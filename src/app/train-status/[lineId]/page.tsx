@@ -1,4 +1,4 @@
-"use client";
+// 'use client' を削除
 import { useRouter, useParams } from "next/navigation";
 import { Box, Typography, IconButton, Button, Paper } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
