@@ -77,13 +77,13 @@ export default function ClientLineDetail({ line, stationData, params }: any) {
         <Box sx={{ display: 'flex', flexDirection: 'row' }}>
           {/* 縦ライン */}
           <Box sx={{ width: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 2 }}>
-            {stationData[params.lineId].map((_: any, idx: number) => (
-              <Box key={idx} sx={{ width: 6, height: idx === stationData[params.lineId].length - 1 ? 24 : 64, background: line.color, borderRadius: 3, mb: idx === stationData[params.lineId].length - 1 ? 0 : -1 }} />
+            {(stationData[params.lineId] ?? []).map((_: any, idx: number) => (
+              <Box key={idx} sx={{ width: 6, height: idx === (stationData[params.lineId]?.length ?? 0) - 1 ? 24 : 64, background: line.color, borderRadius: 3, mb: idx === (stationData[params.lineId]?.length ?? 0) - 1 ? 0 : -1 }} />
             ))}
           </Box>
           {/* 駅カードリスト */}
           <Box sx={{ flex: 1 }}>
-            {stationData[params.lineId].map((station: any, idx: number) => (
+            {(stationData[params.lineId] ?? []).map((station: any, idx: number) => (
               <Box key={station.name} sx={{
                 background: '#fff',
                 borderRadius: 3,
