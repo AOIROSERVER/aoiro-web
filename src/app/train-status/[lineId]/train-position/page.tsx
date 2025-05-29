@@ -117,12 +117,4 @@ export default function TrainPositionPage() {
       <TrainPositionVertical stations={stations} currentTrainIndex={currentTrainIndex} lineColor={lineColor} />
     </Box>
   );
-}
-
-export function generateStaticParams() {
-  // サポートする全ての路線IDを列挙
-  const lineIds = [
-    "CA", "JK", "JY", "JY_OUT", "JB", "JC", "JT"
-  ];
-  return lineIds.map(lineId => ({ lineId }));
 } 

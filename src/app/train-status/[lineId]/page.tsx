@@ -588,4 +588,11 @@ const LineDetailPage = ({ params }: { params: { lineId: string } }) => {
   );
 };
 
+export function generateStaticParams() {
+  const lineIds = [
+    "CA", "JK", "JY", "JY_OUT", "JB", "JC", "JT"
+  ];
+  return lineIds.map(lineId => ({ lineId }));
+}
+
 export default dynamic(() => Promise.resolve(LineDetailPage), { ssr: false }); 
