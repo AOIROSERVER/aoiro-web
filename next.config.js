@@ -1,4 +1,4 @@
-/** @type {import('next').NextConfig} */
+t/** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     unoptimized: true,
