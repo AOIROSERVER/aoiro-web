@@ -2,6 +2,7 @@
 import { Box, Card, Typography, IconButton } from "@mui/material";
 import { Train, Settings } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import dynamic from 'next/dynamic';
 
 // 路線データ（例）
 const lines = [
@@ -22,7 +23,7 @@ function StatusIcon() {
   return <Box sx={{ width: 24, height: 24, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />;
 }
 
-export default function Home() {
+const Home = () => {
   const router = useRouter();
   return (
     <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
@@ -136,4 +137,6 @@ export default function Home() {
       </Box>
     </Box>
   );
-}
+};
+
+export default dynamic(() => Promise.resolve(Home), { ssr: false });
