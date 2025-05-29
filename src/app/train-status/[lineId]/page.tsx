@@ -13,6 +13,7 @@ import DirectionsSubwayIcon from "@mui/icons-material/DirectionsSubway";
 import { ReactNode } from "react";
 import { useState } from "react";
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import dynamic from 'next/dynamic';
 
 // 路線データ例
 const lineData: Record<string, { name: string; color: string; status: string; statusColor: string; statusText: string; detail: string }> = {
@@ -456,38 +457,33 @@ const TrainPositionVertical = ({ stations, currentTrainIndex, lineColor }: { sta
   );
 };
 
-export default function TrainLineDetailPage() {
+const LineDetailPage = ({ params }: { params: { lineId: string } }) => {
   const router = useRouter();
-  const params = useParams();
-  const lineId = typeof params.lineId === 'string' ? params.lineId : Array.isArray(params.lineId) ? params.lineId[0] : '';
-  const line = lineData[lineId] || {
-    name: "不明な路線",
-    color: "#ccc",
-    status: "情報なし",
-    statusColor: "#aaa",
-    statusText: "情報が見つかりません。",
-    detail: "",
-  };
-  const stations = stationData[lineId] || [];
+  const line = lineData[params.lineId as keyof typeof lineData];
+
+  if (!line) {
+    return (
+      <Box sx={{ p: 2 }}>
+        <Typography>路線が見つかりません</Typography>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{ background: '#f5f5f5', minHeight: '100vh', pb: 4 }}>
-      {/* 路線カード（最上部に移動） */}
-      <Box sx={{ px: 2, pt: 3, pb: 2 }}>
-        <Box sx={{
-          background: '#f6f3fb',
-          borderRadius: 3,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-          p: 2,
-          display: 'flex', alignItems: 'center', gap: 2
-        }}>
-          <Box sx={{
-            width: 44, height: 44, borderRadius: 2, border: `2.5px solid ${line.color}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 20, color: '#1a237e', background: '#fff', mr: 2
-          }}>{lineId}</Box>
+    <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
+      {/* ヘッダー */}
+      <Box sx={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        px: 2, py: 2, background: '#fff', borderBottom: '1px solid #e0e0e0', mb: 0.5
+      }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <IconButton onClick={() => router.back()}>
+            <ArrowBackIosNewIcon sx={{ color: '#1a237e' }} />
+          </IconButton>
           <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20 }}>{line.name}</Typography>
         </Box>
       </Box>
+
       {/* 運行情報詳細 */}
       <Box sx={{ px: 2, mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -517,7 +513,7 @@ export default function TrainLineDetailPage() {
             transition: 'box-shadow 0.2s',
             '&:active': { boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }
           }}
-          onClick={() => router.push(`/train-status/${lineId}/train-position`)}
+          onClick={() => router.push(`/train-status/${params.lineId}/train-position`)}
         >
           <TrainIcon sx={{ color: '#2196f3', fontSize: 32, mr: 2 }} />
           <Box sx={{ flex: 1 }}>
@@ -527,8 +523,6 @@ export default function TrainLineDetailPage() {
           <ChevronRightIcon sx={{ color: '#888', fontSize: 28 }} />
         </Paper>
       </Box>
-      {/* 列車位置情報 */}
-      {/* TrainPositionVerticalコンポーネントの呼び出しを削除 */}
       {/* 主要駅一覧 */}
       <Box sx={{ px: 2 }}>
         <Box display="flex" alignItems="center" gap={1} mb={1}>
@@ -538,13 +532,13 @@ export default function TrainLineDetailPage() {
         <Box sx={{ display: 'flex', flexDirection: 'row' }}>
           {/* 縦ライン */}
           <Box sx={{ width: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 2 }}>
-            {stations.map((_, idx) => (
-              <Box key={idx} sx={{ width: 6, height: idx === stations.length - 1 ? 24 : 64, background: line.color, borderRadius: 3, mb: idx === stations.length - 1 ? 0 : -1 }} />
+            {stationData[params.lineId].map((_, idx) => (
+              <Box key={idx} sx={{ width: 6, height: idx === stationData[params.lineId].length - 1 ? 24 : 64, background: line.color, borderRadius: 3, mb: idx === stationData[params.lineId].length - 1 ? 0 : -1 }} />
             ))}
           </Box>
           {/* 駅カードリスト */}
           <Box sx={{ flex: 1 }}>
-            {stations.map((station, idx) => (
+            {stationData[params.lineId].map((station, idx) => (
               <Box key={station.name} sx={{
                 background: '#fff',
                 borderRadius: 3,
@@ -592,4 +586,6 @@ export default function TrainLineDetailPage() {
       </Box>
     </Box>
   );
-} 
+};
+
+export default dynamic(() => Promise.resolve(LineDetailPage), { ssr: false }); 
