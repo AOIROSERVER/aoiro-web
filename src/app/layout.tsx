@@ -6,7 +6,7 @@ import ClientThemeProvider from "./ClientThemeProvider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "aoiro-web",
+  title: "AOIROSERVERアプリ",
   description: "鉄道運行情報アプリ",
 };
 
