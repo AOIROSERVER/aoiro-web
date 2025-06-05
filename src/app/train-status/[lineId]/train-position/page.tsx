@@ -1,9 +1,9 @@
 "use client";
 import { Box } from "@mui/material";
 import TrainIcon from "@mui/icons-material/Train";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 
-// 仮データ
+// 山手線主要駅リスト
 const stations = [
   { name: "東京" },
   { name: "秋葉原" },
@@ -16,7 +16,7 @@ const stations = [
 ];
 const lineColor = "#8fd400"; // 山手線内回りの色
 
-const WS_URL = "ws://localhost:3001";
+const API_URL = "/api/train-position?line=山手線";
 
 const TrainPositionVertical = ({ stations, currentTrainIndex, lineColor }: { stations: { name: string }[]; currentTrainIndex: number; lineColor: string }) => {
   return (
@@ -76,40 +76,30 @@ const TrainPositionVertical = ({ stations, currentTrainIndex, lineColor }: { sta
 
 export default function TrainPositionPage() {
   const [currentTrainIndex, setCurrentTrainIndex] = useState(0);
-  const wsRef = useRef<WebSocket | null>(null);
 
+  // 10秒ごとにAPIから列車位置情報を取得
   useEffect(() => {
-    const ws = new window.WebSocket(WS_URL);
-    wsRef.current = ws;
-    ws.onopen = () => {
-      console.log('[WebSocket] Connected:', WS_URL);
-    };
-    ws.onmessage = (event) => {
+    let timer: any;
+    const fetchPosition = async () => {
       try {
-        const data = JSON.parse(event.data);
-        console.log('[WebSocket] Received:', data);
-        if (data.type === 'train_positions' && Array.isArray(data.positions)) {
-          // 山手線内回りの駅名リストに一致するcurrentStationを探す
-          const yamanoteStations = stations.map(s => s.name);
-          // 位置情報のうち山手線内回りの列車を優先（なければ最初のcurrentStation）
-          let foundIndex = 0;
-          for (const pos of data.positions) {
-            if (yamanoteStations.includes(pos.currentStation)) {
-              foundIndex = yamanoteStations.indexOf(pos.currentStation);
-              break;
-            }
-          }
-          setCurrentTrainIndex(foundIndex);
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        // 外回り優先で駅インデックスを特定
+        const yamanoteStations = stations.map(s => s.name);
+        let foundIndex = 0;
+        if (data["外回り"] && yamanoteStations.includes(data["外回り"].station)) {
+          foundIndex = yamanoteStations.indexOf(data["外回り"].station);
+        } else if (data["内回り"] && yamanoteStations.includes(data["内回り"].station)) {
+          foundIndex = yamanoteStations.indexOf(data["内回り"].station);
         }
+        setCurrentTrainIndex(foundIndex);
       } catch (e) {
-        console.log('[WebSocket] Parse error:', e);
+        // エラー時は何もしない
       }
+      timer = setTimeout(fetchPosition, 10000);
     };
-    ws.onerror = (err) => { console.log('[WebSocket] Error:', err); };
-    ws.onclose = () => { console.log('[WebSocket] Closed'); };
-    return () => {
-      ws.close();
-    };
+    fetchPosition();
+    return () => clearTimeout(timer);
   }, []);
 
   return (
