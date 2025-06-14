@@ -14,9 +14,12 @@ const lines = [
   { id: "JC", name: "中央線", color: "#f15a22", status: "平常運転" },
   { id: "JT", name: "東海道線", color: "#f68b1e", status: "平常運転" },
   { id: "HA", name: "あきが丘線", color: "#e4007f", status: "平常運転" },
-  { id: "HS", name: "夢洲線", color: "#009fe3", status: "平常運転" },
-  { id: "KB", name: "柏倉線", color: "#00b2e5", status: "平常運転" },
-  { id: "KK", name: "海蛙線", color: "#009944", status: "平常運転" },
+  { id: "YS", name: "横須賀線", color: "#00a0de", status: "平常運転" },
+  { id: "MR", name: "丸の内線", color: "#f923e0", status: "平常運転" },
+  { id: "HZ", name: "半蔵門線", color: "#8f76d6", status: "平常運転" },
+  { id: "CD", name: "千代田線", color: "#00b960", status: "平常運転" },
+  { id: "HB", name: "日比谷線", color: "#b5b5ac", status: "平常運転" },
+  { id: "AO", name: "あおうみ線(空港アクセス線)", color: "#00a0de", status: "平常運転" }
 ];
 
 function StatusIcon() {
