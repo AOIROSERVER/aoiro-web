@@ -120,7 +120,7 @@ const TrainStatusPage = () => {
                   width: 44,
                   height: 44,
                   borderRadius: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? '50%' : 2,
-                  border: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? `5px solid ${line.color}` : `2.5px solid ${line.color}`,
+                  border: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? `8px solid ${line.color}` : `2.8px solid ${line.color}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
