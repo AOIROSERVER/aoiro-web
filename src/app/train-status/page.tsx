@@ -119,8 +119,8 @@ const TrainStatusPage = () => {
                 sx={{
                   width: 44,
                   height: 44,
-                  borderRadius: 2,
-                  border: `2.5px solid ${line.color}`,
+                  borderRadius: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? '50%' : 2,
+                  border: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? `5px solid ${line.color}` : `2.5px solid ${line.color}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
