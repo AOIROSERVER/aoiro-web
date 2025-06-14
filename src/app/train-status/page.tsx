@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 
 // 路線データ（例）
 const lines = [
+  // JR路線
   { id: "CA", name: "東海道新幹線", color: "#0033cb", status: "平常運転" },
   { id: "JK", name: "京浜東北線", color: "#00b2e5", status: "平常運転" },
   { id: "JY", name: "山手線（内回り）", color: "#8fd400", status: "平常運転" },
@@ -13,13 +14,16 @@ const lines = [
   { id: "JB", name: "総武線", color: "#ffd400", status: "平常運転" },
   { id: "JC", name: "中央線", color: "#f15a22", status: "平常運転" },
   { id: "JT", name: "東海道線", color: "#f68b1e", status: "平常運転" },
-  { id: "HA", name: "あきが丘線", color: "#e4007f", status: "平常運転" },
-  { id: "YS", name: "横須賀線", color: "#00a0de", status: "平常運転" },
-  { id: "MR", name: "丸の内線", color: "#f923e0", status: "平常運転" },
-  { id: "HZ", name: "半蔵門線", color: "#8f76d6", status: "平常運転" },
-  { id: "CD", name: "千代田線", color: "#00b960", status: "平常運転" },
-  { id: "HB", name: "日比谷線", color: "#b5b5ac", status: "平常運転" },
-  { id: "AO", name: "あおうみ線(空港アクセス線)", color: "#00a0de", status: "平常運転" }
+  { id: "JO", name: "横須賀線", color: "#1069b4", status: "平常運転" },
+  // 東京メトロ路線
+  { id: "M", name: "丸の内線", color: "#f62e36", status: "平常運転" },
+  { id: "Z", name: "半蔵門線", color: "#8f76d6", status: "平常運転" },
+  { id: "C", name: "千代田線", color: "#00bb86", status: "平常運転" },
+  { id: "H", name: "日比谷線", color: "#b5b5ac", status: "平常運転" },
+  { id: "G", name: "銀座線", color: "#f39700", status: "平常運転" },
+  // 私鉄路線
+  { id: "AK", name: "あきが丘線", color: "#e37e40", status: "平常運転" },
+  { id: "AU", name: "あおうみ線 (空港アクセス線)", color: "#15206b", status: "平常運転" }
 ];
 
 function StatusIcon() {
