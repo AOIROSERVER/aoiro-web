@@ -3,35 +3,53 @@ import { Box, Card, Typography, IconButton } from "@mui/material";
 import { Train, Settings } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
+import React, { useEffect, useState } from "react";
 
-// 路線データ（例）
-const lines = [
-  // JR路線
-  { id: "CA", name: "東海道新幹線", color: "#0033cb", status: "平常運転" },
-  { id: "JK", name: "京浜東北線", color: "#00b2e5", status: "平常運転" },
-  { id: "JY", name: "山手線（内回り）", color: "#8fd400", status: "平常運転" },
-  { id: "JY", name: "山手線（外回り）", color: "#8fd400", status: "平常運転" },
-  { id: "JB", name: "総武線", color: "#ffd400", status: "平常運転" },
-  { id: "JC", name: "中央線", color: "#f15a22", status: "平常運転" },
-  { id: "JT", name: "東海道線", color: "#f68b1e", status: "平常運転" },
-  { id: "JO", name: "横須賀線", color: "#1069b4", status: "平常運転" },
-  // 東京メトロ路線
-  { id: "M", name: "丸の内線", color: "#f62e36", status: "平常運転" },
-  { id: "Z", name: "半蔵門線", color: "#8f76d6", status: "平常運転" },
-  { id: "C", name: "千代田線", color: "#00bb86", status: "平常運転" },
-  { id: "H", name: "日比谷線", color: "#b5b5ac", status: "平常運転" },
-  { id: "G", name: "銀座線", color: "#f39700", status: "平常運転" },
-  // 私鉄路線
-  { id: "AK", name: "あきが丘線", color: "#e37e40", status: "平常運転" },
-  { id: "AU", name: "あおうみ線 (空港アクセス線)", color: "#15206b", status: "平常運転" }
-];
-
-function StatusIcon() {
-  return <Box sx={{ width: 24, height: 24, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />;
+function StatusIcon({ status }: { status: string }) {
+  if (status === '平常運転') {
+    return (
+      <Box sx={{ width: 24, height: 24, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />
+    );
+  } else if (status === '遅延') {
+    return (
+      <Box sx={{ width: 24, height: 24, display: 'inline-block', mr: 1 }}>
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <polygon
+            points="12,4 22,20 2,20"
+            fill="none"
+            stroke="#ffa000"
+            strokeWidth="4"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </Box>
+    );
+  } else if (status === '運転見合わせ') {
+    return (
+      <Box sx={{ width: 24, height: 24, display: 'inline-block', mr: 1, position: 'relative' }}>
+        <svg width="24" height="24" viewBox="0 0 24 24" style={{ position: 'absolute', top: 0, left: 0 }}>
+          <line x1="5" y1="5" x2="19" y2="19" stroke="#e53935" strokeWidth="3.5" strokeLinecap="round" />
+          <line x1="19" y1="5" x2="5" y2="19" stroke="#e53935" strokeWidth="3.5" strokeLinecap="round" />
+        </svg>
+      </Box>
+    );
+  }
+  return null;
 }
 
 const TrainStatusPage = () => {
   const router = useRouter();
+  const [lines, setLines] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLines = async () => {
+      const res = await fetch("/api/train-status");
+      const data = await res.json();
+      setLines(Array.isArray(data) ? data : data.lines);
+    };
+    fetchLines();
+  }, []);
+
   return (
     <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
       {/* ヘッダー */}
@@ -77,15 +95,15 @@ const TrainStatusPage = () => {
           </Box>
           <Box display="flex" justifyContent="center" alignItems="center" gap={3}>
             <Box display="flex" alignItems="center" gap={0.5}>
-              <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', mr: 0.5 }} />
+              <StatusIcon status="平常運転" />
               <Typography sx={{ color: '#43a047', fontWeight: 600, fontSize: 15 }}>平常運転</Typography>
             </Box>
             <Box display="flex" alignItems="center" gap={0.5}>
-              <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #ffa000', mr: 0.5 }} />
+              <StatusIcon status="遅延" />
               <Typography sx={{ color: '#ffa000', fontWeight: 600, fontSize: 15 }}>遅延</Typography>
             </Box>
             <Box display="flex" alignItems="center" gap={0.5}>
-              <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #e53935', mr: 0.5 }} />
+              <StatusIcon status="運転見合わせ" />
               <Typography sx={{ color: '#e53935', fontWeight: 600, fontSize: 15 }}>運転見合わせ</Typography>
             </Box>
           </Box>
@@ -136,8 +154,8 @@ const TrainStatusPage = () => {
               <Typography variant="h6" sx={{ color: '#1a237e', fontWeight: 700, fontSize: 18 }}>{line.name}</Typography>
             </Box>
             <Box display="flex" alignItems="center" gap={1}>
-              <StatusIcon />
-              <Typography sx={{ color: '#43a047', fontWeight: 700, fontSize: 17 }}>平常運転</Typography>
+              <StatusIcon status={line.status} />
+              <Typography sx={{ color: line.status === '平常運転' ? '#43a047' : line.status === '遅延' ? '#ffa000' : '#e53935', fontWeight: 700, fontSize: 17 }}>{line.status}</Typography>
             </Box>
           </Box>
         ))}
