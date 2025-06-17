@@ -149,7 +149,7 @@ const TrainStatusPage = () => {
                   mr: 1
                 }}
               >
-                {line.id}
+                {(line.id === 'JY1' || line.id === 'JY2') ? 'JY' : line.id}
               </Box>
               <Typography variant="h6" sx={{ color: '#1a237e', fontWeight: 700, fontSize: 18 }}>{line.name}</Typography>
             </Box>
