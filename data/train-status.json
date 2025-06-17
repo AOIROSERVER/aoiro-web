@@ -9,14 +9,14 @@
   {
     "id": "JK",
     "name": "京浜東北線",
-    "status": "遅延",
+    "status": "平常運転",
     "color": "#00b2e5",
     "updatedAt": "2025-06-15T00:09:11.469Z"
   },
   {
     "id": "JY1",
     "name": "山手線（内回り）",
-    "status": "運転見合わせ",
+    "status": "平常運転",
     "color": "#8fd400",
     "updatedAt": "2025-06-15T00:09:11.469Z",
     "section": "浜松〜有楽町",
