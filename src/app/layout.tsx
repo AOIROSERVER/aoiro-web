@@ -11,7 +11,7 @@ export const metadata = {
   description: "鉄道運行情報アプリ",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: any }) {
   return (
     <html lang="ja">
       <body className={inter.className}>
