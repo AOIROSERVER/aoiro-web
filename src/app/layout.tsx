@@ -2,7 +2,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import Header from "./Header";
 import ClientThemeProvider from "./ClientThemeProvider";
-import { TrainStatusNotification } from "../../../src/components/TrainStatusNotification";
+import { TrainStatusNotification } from "../components/TrainStatusNotification";
 
 const inter = Inter({ subsets: ["latin"] });
 
