@@ -65,22 +65,20 @@ export default function TrainStatusManagement() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      const newLines = lines.map((l) => l.id === editId ? { ...editValues } : l);
-      
-      const response = await fetch("/api/train-status", {
+      // 編集中の路線のみFirestoreに保存
+      const response = await fetch("/api/save-train-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newLines)
+        body: JSON.stringify(editValues)
       });
-      
       if (!response.ok) {
         throw new Error('Failed to save train status');
       }
-      
+      // ローカルのlinesも更新
+      const newLines = lines.map((l) => l.id === editId ? { ...editValues } : l);
       setLines(newLines);
       setEditId(null);
       setEditValues({});
-      
       // 保存後に再取得
       await fetchLines();
     } catch (e) {
