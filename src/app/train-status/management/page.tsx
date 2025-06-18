@@ -65,11 +65,12 @@ export default function TrainStatusManagement() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      // 編集中の路線のみFirestoreに保存
+      // Firestore保存用にlineIdを明示的に付与
+      const saveData = { ...editValues, lineId: editValues.id };
       const response = await fetch("/api/save-train-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(editValues)
+        body: JSON.stringify(saveData)
       });
       if (!response.ok) {
         throw new Error('Failed to save train status');
