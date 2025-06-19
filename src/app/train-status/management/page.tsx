@@ -10,8 +10,8 @@ import { useState, useEffect } from "react";
 const initialLines = [
   { id: "CA", name: "東海道新幹線", status: "平常運転", section: "", detail: "" },
   { id: "JK", name: "京浜東北線", status: "平常運転", section: "", detail: "" },
-  { id: "JY", name: "山手線（内回り）", status: "平常運転", section: "", detail: "" },
-  { id: "JY_OUT", name: "山手線（外回り）", status: "平常運転", section: "", detail: "" },
+  { id: "JY1", name: "山手線（内回り）", status: "平常運転", section: "", detail: "" },
+  { id: "JY2", name: "山手線（外回り）", status: "平常運転", section: "", detail: "" },
   { id: "JB", name: "総武線", status: "平常運転", section: "", detail: "" },
   { id: "JC", name: "中央線", status: "平常運転", section: "", detail: "" },
   { id: "JT", name: "東海道線", status: "平常運転", section: "", detail: "" },
@@ -43,7 +43,9 @@ export default function TrainStatusManagement() {
           setLines(data);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Error fetching train status:', e);
+    }
     setLoading(false);
   };
 
@@ -65,7 +67,7 @@ export default function TrainStatusManagement() {
   const handleSave = async () => {
     try {
       setLoading(true);
-      // Firestore保存用にlineIdを明示的に付与
+      // Supabase保存用にlineIdを明示的に付与
       const saveData = { ...editValues, lineId: editValues.id };
       const response = await fetch("/api/save-train-status", {
         method: "POST",

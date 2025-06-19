@@ -1,19 +1,7 @@
 console.log("FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID);
-console.log("FIREBASE_CLIENT_EMAIL:", process.env.FIREBASE_CLIENT_EMAIL);
-console.log("FIREBASE_PRIVATE_KEY:", process.env.FIREBASE_PRIVATE_KEY?.slice(0, 30)); // 先頭だけ
+console.log("FIREBASE_PRIVATE_KEY:", process.env.FIREBASE_PRIVATE_KEY?.slice(0, 30));
 import { NextResponse } from 'next/server';
-import admin from 'firebase-admin';
-
-// Firebase Admin SDKの初期化
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+import { supabase } from '../../../lib/supabase';
 
 export async function POST(request: Request) {
   try {
@@ -34,8 +22,10 @@ export async function POST(request: Request) {
       topic: `train-status-${lineId}`, // トピックベースの通知
     };
 
-    // 通知の送信
-    await admin.messaging().send(message);
+    // 通知の送信（現在はログ出力のみ）
+    console.log('Notification message:', message);
+
+    // 将来的にプッシュ通知を実装する場合はここに追加
 
     return NextResponse.json({ message: 'Notification sent successfully' });
   } catch (error) {

@@ -1,26 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
-
-if (!getApps().length) {
-  initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+import { supabase } from '../../../lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
-    const db = getFirestore();
-    // "train_status" コレクションに lineId をドキュメントIDとして保存
-    await db.collection('train_status').doc(data.lineId).set(data);
+    
+    // Supabaseにデータを保存
+    const { error } = await supabase
+      .from('train_status')
+      .upsert({
+        line_id: data.lineId,
+        name: data.name,
+        status: data.status,
+        section: data.section || '',
+        detail: data.detail || '',
+        color: data.color || '#000000',
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'line_id'
+      });
+
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json({ message: '保存失敗', error: error.message }, { status: 500 });
+    }
+
     return NextResponse.json({ message: '保存成功' });
   } catch (error) {
-    console.error(error);
+    console.error('Error saving train status:', error);
     return NextResponse.json({ message: '保存失敗', error: String(error) }, { status: 500 });
   }
 } 
