@@ -7,6 +7,25 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
+// 路線の表示順序を定義
+const lineOrder = [
+  'CA',   // 東海道新幹線
+  'JK',   // 京浜東北線
+  'JY1',  // 山手線（内回り）
+  'JY2',  // 山手線（外回り）
+  'JB',   // 総武線
+  'JC',   // 中央線
+  'JT',   // 東海道線
+  'JO',   // 横須賀線
+  'M',    // 丸の内線
+  'Z',    // 半蔵門線
+  'C',    // 千代田線
+  'H',    // 日比谷線
+  'G',    // 銀座線
+  'AK',   // あきが丘線
+  'AU'    // あおうみ線
+];
+
 const initialLines = [
   { id: "CA", name: "東海道新幹線", status: "平常運転", section: "", detail: "" },
   { id: "JK", name: "京浜東北線", status: "平常運転", section: "", detail: "" },
@@ -32,6 +51,21 @@ export default function TrainStatusManagement() {
   const [editValues, setEditValues] = useState<any>({});
   const [loading, setLoading] = useState(false);
 
+  // 路線を定義された順序でソートする関数
+  const sortLines = (linesData: any[]) => {
+    return linesData.sort((a: any, b: any) => {
+      const aIndex = lineOrder.indexOf(a.id);
+      const bIndex = lineOrder.indexOf(b.id);
+      
+      // 定義されていない路線は最後に配置
+      if (aIndex === -1 && bIndex === -1) return 0;
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      
+      return aIndex - bIndex;
+    });
+  };
+
   // APIからデータ取得
   const fetchLines = async () => {
     setLoading(true);
@@ -40,7 +74,8 @@ export default function TrainStatusManagement() {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          setLines(data);
+          // 取得したデータをソートして設定
+          setLines(sortLines(data));
         }
       }
     } catch (e) {
@@ -77,12 +112,12 @@ export default function TrainStatusManagement() {
       if (!response.ok) {
         throw new Error('Failed to save train status');
       }
-      // ローカルのlinesも更新
+      // ローカルのlinesも更新（ソートを維持）
       const newLines = lines.map((l) => l.id === editId ? { ...editValues } : l);
-      setLines(newLines);
+      setLines(sortLines(newLines));
       setEditId(null);
       setEditValues({});
-      // 保存後に再取得
+      // 保存後に再取得（ソート済み）
       await fetchLines();
     } catch (e) {
       console.error('Error saving train status:', e);
