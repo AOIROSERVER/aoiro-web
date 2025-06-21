@@ -8,28 +8,51 @@ export async function POST(request: Request) {
     const { lineId, lineName, status, details } = await request.json();
 
     // 通知メッセージの作成
-    const message = {
-      notification: {
-        title: `${lineName}の運行情報`,
-        body: `${status}${details ? `: ${details}` : ''}`,
-      },
+    const notificationMessage = {
+      title: `${lineName}の運行情報`,
+      body: `${status}${details ? `: ${details}` : ''}`,
+      icon: '/logo192.png',
+      badge: '/logo192.png',
+      tag: `train-status-${lineId}`,
       data: {
         lineId,
         lineName,
         status,
         details: details || '',
-      },
-      topic: `train-status-${lineId}`, // トピックベースの通知
+        timestamp: new Date().toISOString()
+      }
     };
 
-    // 通知の送信（現在はログ出力のみ）
-    console.log('Notification message:', message);
+    console.log('通知メッセージ:', notificationMessage);
 
-    // 将来的にプッシュ通知を実装する場合はここに追加
+    // Supabase通知APIを呼び出し
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/supabase-notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lineId,
+        lineName,
+        status,
+        details
+      })
+    });
 
-    return NextResponse.json({ message: 'Notification sent successfully' });
+    if (!response.ok) {
+      throw new Error(`Supabase通知APIエラー: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('通知送信結果:', result);
+
+    return NextResponse.json({ 
+      message: 'Notification sent successfully',
+      result 
+    });
+
   } catch (error) {
-    console.error('Error sending notification:', error);
+    console.error('通知送信エラー:', error);
     return NextResponse.json(
       { message: 'Error sending notification' },
       { status: 500 }

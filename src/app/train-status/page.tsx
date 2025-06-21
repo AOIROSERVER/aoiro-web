@@ -24,6 +24,25 @@ const lineOrder = [
   'AU'    // あおうみ線
 ];
 
+// 路線ごとのデフォルト色を定義
+const defaultLineColors: { [key: string]: string } = {
+  CA: '#0033cb',   // 東海道新幹線
+  JK: '#00b2e5',   // 京浜東北線
+  JY1: '#8fd400',  // 山手線（内回り）
+  JY2: '#8fd400',  // 山手線（外回り）
+  JB: '#ffd400',   // 総武線
+  JC: '#f15a22',   // 中央線
+  JT: '#f68b1e',   // 東海道線
+  JO: '#1069b4',   // 横須賀線
+  M: '#f62e36',    // 丸の内線
+  Z: '#8f76d6',    // 半蔵門線
+  C: '#00bb86',    // 千代田線
+  H: '#b5b5ac',    // 日比谷線
+  G: '#f39700',    // 銀座線
+  AK: '#e37e40',   // あきが丘線
+  AU: '#15206b'    // あおうみ線
+};
+
 function StatusIcon({ status }: { status: string }) {
   if (status === '平常運転') {
     return (
@@ -65,6 +84,10 @@ const TrainStatusPage = () => {
       const res = await fetch("/api/train-status");
       const data = await res.json();
       const linesData = Array.isArray(data) ? data : data.lines;
+      
+      // デバッグ用：東海道新幹線のデータを確認
+      const caLine = linesData.find((line: any) => line.id === 'CA');
+      console.log('東海道新幹線のデータ:', caLine);
       
       // 路線を定義された順序でソート
       const sortedLines = linesData.sort((a: any, b: any) => {
@@ -145,7 +168,23 @@ const TrainStatusPage = () => {
       </Box>
       {/* 路線リスト */}
       <Box sx={{ px: 2, pb: 2 }}>
-        {lines.map((line, idx) => (
+        {lines.map((line, idx) => {
+          // デバッグ用：色の値を計算
+          let finalColor = line.color || defaultLineColors[line.id] || '#1a237e';
+          
+          // 東海道新幹線の場合は強制的に色を設定
+          if (line.id === 'CA') {
+            finalColor = '#0033cb';
+            console.log('東海道新幹線の色を強制設定:', finalColor);
+          }
+          
+          console.log(`路線 ${line.id} (${line.name}):`, {
+            lineColor: line.color,
+            defaultColor: defaultLineColors[line.id],
+            finalColor: finalColor
+          });
+          
+          return (
           <Box
             key={line.id + idx}
             sx={{
@@ -172,7 +211,7 @@ const TrainStatusPage = () => {
                   width: 44,
                   height: 44,
                   borderRadius: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? '50%' : 2,
-                  border: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? `8px solid ${line.color}` : `2.8px solid ${line.color}`,
+                  border: ['M', 'Z', 'C', 'H', 'G'].includes(line.id) ? `8px solid ${finalColor}` : `2.8px solid ${finalColor}`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -180,8 +219,12 @@ const TrainStatusPage = () => {
                   fontSize: 20,
                   color: '#1a237e',
                   background: '#fff',
-                  mr: 1
+                  mr: 1,
+                  ...(line.id === 'CA' && {
+                    border: '2.8px solid #0033cb'
+                  })
                 }}
+                style={line.id === 'CA' ? { border: '2.8px solid #0033cb' } : {}}
               >
                 {(line.id === 'JY1' || line.id === 'JY2') ? 'JY' : line.id}
               </Box>
@@ -192,7 +235,8 @@ const TrainStatusPage = () => {
               <Typography sx={{ color: line.status === '平常運転' ? '#43a047' : line.status === '遅延' ? '#ffa000' : '#e53935', fontWeight: 700, fontSize: 17 }}>{line.status}</Typography>
             </Box>
           </Box>
-        ))}
+          );
+        })}
       </Box>
     </Box>
   );

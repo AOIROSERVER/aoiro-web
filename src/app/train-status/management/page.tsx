@@ -6,6 +6,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { SupabaseNotification } from "../../../components/SupabaseNotification";
 
 // 路線の表示順序を定義
 const lineOrder = [
@@ -206,6 +207,7 @@ export default function TrainStatusManagement() {
           </Paper>
         ))}
       </Box>
+      <SupabaseNotification />
     </Box>
   );
 } 

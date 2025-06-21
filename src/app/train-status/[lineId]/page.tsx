@@ -9,7 +9,7 @@ import WcIcon from '@mui/icons-material/Wc';
 import ElevatorIcon from '@mui/icons-material/Elevator';
 import WifiIcon from '@mui/icons-material/Wifi';
 import PeopleIcon from '@mui/icons-material/People';
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // 路線ごとの主要駅・情報データ
@@ -108,6 +108,7 @@ const lineColors = {
 
 export default function TrainLineDetail() {
   const params = useParams();
+  const router = useRouter();
   const lineId = params.lineId as keyof typeof lineData;
   const [statusInfo, setStatusInfo] = useState<{ status?: string; detail?: string; section?: string }>({});
 
@@ -154,6 +155,15 @@ export default function TrainLineDetail() {
     );
   }
 
+  const handleTrainPositionClick = () => {
+    console.log('列車位置情報ボタンがクリックされました');
+    console.log('lineId:', lineId);
+    console.log('line.name:', line.name);
+    const url = `/train-status/${lineId}/train-position?line=${encodeURIComponent(line.name)}`;
+    console.log('遷移先URL:', url);
+    router.push(url);
+  };
+
   return (
     <Box sx={{ background: '#fafbfc', minHeight: '100vh', pb: 4 }}>
       {/* ヘッダー */}
@@ -197,7 +207,22 @@ export default function TrainLineDetail() {
           <TrainIcon sx={{ color: '#2962ff', mr: 1 }} />
           <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 16 }}>列車位置情報</Typography>
         </Box>
-        <Card sx={{ p: 2, borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+        <Card 
+          sx={{ 
+            p: 2, 
+            borderRadius: 3, 
+            boxShadow: '0 2px 8px rgba(0,0,0,0.07)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: '#f5f5f5',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }
+          }}
+          onClick={handleTrainPositionClick}
+        >
           <Typography sx={{ color: '#757575', fontWeight: 500, fontSize: 15 }}>リアルタイムで列車の位置を確認</Typography>
           <ArrowForwardIosIcon sx={{ color: '#bdbdbd', fontSize: 18 }} />
         </Card>
