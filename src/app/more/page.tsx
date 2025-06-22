@@ -1,52 +1,229 @@
 "use client";
-import { Box, Card, Typography, List, ListItem, ListItemIcon, ListItemText, Divider, IconButton, Avatar, ListItemButton } from "@mui/material";
-import { Settings, AccountCircle, Info, Link as LinkIcon, ExitToApp } from "@mui/icons-material";
+import React, { useEffect, useState } from "react";
+import {
+  Box,
+  Card,
+  Typography,
+  Avatar,
+  Grid,
+  Button,
+  CircularProgress,
+  Divider,
+  IconButton,
+} from "@mui/material";
+import {
+  Settings,
+  AccountCircle,
+  Info,
+  NotificationsNone,
+  Palette,
+  Shield,
+  HelpOutline,
+  Email,
+  InfoOutlined,
+  Login,
+  Logout,
+} from "@mui/icons-material";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../contexts/AuthContext";
+
+// ニュース記事型
+type NewsItem = {
+  id: string;
+  title: string;
+  date: string;
+  imageUrl: string;
+  url: string;
+};
 
 export default function MorePage() {
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { user, signOut } = useAuth(); // 認証コンテキストからユーザー情報とsignOutを取得
+
+  useEffect(() => {
+    fetch(
+      "https://aoiroserver.tokyo/wp-json/wp/v2/posts?_embed&per_page=3&orderby=date&order=desc"
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const items = data.map((post: any) => {
+          let imageUrl = "";
+          if (post._embedded && post._embedded["wp:featuredmedia"]) {
+            const media = post._embedded["wp:featuredmedia"][0];
+            imageUrl =
+              media.media_details?.sizes?.medium_large?.source_url ||
+              media.media_details?.sizes?.medium?.source_url ||
+              media.media_details?.sizes?.full?.source_url ||
+              media.source_url ||
+              "";
+          }
+          return {
+            id: post.id.toString(),
+            title: post.title.rendered,
+            date: new Date(post.date).toLocaleDateString("ja-JP"),
+            imageUrl,
+            url: post.link,
+          };
+        });
+        setNews(items);
+      })
+      .catch(() => setNews([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <Box sx={{ p: 2, background: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ p: 2, background: "#f7f8fa", minHeight: "100vh" }}>
       {/* ヘッダー */}
       <Box display="flex" alignItems="center" gap={1} mb={2}>
-        <Settings sx={{ color: '#ff9800', fontSize: 32 }} />
-        <Typography variant="h5" fontWeight="bold">その他</Typography>
+        <Settings sx={{ color: "#4A90E2", fontSize: 32 }} />
+        <Typography variant="h5" fontWeight="bold">
+          その他
+        </Typography>
       </Box>
-      {/* アカウント情報 */}
+
+      {/* アカウント欄 */}
       <Card sx={{ mb: 3, borderRadius: 3, p: 2 }}>
         <Box display="flex" alignItems="center" gap={2}>
-          <Avatar sx={{ bgcolor: '#ff9800', color: '#fff', fontWeight: 'bold' }}>A</Avatar>
-          <Box>
-            <Typography variant="h6">管理者</Typography>
-            <Typography variant="body2" color="text.secondary">admin@example.com</Typography>
+          <Avatar sx={{ bgcolor: "#4A90E2", color: "#fff", fontWeight: "bold" }}>
+            {user ? (user.email?.charAt(0).toUpperCase() || 'A') : <Login />}
+          </Avatar>
+          <Box flex={1}>
+            {user ? (
+              <>
+                <Typography variant="h6">{user.email}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  ログイン済み
+                </Typography>
+              </>
+            ) : (
+              <Box onClick={() => router.push("/login")} sx={{ cursor: "pointer" }}>
+                <Typography variant="h6" color="#050045">
+                  AOIROidにログイン
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  アカウントを作成して、より便利に
+                </Typography>
+              </Box>
+            )}
           </Box>
+          {user && (
+            <IconButton onClick={signOut}>
+              <Logout />
+            </IconButton>
+          )}
         </Box>
       </Card>
-      {/* メニューリスト */}
-      <Card sx={{ mb: 3, borderRadius: 3 }}>
-        <List>
-          <ListItemButton>
-            <ListItemIcon><AccountCircle /></ListItemIcon>
-            <ListItemText primary="アカウント設定" />
-          </ListItemButton>
-          <Divider />
-          <ListItemButton component="a" href="https://discord.gg/xxxx" target="_blank">
-            <ListItemIcon><LinkIcon /></ListItemIcon>
-            <ListItemText primary="公式Discord" />
-          </ListItemButton>
-          <ListItemButton component="a" href="https://github.com/xxxx" target="_blank">
-            <ListItemIcon><LinkIcon /></ListItemIcon>
-            <ListItemText primary="GitHub" />
-          </ListItemButton>
-          <Divider />
-          <ListItemButton>
-            <ListItemIcon><Info /></ListItemIcon>
-            <ListItemText primary="バージョン情報" secondary="v1.0.0" />
-          </ListItemButton>
-          <ListItemButton>
-            <ListItemIcon><ExitToApp /></ListItemIcon>
-            <ListItemText primary="ログアウト" />
-          </ListItemButton>
-        </List>
-      </Card>
+
+      {/* 最新情報 */}
+      <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+        最新情報
+      </Typography>
+      <Box mb={3}>
+        {loading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" py={4}>
+            <CircularProgress />
+          </Box>
+        ) : news.length > 0 ? (
+          <Grid container spacing={2}>
+            {news.map((item) => (
+              <Grid item xs={12} key={item.id}>
+                <Card
+                  sx={{ display: "flex", alignItems: "center", p: 1.5, borderRadius: 2, cursor: "pointer" }}
+                  onClick={() => window.open(item.url, "_blank")}
+                >
+                  <Box
+                    sx={{
+                      width: 80,
+                      height: 80,
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      bgcolor: "#eee",
+                      mr: 2,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.imageUrl ? (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                      />
+                    ) : (
+                      <Box
+                        width="100%"
+                        height="100%"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        color="#aaa"
+                      >
+                        <InfoOutlined fontSize="large" />
+                      </Box>
+                    )}
+                  </Box>
+                  <Box flex={1}>
+                    <Typography fontWeight="bold" fontSize={15} color="#050045" noWrap>
+                      {item.title}
+                    </Typography>
+                    <Typography fontSize={13} color="#666">
+                      {item.date}
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Typography color="text.secondary">最新情報はありません</Typography>
+        )}
+      </Box>
+
+      {/* 設定 */}
+      <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+        設定
+      </Typography>
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<NotificationsNone sx={{ color: "#4A90E2" }} />} sx={{ borderRadius: 2 }}>
+            通知設定
+          </Button>
+        </Grid>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<Palette sx={{ color: "#50C878" }} />} sx={{ borderRadius: 2 }}>
+            表示設定
+          </Button>
+        </Grid>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<Shield sx={{ color: "#FF6B6B" }} />} sx={{ borderRadius: 2 }}>
+            プライバシー
+          </Button>
+        </Grid>
+      </Grid>
+
+      {/* その他 */}
+      <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+        その他
+      </Typography>
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<HelpOutline sx={{ color: "#9B59B6" }} />} sx={{ borderRadius: 2 }}>
+            ヘルプ
+          </Button>
+        </Grid>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<Email sx={{ color: "#F1C40F" }} />} sx={{ borderRadius: 2 }}>
+            お問い合わせ
+          </Button>
+        </Grid>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<Info sx={{ color: "#3498DB" }} />} sx={{ borderRadius: 2 }}>
+            アプリについて
+          </Button>
+        </Grid>
+      </Grid>
+
       {/* フッター */}
       <Box textAlign="center" color="text.secondary" mt={4}>
         <Typography variant="body2">© 2024 AOIRO SERVER</Typography>
