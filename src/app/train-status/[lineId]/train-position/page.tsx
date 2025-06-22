@@ -54,6 +54,161 @@ const LINE_STATIONS: Record<string, Array<{ name: string; code: string }>> = {
     { name: '東京', code: 'JC01' },
     { name: '御茶ノ水', code: 'JC02' },
     { name: '新宿', code: 'JC03' }
+  ],
+  // 丸の内線
+  M: [
+    { name: '池袋', code: 'M01' },
+    { name: '新大塚', code: 'M02' },
+    { name: '茗荷谷', code: 'M03' },
+    { name: '後楽園', code: 'M04' },
+    { name: '本郷三丁目', code: 'M05' },
+    { name: '御茶ノ水', code: 'M06' },
+    { name: '淡路町', code: 'M07' },
+    { name: '大手町', code: 'M08' },
+    { name: '東京', code: 'M09' },
+    { name: '銀座', code: 'M10' },
+    { name: '霞ヶ関', code: 'M11' },
+    { name: '国会議事堂前', code: 'M12' },
+    { name: '赤坂見附', code: 'M13' },
+    { name: '四谷三丁目', code: 'M14' },
+    { name: '新宿御苑前', code: 'M15' },
+    { name: '新宿三丁目', code: 'M16' },
+    { name: '新宿', code: 'M17' },
+    { name: '西新宿', code: 'M18' },
+    { name: '中野坂上', code: 'M19' },
+    { name: '新中野', code: 'M20' },
+    { name: '東高円寺', code: 'M21' },
+    { name: '新高円寺', code: 'M22' },
+    { name: '南阿佐ヶ谷', code: 'M23' },
+    { name: '荻窪', code: 'M24' }
+  ],
+  // 日比谷線
+  H: [
+    { name: '北千住', code: 'H01' },
+    { name: '南千住', code: 'H02' },
+    { name: '三ノ輪', code: 'H03' },
+    { name: '入谷', code: 'H04' },
+    { name: '上野', code: 'H05' },
+    { name: '秋葉原', code: 'H06' },
+    { name: '小伝馬町', code: 'H07' },
+    { name: '人形町', code: 'H08' },
+    { name: '茅場町', code: 'H09' },
+    { name: '八丁堀', code: 'H10' },
+    { name: '築地', code: 'H11' },
+    { name: '東銀座', code: 'H12' },
+    { name: '銀座', code: 'H13' },
+    { name: '日比谷', code: 'H14' },
+    { name: '有楽町', code: 'H15' },
+    { name: '霞ヶ関', code: 'H16' },
+    { name: '神谷町', code: 'H17' },
+    { name: '六本木', code: 'H18' },
+    { name: '広尾', code: 'H19' },
+    { name: '恵比寿', code: 'H20' },
+    { name: '中目黒', code: 'H21' }
+  ],
+  // 銀座線
+  G: [
+    { name: '浅草', code: 'G01' },
+    { name: '田原町', code: 'G02' },
+    { name: '稲荷町', code: 'G03' },
+    { name: '上野', code: 'G04' },
+    { name: '上野広小路', code: 'G05' },
+    { name: '末広町', code: 'G06' },
+    { name: '神田', code: 'G07' },
+    { name: '三越前', code: 'G08' },
+    { name: '日本橋', code: 'G09' },
+    { name: '京橋', code: 'G10' },
+    { name: '銀座', code: 'G11' },
+    { name: '新橋', code: 'G12' },
+    { name: '虎ノ門', code: 'G13' },
+    { name: '溜池山王', code: 'G14' },
+    { name: '赤坂見附', code: 'G15' },
+    { name: '青山一丁目', code: 'G16' },
+    { name: '外苑前', code: 'G17' },
+    { name: '表参道', code: 'G18' },
+    { name: '渋谷', code: 'G19' }
+  ],
+  // 東海道線
+  JT: [
+    { name: '浜松', code: 'JT01' },
+    { name: '品川', code: 'JT02' },
+    { name: '大井町', code: 'JT03' },
+    { name: '大崎', code: 'JT04' },
+    { name: '西大井', code: 'JT05' },
+    { name: '武蔵小杉', code: 'JT06' }
+  ],
+  // 横須賀線
+  JO: [
+    { name: '大船', code: 'JO01' },
+    { name: '北鎌倉', code: 'JO02' },
+    { name: '鎌倉', code: 'JO03' },
+    { name: '由比ヶ浜', code: 'JO04' },
+    { name: '稲村ヶ崎', code: 'JO05' },
+    { name: '極楽寺', code: 'JO06' },
+    { name: '長谷', code: 'JO07' },
+    { name: '江ノ島', code: 'JO08' },
+    { name: '鵠沼', code: 'JO09' },
+    { name: '藤沢', code: 'JO10' },
+    { name: '辻堂', code: 'JO11' },
+    { name: '茅ケ崎', code: 'JO12' },
+    { name: '北茅ケ崎', code: 'JO13' },
+    { name: '香川', code: 'JO14' },
+    { name: '平塚', code: 'JO15' },
+    { name: '大磯', code: 'JO16' },
+    { name: '二宮', code: 'JO17' },
+    { name: '国府津', code: 'JO18' },
+    { name: '小田原', code: 'JO19' },
+    { name: '早川', code: 'JO20' },
+    { name: '根府川', code: 'JO21' },
+    { name: '真鶴', code: 'JO22' },
+    { name: '湯河原', code: 'JO23' },
+    { name: '熱海', code: 'JO24' }
+  ],
+  // あきが丘線
+  AK: [
+    { name: '浜松', code: 'AK01' },
+    { name: '大出碧大前', code: 'AK02' },
+    { name: 'あきが丘', code: 'AK03' },
+    { name: '丹津南', code: 'AK04' },
+    { name: '片見', code: 'AK05' },
+    { name: '舞洲', code: 'AK06' }
+  ],
+  // あおうみ線
+  AU: [
+    { name: '舞洲', code: 'AU01' },
+    { name: '若宮道', code: 'AU02' },
+    { name: 'あおうみ空港', code: 'AU03' },
+    { name: '淡路大路', code: 'AU04' },
+    { name: '美馬島通り', code: 'AU05' },
+    { name: '磯町海岸', code: 'AU06' }
+  ],
+  // 千代田線
+  C: [
+    { name: '浜松', code: 'C01' },
+    { name: '霞が関', code: 'C02' },
+    { name: '国会議事堂', code: 'C03' },
+    { name: '日比谷', code: 'C04' },
+    { name: '二重橋前', code: 'C05' },
+    { name: '大手町', code: 'C06' },
+    { name: '千駄木', code: 'C07' },
+    { name: '新御茶ノ水', code: 'C08' },
+    { name: '西日暮里', code: 'C09' },
+    { name: '北千住', code: 'C10' },
+    { name: '金町', code: 'C11' },
+    { name: '綾瀬', code: 'C12' },
+    { name: '北綾瀬', code: 'C13' }
+  ],
+  // 半蔵門線
+  Z: [
+    { name: '浜松', code: 'Z01' },
+    { name: '表参道', code: 'Z02' },
+    { name: '永田町', code: 'Z03' },
+    { name: '半蔵門', code: 'Z04' },
+    { name: '九段下', code: 'Z05' },
+    { name: '神保町', code: 'Z06' },
+    { name: '大手町', code: 'Z07' },
+    { name: '水天宮前', code: 'Z08' },
+    { name: '押上', code: 'Z09' }
   ]
 };
 
@@ -64,7 +219,16 @@ const LINE_COLORS: Record<string, string> = {
   JK: '#00b2e5',  // 京浜東北線
   CA: '#0072bc',  // 東海道新幹線
   JB: '#ffd400',  // 総武線
-  JC: '#ff4500'   // 中央線
+  JC: '#ff4500',  // 中央線
+  M: '#f62e36',   // 丸の内線
+  H: '#b5b5ac',   // 日比谷線
+  G: '#f39700',   // 銀座線
+  JT: '#f68b1e',  // 東海道線
+  JO: '#1069b4',  // 横須賀線
+  AK: '#8e44ad',  // あきが丘線
+  AU: '#3498db',  // あおうみ線
+  C: '#e74c3c',   // 千代田線
+  Z: '#f39c12'    // 半蔵門線
 };
 
 // 路線コードを取得
@@ -83,6 +247,24 @@ const getLineCode = (lineName: string): string => {
     return 'JC';
   } else if (lineName.includes('東海道新幹線')) {
     return 'CA';
+  } else if (lineName.includes('丸の内線')) {
+    return 'M';
+  } else if (lineName.includes('日比谷線')) {
+    return 'H';
+  } else if (lineName.includes('銀座線')) {
+    return 'G';
+  } else if (lineName.includes('東海道線')) {
+    return 'JT';
+  } else if (lineName.includes('横須賀線')) {
+    return 'JO';
+  } else if (lineName.includes('あきが丘線')) {
+    return 'AK';
+  } else if (lineName.includes('あおうみ線')) {
+    return 'AU';
+  } else if (lineName.includes('千代田線')) {
+    return 'C';
+  } else if (lineName.includes('半蔵門線')) {
+    return 'Z';
   }
   return 'JY1'; // デフォルト
 };
@@ -175,7 +357,16 @@ export default function TrainPositionPage() {
            lineCode === 'JK' ? 'JK' :
            lineCode === 'CA' ? 'CA' :
            lineCode === 'JB' ? 'JB' :
-           lineCode === 'JC' ? 'JC' : 'JY'}
+           lineCode === 'JC' ? 'JC' :
+           lineCode === 'M' ? 'M' :
+           lineCode === 'H' ? 'H' :
+           lineCode === 'G' ? 'G' :
+           lineCode === 'JT' ? 'JT' :
+           lineCode === 'JO' ? 'JO' :
+           lineCode === 'AK' ? 'AK' :
+           lineCode === 'AU' ? 'AU' :
+           lineCode === 'C' ? 'C' :
+           lineCode === 'Z' ? 'Z' : 'JY'}
         </Box>
         <Box>
           <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', textAlign: 'center', color: 'black' }}>

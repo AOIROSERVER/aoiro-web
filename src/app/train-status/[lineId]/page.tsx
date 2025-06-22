@@ -94,6 +94,206 @@ const lineData = {
       { name: '新宿', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
     ]
   },
+  AK: {
+    name: 'あきが丘線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '浜松', type: '特急', transfer: ['JK'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '大出碧大前', type: '急行', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: 'あきが丘', type: '特急', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '丹津南', type: '各停', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '片見', type: '通勤特急', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '舞洲', type: '特急', transfer: ['AU'], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+    ]
+  },
+  AU: {
+    name: 'あおうみ線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '舞洲', type: '特急', transfer: ['AK'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '若宮道', type: '各停', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: 'あおうみ空港', type: '特急', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '淡路大路', type: '急行', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '美馬島通り', type: '通勤特急', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '磯町海岸', type: '特急', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+    ]
+  },
+  C: {
+    name: '千代田線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '浜松', type: '急行', transfer: ['JK'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '霞が関', type: '急行', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: '国会議事堂', type: '急行', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '日比谷', type: '各停', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '二重橋前', type: '各停', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '大手町', type: '急行', transfer: ['Z'], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+      { name: '千駄木', type: '各停', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '7分' },
+      { name: '新御茶ノ水', type: '各停', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '8分' },
+      { name: '西日暮里', type: '各停', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '9分' },
+      { name: '北千住', type: '急行', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '10分' },
+      { name: '金町', type: '各停', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '11分' },
+      { name: '綾瀬', type: '急行', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '12分' },
+      { name: '北綾瀬', type: '急行', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '13分' },
+    ]
+  },
+  Z: {
+    name: '半蔵門線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '浜松', type: '急行', transfer: ['JK'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '表参道', type: '急行', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: '永田町', type: '各停', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '半蔵門', type: '各停', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '九段下', type: '急行', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '神保町', type: '各停', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+      { name: '大手町', type: '急行', transfer: ['C'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '7分' },
+      { name: '水天宮前', type: '各停', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '8分' },
+      { name: '押上', type: '急行', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '9分' },
+    ]
+  },
+  M: {
+    name: '丸の内線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '池袋', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '新大塚', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: '茗荷谷', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '後楽園', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '本郷三丁目', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '御茶ノ水', type: '普通', transfer: ['JB'], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+      { name: '淡路町', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '7分' },
+      { name: '大手町', type: '普通', transfer: ['C', 'Z'], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '8分' },
+      { name: '東京', type: '普通', transfer: ['JK'], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '9分' },
+      { name: '銀座', type: '普通', transfer: ['G'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '10分' },
+      { name: '霞ヶ関', type: '普通', transfer: ['M'], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '11分' },
+      { name: '国会議事堂前', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '12分' },
+      { name: '赤坂見附', type: '普通', transfer: ['H'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '13分' },
+      { name: '四谷三丁目', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '14分' },
+      { name: '新宿御苑前', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '15分' },
+      { name: '新宿三丁目', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '16分' },
+      { name: '新宿', type: '普通', transfer: ['JC'], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '17分' },
+      { name: '西新宿', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '18分' },
+      { name: '中野坂上', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '19分' },
+      { name: '新中野', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '20分' },
+      { name: '東高円寺', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '21分' },
+      { name: '新高円寺', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '22分' },
+      { name: '南阿佐ヶ谷', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '23分' },
+      { name: '荻窪', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '24分' },
+    ]
+  },
+  H: {
+    name: '日比谷線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '北千住', type: '普通', transfer: ['C'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '南千住', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: '三ノ輪', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '入谷', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '上野', type: '普通', transfer: ['JK'], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '秋葉原', type: '普通', transfer: ['JB'], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+      { name: '小伝馬町', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '7分' },
+      { name: '人形町', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '8分' },
+      { name: '茅場町', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '9分' },
+      { name: '八丁堀', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '10分' },
+      { name: '築地', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '11分' },
+      { name: '東銀座', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '12分' },
+      { name: '銀座', type: '普通', transfer: ['G', 'M'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '13分' },
+      { name: '日比谷', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '14分' },
+      { name: '有楽町', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '15分' },
+      { name: '霞ヶ関', type: '普通', transfer: ['M'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '16分' },
+      { name: '神谷町', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '17分' },
+      { name: '六本木', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '18分' },
+      { name: '広尾', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '19分' },
+      { name: '恵比寿', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '20分' },
+      { name: '中目黒', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '21分' },
+    ]
+  },
+  G: {
+    name: '銀座線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '浅草', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '田原町', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: '稲荷町', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '上野', type: '普通', transfer: ['JK'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '上野広小路', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '末広町', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+      { name: '神田', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '7分' },
+      { name: '三越前', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '8分' },
+      { name: '日本橋', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '9分' },
+      { name: '京橋', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '10分' },
+      { name: '銀座', type: '普通', transfer: ['H', 'M'], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '11分' },
+      { name: '新橋', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '12分' },
+      { name: '虎ノ門', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '13分' },
+      { name: '溜池山王', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '14分' },
+      { name: '赤坂見附', type: '普通', transfer: ['H', 'M'], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '15分' },
+      { name: '青山一丁目', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '16分' },
+      { name: '外苑前', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '17分' },
+      { name: '表参道', type: '普通', transfer: ['Z'], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '18分' },
+      { name: '渋谷', type: '普通', transfer: ['JY1', 'JY2'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '19分' },
+    ]
+  },
+  JT: {
+    name: '東海道線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '浜松', type: '普通', transfer: ['JK'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '品川', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: '大井町', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '大崎', type: '普通', transfer: ['JY1', 'JY2'], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '西大井', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '武蔵小杉', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+    ]
+  },
+  JO: {
+    name: '横須賀線',
+    status: '平常運転',
+    statusColor: '#43a047',
+    statusIcon: <Box sx={{ width: 18, height: 18, borderRadius: '50%', border: '2.5px solid #43a047', display: 'inline-block', mr: 1 }} />,
+    stations: [
+      { name: '大船', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '1分' },
+      { name: '北鎌倉', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '2分' },
+      { name: '鎌倉', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '3分' },
+      { name: '由比ヶ浜', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '4分' },
+      { name: '稲村ヶ崎', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '5分' },
+      { name: '極楽寺', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '6分' },
+      { name: '長谷', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '7分' },
+      { name: '江ノ島', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '8分' },
+      { name: '鵠沼', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '9分' },
+      { name: '藤沢', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '10分' },
+      { name: '辻堂', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '11分' },
+      { name: '茅ケ崎', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '12分' },
+      { name: '北茅ケ崎', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '13分' },
+      { name: '香川', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '14分' },
+      { name: '平塚', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '15分' },
+      { name: '大磯', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '16分' },
+      { name: '二宮', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '17分' },
+      { name: '国府津', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '18分' },
+      { name: '小田原', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '19分' },
+      { name: '早川', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '20分' },
+      { name: '根府川', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '21分' },
+      { name: '真鶴', type: '普通', transfer: [], icons: [<RestaurantIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '22分' },
+      { name: '湯河原', type: '普通', transfer: [], icons: [<WcIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '23分' },
+      { name: '熱海', type: '普通', transfer: [], icons: [<ElevatorIcon fontSize="small" />], congestion: '普通', congestionColor: '#43a047', time: '24分' },
+    ]
+  },
   // 他の路線も同様に追加可能
 };
 
@@ -104,6 +304,15 @@ const lineColors = {
   JB: '#ffd400',  // 総武線
   JC: '#ff0000',  // 中央線
   CA: '#0072bc',  // 東海道新幹線
+  AK: '#8e44ad',  // あきが丘線
+  AU: '#3498db',  // あおうみ線
+  C: '#e74c3c',   // 千代田線
+  Z: '#f39c12',   // 半蔵門線
+  M: '#f62e36',   // 丸の内線
+  H: '#b5b5ac',   // 日比谷線
+  G: '#f39700',   // 銀座線
+  JT: '#f68b1e',  // 東海道線
+  JO: '#1069b4',  // 横須賀線
 };
 
 export default function TrainLineDetail() {
