@@ -1,9 +1,10 @@
 "use client";
-import { Box, Card, Typography, IconButton } from "@mui/material";
+import { Box, Card, Typography, IconButton, CircularProgress } from "@mui/material";
 import { Train, Settings } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 
 // 路線の表示順序を定義
 const lineOrder = [
@@ -75,9 +76,10 @@ function StatusIcon({ status }: { status: string }) {
   return null;
 }
 
-const TrainStatusPage = () => {
+export default function TrainStatusPage() {
   const router = useRouter();
   const [lines, setLines] = useState<any[]>([]);
+  const { loading, isAdmin } = useAuth();
 
   useEffect(() => {
     const fetchLines = async () => {
@@ -107,6 +109,10 @@ const TrainStatusPage = () => {
     fetchLines();
   }, []);
 
+  if (loading) {
+    return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /><Typography mt={2}>認証確認中...</Typography></Box>;
+  }
+
   return (
     <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
       {/* ヘッダー */}
@@ -118,9 +124,11 @@ const TrainStatusPage = () => {
           <Train sx={{ color: '#1a237e', fontSize: 28 }} />
           <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20 }}>運行状況</Typography>
         </Box>
-        <IconButton onClick={() => router.push('/train-status/management')}>
-          <Settings sx={{ color: '#1a237e' }} />
-        </IconButton>
+        {!loading && isAdmin && (
+          <IconButton onClick={() => router.push('/train-status/management')}>
+            <Settings sx={{ color: '#1a237e' }} />
+          </IconButton>
+        )}
       </Box>
       {/* 路線図カード */}
       <Box sx={{ px: 2, mt: 2, mb: 2 }}>
@@ -240,6 +248,4 @@ const TrainStatusPage = () => {
       </Box>
     </Box>
   );
-};
-
-export default dynamic(() => Promise.resolve(TrainStatusPage), { ssr: false }); 
+} 

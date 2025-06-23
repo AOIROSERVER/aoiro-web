@@ -8,6 +8,8 @@ type AuthContextType = {
   supabase: SupabaseClient;
   session: Session | null;
   user: User | null;
+  loading: boolean;
+  isAdmin: boolean;
   signOut: () => void;
 };
 
@@ -16,23 +18,37 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // 最初にセッション情報を取得
+    setLoading(true);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
+      const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
+      const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
+      setIsAdmin(isSupabaseAdmin || isLocalAdmin);
+      if (session?.user) {
+        localStorage.removeItem('admin');
+      }
     });
 
-    // 認証状態の変更を監視
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-
-        // ログアウト時はログインページへ
+        setLoading(false);
+        const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
+        const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
+        setIsAdmin(isSupabaseAdmin || isLocalAdmin);
         if (event === "SIGNED_OUT") {
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setLoading(false);
           router.push("/login");
         }
       }
@@ -43,14 +59,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [router]);
 
+  useEffect(() => {
+    const handleStorage = () => {
+      const isSupabaseAdmin = user?.email === 'aoiroserver.m@gmail.com';
+      const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
+      setIsAdmin(isSupabaseAdmin || isLocalAdmin);
+    };
+    window.addEventListener('storage', handleStorage);
+    handleStorage();
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [user]);
+
   const signOut = async () => {
+    setLoading(true);
     await supabase.auth.signOut();
+    setSession(null);
+    setUser(null);
+    setIsAdmin(false);
+    setLoading(false);
+    router.push('/login');
   };
 
   const value = {
     supabase,
     session,
     user,
+    loading,
+    isAdmin,
     signOut,
   };
 

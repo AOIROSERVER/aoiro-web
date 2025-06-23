@@ -13,6 +13,7 @@ import {
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 
 // 道路の表示順序を定義
 const roadOrder = [
@@ -157,6 +158,7 @@ function StatusIcon({ status }: { status: string }) {
 const RoadStatusPage = () => {
   const router = useRouter();
   const [roads, setRoads] = useState<any[]>([]);
+  const { loading, isAdmin } = useAuth();
 
   useEffect(() => {
     const fetchRoads = async () => {
@@ -183,9 +185,11 @@ const RoadStatusPage = () => {
           <DirectionsCar sx={{ color: '#1a237e', fontSize: 28 }} />
           <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20 }}>道路状況</Typography>
         </Box>
-        <IconButton onClick={() => router.push('/road-status/management')}>
-          <Settings sx={{ color: '#1a237e' }} />
-        </IconButton>
+        {!loading && isAdmin && (
+          <IconButton onClick={() => router.push('/road-status/management')}>
+            <Settings sx={{ color: '#1a237e' }} />
+          </IconButton>
+        )}
       </Box>
       
       <Box sx={{ p: 2 }}>

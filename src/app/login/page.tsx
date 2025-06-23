@@ -32,6 +32,15 @@ const MicrosoftIcon = () => (
     height={20}
   />
 );
+const DiscordIcon = () => (
+  <img
+    src="https://cdn.jsdelivr.net/gh/edent/SuperTinyIcons/images/svg/discord.svg"
+    alt="Discord"
+    width={20}
+    height={20}
+    style={{ filter: 'grayscale(0%)' }}
+  />
+);
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -58,7 +67,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'azure') => {
+  const handleSocialLogin = async (provider: 'google' | 'azure' | 'discord') => {
     setLoading(true);
     setError(null);
     try {
@@ -163,6 +172,26 @@ export default function LoginPage() {
             startIcon={<MicrosoftIcon />}
           >
             Microsoftでログイン
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={() => handleSocialLogin('discord')}
+            disabled={loading}
+            startIcon={<DiscordIcon />}
+            sx={{ mt: 1, mb: 2 }}
+          >
+            Discordでログイン
+          </Button>
+          {/* 管理者ログインボタン */}
+          <Button
+            fullWidth
+            variant="outlined"
+            color="secondary"
+            sx={{ mt: 1, mb: 2 }}
+            onClick={() => router.push('/admin-login')}
+          >
+            管理者ログイン
           </Button>
 
           {/* リンク */}

@@ -40,7 +40,12 @@ export default function MorePage() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const { user, signOut } = useAuth(); // 認証コンテキストからユーザー情報とsignOutを取得
+  const { user, signOut, loading: authLoading } = useAuth();
+
+  const avatarUrl = user?.user_metadata?.picture || user?.user_metadata?.avatar_url || null;
+
+  // localStorageのadminフラグ取得
+  const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
 
   useEffect(() => {
     fetch(
@@ -78,7 +83,7 @@ export default function MorePage() {
       {/* ヘッダー */}
       <Box display="flex" alignItems="center" gap={1} mb={2}>
         <Settings sx={{ color: "#4A90E2", fontSize: 32 }} />
-        <Typography variant="h5" fontWeight="bold">
+        <Typography variant="h5" fontWeight="bold" sx={{ color: '#212529' }}>
           その他
         </Typography>
       </Box>
@@ -86,13 +91,24 @@ export default function MorePage() {
       {/* アカウント欄 */}
       <Card sx={{ mb: 3, borderRadius: 3, p: 2 }}>
         <Box display="flex" alignItems="center" gap={2}>
-          <Avatar sx={{ bgcolor: "#4A90E2", color: "#fff", fontWeight: "bold" }}>
-            {user ? (user.email?.charAt(0).toUpperCase() || 'A') : <Login />}
+          <Avatar sx={{ bgcolor: "#4A90E2", color: "#fff", fontWeight: "bold" }}
+            src={avatarUrl || undefined}
+          >
+            {!avatarUrl && (user ? (user.email?.charAt(0).toUpperCase() || 'A') : isLocalAdmin ? '最' : <Login />)}
           </Avatar>
           <Box flex={1}>
-            {user ? (
+            {loading ? (
+              <Typography variant="body2" color="text.secondary">認証確認中...</Typography>
+            ) : user ? (
               <>
                 <Typography variant="h6">{user.email}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  ログイン済み
+                </Typography>
+              </>
+            ) : isLocalAdmin ? (
+              <>
+                <Typography variant="h6">最高権限者様</Typography>
                 <Typography variant="body2" color="text.secondary">
                   ログイン済み
                 </Typography>
@@ -105,10 +121,13 @@ export default function MorePage() {
                 <Typography variant="body2" color="text.secondary">
                   アカウントを作成して、より便利に
                 </Typography>
+                <Typography variant="body2" color="error.main">
+                  ※ログインしてください
+                </Typography>
               </Box>
             )}
           </Box>
-          {user && (
+          {(user || isLocalAdmin) && !loading && (
             <IconButton onClick={signOut}>
               <Logout />
             </IconButton>
@@ -117,7 +136,7 @@ export default function MorePage() {
       </Card>
 
       {/* 最新情報 */}
-      <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+      <Typography variant="subtitle1" fontWeight="bold" mb={1} sx={{ color: '#212529' }}>
         最新情報
       </Typography>
       <Box mb={3}>
@@ -181,44 +200,56 @@ export default function MorePage() {
       </Box>
 
       {/* 設定 */}
-      <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+      <Typography variant="subtitle1" fontWeight="bold" mb={1} sx={{ color: '#212529' }}>
         設定
       </Typography>
       <Grid container spacing={2} mb={3}>
         <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<NotificationsNone sx={{ color: "#4A90E2" }} />} sx={{ borderRadius: 2 }}>
+          <Button fullWidth variant="outlined" startIcon={<NotificationsNone sx={{ color: "#4A90E2" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/settings/notification')}
+          >
             通知設定
           </Button>
         </Grid>
         <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<Palette sx={{ color: "#50C878" }} />} sx={{ borderRadius: 2 }}>
+          <Button fullWidth variant="outlined" startIcon={<Palette sx={{ color: "#50C878" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/settings/display')}
+          >
             表示設定
           </Button>
         </Grid>
         <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<Shield sx={{ color: "#FF6B6B" }} />} sx={{ borderRadius: 2 }}>
+          <Button fullWidth variant="outlined" startIcon={<Shield sx={{ color: "#FF6B6B" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/settings/privacy')}
+          >
             プライバシー
           </Button>
         </Grid>
       </Grid>
 
       {/* その他 */}
-      <Typography variant="subtitle1" fontWeight="bold" mb={1}>
+      <Typography variant="subtitle1" fontWeight="bold" mb={1} sx={{ color: '#212529' }}>
         その他
       </Typography>
       <Grid container spacing={2} mb={3}>
         <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<HelpOutline sx={{ color: "#9B59B6" }} />} sx={{ borderRadius: 2 }}>
+          <Button fullWidth variant="outlined" startIcon={<HelpOutline sx={{ color: "#9B59B6" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/help')}
+          >
             ヘルプ
           </Button>
         </Grid>
         <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<Email sx={{ color: "#F1C40F" }} />} sx={{ borderRadius: 2 }}>
+          <Button fullWidth variant="outlined" startIcon={<Email sx={{ color: "#F1C40F" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/contact')}
+          >
             お問い合わせ
           </Button>
         </Grid>
         <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<Info sx={{ color: "#3498DB" }} />} sx={{ borderRadius: 2 }}>
+          <Button fullWidth variant="outlined" startIcon={<Info sx={{ color: "#3498DB" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/about')}
+          >
             アプリについて
           </Button>
         </Grid>

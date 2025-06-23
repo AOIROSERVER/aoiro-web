@@ -1,9 +1,10 @@
 "use client";
-import { Box, Typography, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { Box, Typography, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, CircularProgress } from "@mui/material";
 import { DirectionsCar, ArrowBack, Edit, Save, Cancel, CheckCircleOutline, WarningAmber, Build, ReportProblem } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from "react";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const roadIcons: { [key: string]: string } = {
   'C1_INNER': 'https://i.imgur.com/UVf9Maf.jpg',
@@ -63,6 +64,7 @@ function StatusIcon({ status }: { status: string }) {
 
 const RoadStatusManagementPage = () => {
   const router = useRouter();
+  const { isAdmin, loading } = useAuth();
   const [roads, setRoads] = useState<any[]>([]);
   const [editingRoad, setEditingRoad] = useState<any>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -162,6 +164,13 @@ const RoadStatusManagementPage = () => {
     setEditDialogOpen(false);
     setEditingRoad(null);
   };
+
+  if (loading) {
+    return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /><Typography mt={2}>認証確認中...</Typography></Box>;
+  }
+  if (!isAdmin) {
+    return <Box sx={{ p: 4, textAlign: 'center' }}><Typography color="error.main">管理者のみアクセス可能です</Typography></Box>;
+  }
 
   return (
     <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
