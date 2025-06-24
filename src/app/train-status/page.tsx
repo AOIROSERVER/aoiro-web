@@ -213,7 +213,7 @@ export default function TrainStatusPage() {
             }}
             onClick={() => router.push(`/train-status/${line.id}`)}
           >
-            <Box display="flex" alignItems="center" gap={2}>
+            <Box display="flex" alignItems="center" gap={2} sx={{ flex: 1, minWidth: 0 }}>
               <Box
                 sx={{
                   width: 44,
@@ -236,11 +236,11 @@ export default function TrainStatusPage() {
               >
                 {(line.id === 'JY1' || line.id === 'JY2') ? 'JY' : line.id}
               </Box>
-              <Typography variant="h6" sx={{ color: '#1a237e', fontWeight: 700, fontSize: 18 }}>{line.name}</Typography>
-            </Box>
-            <Box display="flex" alignItems="center" gap={1}>
-              <StatusIcon status={line.status} />
-              <Typography sx={{ color: line.status === '平常運転' ? '#43a047' : line.status === '遅延' ? '#ffa000' : '#e53935', fontWeight: 700, fontSize: 17 }}>{line.status}</Typography>
+              <Typography variant="h6" sx={{ color: '#1a237e', fontWeight: 700, fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>{line.name}</Typography>
+              <Box display="flex" alignItems="center" gap={1}>
+                <StatusIcon status={line.status} />
+                <Typography sx={{ color: line.status === '平常運転' ? '#43a047' : line.status === '遅延' ? '#ffa000' : '#e53935', fontWeight: 700, fontSize: 17, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{line.status}</Typography>
+              </Box>
             </Box>
           </Box>
           );
