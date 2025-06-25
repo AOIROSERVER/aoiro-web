@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { Email, Lock, Login as LoginIcon } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // 仮のソーシャルアイコン
 const GoogleIcon = () => (
@@ -49,6 +49,24 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const { supabase } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // URLパラメータからエラーを取得
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      switch (errorParam) {
+        case 'session_error':
+          setError('セッションの設定に失敗しました。再度ログインしてください。');
+          break;
+        case 'auth_error':
+          setError('認証に失敗しました。再度お試しください。');
+          break;
+        default:
+          setError('ログインに失敗しました。再度お試しください。');
+      }
+    }
+  }, [searchParams]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -74,7 +92,11 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            // フラグメントベースの認証を避けるため、response_typeを明示的に指定
+            response_type: 'code',
+          },
         },
       });
       if (error) throw error;

@@ -24,33 +24,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setLoading(true);
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    
+    // 初期セッション取得
+    const getInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      
       const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
       const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
       setIsAdmin(isSupabaseAdmin || isLocalAdmin);
+      
       if (session?.user) {
         localStorage.removeItem('admin');
       }
-    });
+      
+      setLoading(false);
+    };
 
+    getInitialSession();
+
+    // 認証状態変更の監視
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('認証状態変更:', event, session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        
         const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
         const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
         setIsAdmin(isSupabaseAdmin || isLocalAdmin);
-        if (event === "SIGNED_OUT") {
+        
+        if (event === "SIGNED_IN" && session) {
+          localStorage.removeItem('admin');
+          // 認証成功後のリダイレクト
+          if (window.location.pathname === '/') {
+            router.push('/train-status');
+          }
+        } else if (event === "SIGNED_OUT") {
           setSession(null);
           setUser(null);
           setIsAdmin(false);
-          setLoading(false);
           router.push("/login");
         }
+        
+        setLoading(false);
       }
     );
 
