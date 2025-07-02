@@ -36,4 +36,4 @@ export async function POST(request: Request) {
 }
 
 // subscriptions配列をexportしてsave-subscription/route.tsと共有
-export { subscriptions } from '../save-subscription/route'; 
+// export { subscriptions } from '../save-subscription/route'; 
