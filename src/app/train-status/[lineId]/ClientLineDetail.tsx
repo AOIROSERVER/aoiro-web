@@ -91,8 +91,13 @@ export default function ClientLineDetail({ line, stationData, params }: any) {
                 p: 2,
                 mb: 2,
                 ml: 1,
-                position: 'relative'
-              }}>
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'box-shadow 0.2s',
+                '&:active': { boxShadow: '0 1px 4px rgba(0,0,0,0.10)' }
+              }}
+                onClick={() => router.push(`/station-info/${station.id}`)}
+              >
                 <Typography sx={{ color: '#222', fontWeight: 700, fontSize: 17 }}>{station.name}</Typography>
                 <Box display="flex" alignItems="center" gap={1} mt={0.5} mb={0.5}>
                   <Typography sx={{ color: station.congestionColor, fontWeight: 600, fontSize: 14 }}>{station.congestion}</Typography>

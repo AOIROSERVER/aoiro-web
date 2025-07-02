@@ -73,7 +73,17 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-    
+
+    // 通知内容を生成
+    const notifyTitle = '運行情報更新';
+    const notifyBody = data.map(item => `${item.name}：${item.status}${item.detail ? '（' + item.detail + '）' : ''}`).join('\n');
+    // /api/notify-allにPOST
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/notify-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: notifyTitle, body: notifyBody })
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving train status:', error);

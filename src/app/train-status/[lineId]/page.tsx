@@ -470,7 +470,10 @@ export default function TrainLineDetail() {
                 }} />
               </Box>
               {/* 駅カード */}
-              <Card sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', p: 2, display: 'flex', alignItems: 'center', mb: 0, position: 'relative', flex: 1 }}>
+              <Card 
+                sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', p: 2, display: 'flex', alignItems: 'center', mb: 0, position: 'relative', flex: 1, cursor: 'pointer', transition: 'box-shadow 0.2s', '&:active': { boxShadow: '0 1px 4px rgba(0,0,0,0.10)' } }}
+                onClick={() => router.push(`/station-info/${('id' in station ? (station as any).id : station.name)}`)}
+              >
                 <Box sx={{ flex: 1 }}>
                   <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 17 }}>{station.name}</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 1 }}>

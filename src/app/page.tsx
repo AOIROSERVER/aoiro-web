@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
+import { subscribeUserToPush } from '../lib/pushNotification';
 
 export default function HomePage() {
   const router = useRouter();
@@ -61,6 +62,7 @@ export default function HomePage() {
   return (
     <div style={{ 
       display: 'flex', 
+      flexDirection: 'column',
       justifyContent: 'center', 
       alignItems: 'center', 
       height: '100vh',
@@ -68,6 +70,12 @@ export default function HomePage() {
       color: '#666'
     }}>
       認証処理中...
+      <button
+        style={{ marginTop: 24, padding: '8px 16px', fontSize: '16px', cursor: 'pointer' }}
+        onClick={subscribeUserToPush}
+      >
+        通知を許可
+      </button>
     </div>
   );
 }
