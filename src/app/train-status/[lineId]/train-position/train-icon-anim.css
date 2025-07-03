@@ -29,4 +29,14 @@
   0%   { filter: blur(0px); opacity: 1; }
   50%  { filter: blur(2px); opacity: 0.7; }
   100% { filter: blur(0px); opacity: 1; }
+}
+
+/* 電車マークのホバリング（上下ふわふわ）アニメーション */
+.train-icon-hover {
+  animation: train-hover 1.8s ease-in-out infinite;
+}
+@keyframes train-hover {
+  0%   { transform: translateY(-8px); }
+  50%  { transform: translateY(0); }
+  100% { transform: translateY(-8px); }
 } 

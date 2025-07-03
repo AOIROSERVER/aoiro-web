@@ -565,6 +565,7 @@ export default function TrainPositionPage() {
                         src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
                         alt="電車"
                         style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
+                        className="train-icon-hover"
                         onClick={() => handleTrainIconClick(station.name)}
                       />
                       <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
