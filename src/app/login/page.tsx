@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import {
   Box,
   Container,
@@ -108,132 +108,134 @@ export default function LoginPage() {
   };
 
   return (
-    <Container component="main" maxWidth="xs" sx={{ pt: 8 }}>
-      <Card sx={{ p: 4, borderRadius: 3, boxShadow: 3 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
-            AOIROidにログイン
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            アカウントにアクセスします
-          </Typography>
-
-          {/* エラー表示 */}
-          {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
-
-          {/* メール・パスワード入力 */}
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="メールアドレス"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            InputProps={{
-              startAdornment: <Email sx={{ color: "text.disabled", mr: 1 }} />,
-            }}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="パスワード"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            InputProps={{
-              startAdornment: <Lock sx={{ color: "text.disabled", mr: 1 }} />,
-            }}
-          />
-
-          {/* ログインボタン */}
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            onClick={handleLogin}
-            disabled={loading}
-            startIcon={<LoginIcon />}
-            sx={{ mt: 3, mb: 2, py: 1.5, bgcolor: "#4A90E2" }}
-          >
-            {loading ? 'ログイン中...' : 'ログイン'}
-          </Button>
-
-          {/* ソーシャルログイン */}
-          <Divider sx={{ width: "100%", my: 2 }}>または</Divider>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => handleSocialLogin('google')}
-            disabled={loading}
-            startIcon={<GoogleIcon />}
-            sx={{ mb: 1.5 }}
-          >
-            Googleでログイン
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => handleSocialLogin('azure')}
-            disabled={loading}
-            startIcon={<MicrosoftIcon />}
-          >
-            Microsoftでログイン
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => handleSocialLogin('discord')}
-            disabled={loading}
-            startIcon={<DiscordIcon />}
-            sx={{ mt: 1, mb: 2 }}
-          >
-            Discordでログイン
-          </Button>
-          {/* 管理者ログインボタン */}
-          <Button
-            fullWidth
-            variant="outlined"
-            color="secondary"
-            sx={{ mt: 1, mb: 2 }}
-            onClick={() => router.push('/admin-login')}
-          >
-            管理者ログイン
-          </Button>
-
-          {/* リンク */}
+    <Suspense>
+      <Container component="main" maxWidth="xs" sx={{ pt: 8 }}>
+        <Card sx={{ p: 4, borderRadius: 3, boxShadow: 3 }}>
           <Box
             sx={{
               display: "flex",
-              justifyContent: "space-between",
-              width: "100%",
-              mt: 2,
+              flexDirection: "column",
+              alignItems: "center",
             }}
           >
-            <Link href="#" variant="body2">
-              パスワードを忘れましたか？
-            </Link>
-            <Link href="#" variant="body2">
-              新規登録はこちら
-            </Link>
+            <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
+              AOIROidにログイン
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              アカウントにアクセスします
+            </Typography>
+
+            {/* エラー表示 */}
+            {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
+
+            {/* メール・パスワード入力 */}
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label="メールアドレス"
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
+              InputProps={{
+                startAdornment: <Email sx={{ color: "text.disabled", mr: 1 }} />,
+              }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="パスワード"
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+              InputProps={{
+                startAdornment: <Lock sx={{ color: "text.disabled", mr: 1 }} />,
+              }}
+            />
+
+            {/* ログインボタン */}
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              onClick={handleLogin}
+              disabled={loading}
+              startIcon={<LoginIcon />}
+              sx={{ mt: 3, mb: 2, py: 1.5, bgcolor: "#4A90E2" }}
+            >
+              {loading ? 'ログイン中...' : 'ログイン'}
+            </Button>
+
+            {/* ソーシャルログイン */}
+            <Divider sx={{ width: "100%", my: 2 }}>または</Divider>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => handleSocialLogin('google')}
+              disabled={loading}
+              startIcon={<GoogleIcon />}
+              sx={{ mb: 1.5 }}
+            >
+              Googleでログイン
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => handleSocialLogin('azure')}
+              disabled={loading}
+              startIcon={<MicrosoftIcon />}
+            >
+              Microsoftでログイン
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={() => handleSocialLogin('discord')}
+              disabled={loading}
+              startIcon={<DiscordIcon />}
+              sx={{ mt: 1.5 }}
+            >
+              Discordでログイン
+            </Button>
+            {/* 管理者ログインボタン */}
+            <Button
+              fullWidth
+              variant="outlined"
+              color="secondary"
+              sx={{ mt: 1, mb: 2 }}
+              onClick={() => router.push('/admin-login')}
+            >
+              管理者ログイン
+            </Button>
+
+            {/* リンク */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                width: "100%",
+                mt: 2,
+              }}
+            >
+              <Link href="#" variant="body2">
+                パスワードを忘れましたか？
+              </Link>
+              <Link href="#" variant="body2">
+                新規登録はこちら
+              </Link>
+            </Box>
           </Box>
-        </Box>
-      </Card>
-    </Container>
+        </Card>
+      </Container>
+    </Suspense>
   );
 } 
