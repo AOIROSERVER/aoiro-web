@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { subscribeUserToPush } from '../../lib/pushNotification';
 
 // 路線の表示順序を定義
 const lineOrder = [

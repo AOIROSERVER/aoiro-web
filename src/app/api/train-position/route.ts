@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// 仮のダミーデータ
-const dummyTrainPositions = [
-  {
-    line: '山手線',
-    direction: '外回り',
-    station: '高輪ゲートウェイ',
-  },
-  {
-    line: '山手線',
-    direction: '内回り',
-    station: '秋葉原',
-  },
-  {
-    line: '京浜東北線',
-    direction: '下り',
-    station: '東京',
-  }
-];
+// Webhook DiscordのエンドポイントURL（Netlify Functionsのパス）
+const WEBHOOK_DISCORD_URL = process.env.WEBHOOK_DISCORD_URL || 'https://YOUR_DEPLOY_DOMAIN/.netlify/functions/webhook-discord';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -28,14 +12,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'line and direction are required' }, { status: 400 });
   }
 
-  // ダミーデータから該当する列車位置を取得
-  const train = dummyTrainPositions.find(
-    t => t.line === line && t.direction === direction
-  );
-
-  if (!train) {
-    return NextResponse.json({ error: 'No train position found' }, { status: 404 });
+  try {
+    // webhook-discord.js経由で全列車位置情報を取得
+    const res = await fetch(WEBHOOK_DISCORD_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: 'dummy/for/fetch' }) // 何かしらPOSTしないと405になるため
+    });
+    if (!res.ok) {
+      return NextResponse.json({ error: 'Failed to fetch train positions' }, { status: 500 });
+    }
+    const data = await res.json();
+    if (!data.positions) {
+      return NextResponse.json({ error: 'No train positions found' }, { status: 404 });
+    }
+    // lineとdirectionで該当する列車位置のみ返す
+    const train = data.positions.find(
+      (t: any) => t.line === line && t.direction === direction
+    );
+    if (!train) {
+      return NextResponse.json({ error: 'No train position found' }, { status: 404 });
+    }
+    return NextResponse.json(train);
+  } catch (error) {
+    return NextResponse.json({ error: 'Server error', details: String(error) }, { status: 500 });
   }
-
-  return NextResponse.json(train);
 } 
