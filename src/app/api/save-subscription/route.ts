@@ -1,4 +1,4 @@
-export let subscriptions: any[] = [];
+let subscriptions: any[] = [];
 
 export async function POST(request: Request) {
   try {
