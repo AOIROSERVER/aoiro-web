@@ -39,4 +39,10 @@
   0%   { transform: translateY(-8px); }
   50%  { transform: translateY(0); }
   100% { transform: translateY(-8px); }
+}
+
+/* 駅間移動アニメーション */
+.train-move-between {
+  transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  will-change: transform;
 } 

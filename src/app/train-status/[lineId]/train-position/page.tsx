@@ -2,7 +2,7 @@
 import { Box, Typography, Card, Modal, Paper, LinearProgress, IconButton } from "@mui/material";
 import TrainIcon from "@mui/icons-material/Train";
 import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import './train-icon-anim.css';
 
 // 路線ごとの駅データを定義（主要駅一覧に合わせる）
@@ -310,6 +310,11 @@ export default function TrainPositionPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStation, setModalStation] = useState<string | null>(null);
   const [modalTime, setModalTime] = useState<string | null>(null);
+  const [trainState, setTrainState] = useState<'stopped'|'between'>('stopped');
+  const [betweenStations, setBetweenStations] = useState<[string, string]|null>(null);
+  const lastStationRef = useRef<string|null>(null);
+  const timerRef = useRef<any>(null);
+  const [moveAnim, setMoveAnim] = useState(false);
 
   // line名・方向の正規化関数
   function normalizeLineAndDirection(rawLine: string): { line: string, direction: string } {
@@ -344,7 +349,6 @@ export default function TrainPositionPage() {
         .then(res => res.json())
         .then(data => {
           if (data.trainMessages && Array.isArray(data.trainMessages)) {
-            // この路線・この方向の最新の駅名を抽出
             const filtered = data.trainMessages.filter((msg: any) => {
               const parts = msg.content.split('/');
               return (
@@ -353,21 +357,57 @@ export default function TrainPositionPage() {
                 parts[1].includes(direction)
               );
             });
-            // 最新の到着駅だけをcurrentStationsにセット
             if (filtered.length > 0) {
-              const latest = filtered[0]; // 一番新しいメッセージ
+              const latest = filtered[0];
               const parts = latest.content.split('/');
               const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
-              setCurrentStations([station]);
-              console.log('currentStations:', [station]);
+              // 駅が変わったら状態遷移
+              if (lastStationRef.current !== station) {
+                setCurrentStations([station]);
+                setTrainState('stopped');
+                setBetweenStations(null);
+                lastStationRef.current = station;
+                if (timerRef.current) clearTimeout(timerRef.current);
+                setMoveAnim(false);
+                timerRef.current = setTimeout(() => {
+                  setTrainState('between');
+                  const idx = stations.findIndex(s => normalizeStationName(s.name) === station);
+                  if (idx !== -1 && idx < stations.length - 1) {
+                    setBetweenStations([
+                      normalizeStationName(stations[idx].name),
+                      normalizeStationName(stations[idx+1].name)
+                    ]);
+                    setMoveAnim(true);
+                  } else {
+                    setBetweenStations(null);
+                    setMoveAnim(false);
+                  }
+                  timerRef.current = setTimeout(() => {
+                    setTrainState('stopped');
+                    setBetweenStations(null);
+                    setMoveAnim(false);
+                  }, 10000);
+                }, 10000);
+              }
             } else {
               setCurrentStations([]);
+              setTrainState('stopped');
+              setBetweenStations(null);
+              lastStationRef.current = null;
             }
           } else {
             setCurrentStations([]);
+            setTrainState('stopped');
+            setBetweenStations(null);
+            lastStationRef.current = null;
           }
         })
-        .catch(() => setCurrentStations([]));
+        .catch(() => {
+          setCurrentStations([]);
+          setTrainState('stopped');
+          setBetweenStations(null);
+          lastStationRef.current = null;
+        });
     };
 
     fetchTrainPositions();
@@ -545,7 +585,7 @@ export default function TrainPositionPage() {
                     </Typography>
                   </Box>
                   {/* 電車マークと野球ベース or 空白スペース */}
-                  {currentStations.includes(normalizeStationName(station.name)) ? (
+                  {trainState === 'stopped' && currentStations.includes(normalizeStationName(station.name)) ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2, width: 48, position: 'relative' }}>
                       {/* Googleマップ風の白い半透明円エフェクト */}
                       <span style={{
@@ -569,6 +609,19 @@ export default function TrainPositionPage() {
                         onClick={() => handleTrainIconClick(station.name)}
                       />
                       <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
+                        <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                      </svg>
+                    </Box>
+                  ) : trainState === 'between' && betweenStations &&
+                    betweenStations[0] === normalizeStationName(station.name) && index < stations.length - 1 ? (
+                    <Box sx={{ position: 'absolute', left: '50%', top: 0, width: 48, height: 112, transform: 'translateX(-50%)', zIndex: 3 }}>
+                      <img
+                        src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                        alt="電車(駅間)"
+                        style={{ width: 48, height: 48, filter: 'brightness(0.95)', opacity: 0.85, position: 'absolute', left: 0, top: 0, transform: moveAnim ? 'translateY(64px)' : 'translateY(0)' }}
+                        className={`train-icon-hover train-move-between`}
+                      />
+                      <svg width="28" height="20" viewBox="0 0 28 20" style={{ position: 'absolute', left: 10, top: moveAnim ? 64+44 : 44, transform: 'translateY(0)' }}>
                         <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
                       </svg>
                     </Box>
