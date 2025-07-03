@@ -614,16 +614,44 @@ export default function TrainPositionPage() {
                     </Box>
                   ) : trainState === 'between' && betweenStations &&
                     betweenStations[0] === normalizeStationName(station.name) && index < stations.length - 1 ? (
-                    <Box sx={{ position: 'absolute', left: '50%', top: 0, width: 48, height: 112, transform: 'translateX(-50%)', zIndex: 3 }}>
-                      <img
-                        src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
-                        alt="電車(駅間)"
-                        style={{ width: 48, height: 48, filter: 'brightness(0.95)', opacity: 0.85, position: 'absolute', left: 0, top: 0, transform: moveAnim ? 'translateY(64px)' : 'translateY(0)' }}
-                        className={`train-icon-hover train-move-between`}
-                      />
-                      <svg width="28" height="20" viewBox="0 0 28 20" style={{ position: 'absolute', left: 10, top: moveAnim ? 64+44 : 44, transform: 'translateY(0)' }}>
-                        <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
-                      </svg>
+                    <Box sx={{ position: 'relative', width: 48, height: 64, ml: 2 }}>
+                      <Box
+                        className={`train-move-between train-icon-hover`}
+                        style={{
+                          position: 'absolute',
+                          left: '50%',
+                          top: 0,
+                          transform: moveAnim ? 'translate(-50%, 64px)' : 'translate(-50%, 0)',
+                          transition: 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)',
+                          zIndex: 3,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {/* Googleマップ風の白い半透明円エフェクト */}
+                        <span style={{
+                          position: 'absolute',
+                          left: '50%',
+                          top: 24,
+                          width: 56,
+                          height: 56,
+                          background: 'rgba(200,200,200,0.5)',
+                          borderRadius: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          filter: 'blur(2px)',
+                          zIndex: 1,
+                          pointerEvents: 'none',
+                        }} />
+                        <img
+                          src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                          alt="電車(駅間)"
+                          style={{ width: 48, height: 48, filter: 'brightness(0.95)', opacity: 0.85, zIndex: 2 }}
+                        />
+                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4, zIndex: 2 }}>
+                          <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                        </svg>
+                      </Box>
                     </Box>
                   ) : (
                     <Box sx={{ width: 48, height: 68, ml: 2 }} />
