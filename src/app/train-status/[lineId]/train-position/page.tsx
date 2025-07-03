@@ -1,6 +1,7 @@
 "use client";
-import { Box, Typography, Card } from "@mui/material";
+import { Box, Typography, Card, Modal, Paper, LinearProgress, IconButton } from "@mui/material";
 import TrainIcon from "@mui/icons-material/Train";
+import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useState } from "react";
 
 // 路線ごとの駅データを定義（主要駅一覧に合わせる）
@@ -231,15 +232,16 @@ const LINE_COLORS: Record<string, string> = {
   Z: '#f39c12'    // 半蔵門線
 };
 
-// 路線ごとの電車アイコン画像URL
-const TRAIN_ICON_URLS: Record<string, string> = {
-  '山手線': 'https://i.imgur.com/K04At9r.png',
-  '京浜東北線': 'https://i.imgur.com/ZfkSjHa.png',
-  '中央線': 'https://i.imgur.com/5k2USuI.png',
-  '総武線': 'https://i.imgur.com/RadEwgh.png',
-  '東海道新幹線': 'https://i.imgur.com/rKubwpB.png',
+// 路線ごとの電車画像URLを指定
+const TRAIN_IMAGE_URLS: Record<string, string> = {
+  '山手線': 'https://i.imgur.com/Wu8a0Pv.png',
+  '京浜東北線': 'https://i.imgur.com/bn2qvjr.png',
+  '中央線': 'https://i.imgur.com/A5oLcpF.jpg',
+  '総武線': 'https://i.imgur.com/vb9dLGm.png',
+  '東海道新幹線': 'https://i.imgur.com/ua4M1QB.jpg',
+  'あきが丘線': 'https://i.imgur.com/oR6Koa5.png',
 };
-const DEFAULT_TRAIN_ICON_URL = 'https://i.imgur.com/K04At9r.png'; // デフォルトは山手線
+const DEFAULT_TRAIN_IMAGE_URL = 'https://i.imgur.com/Wu8a0Pv.png'; // デフォルトは山手線
 
 // 路線コードを取得
 const getLineCode = (lineName: string): string => {
@@ -293,6 +295,9 @@ export default function TrainPositionPage() {
   const [lineCode, setLineCode] = useState<string>('JY1');
   const [direction, setDirection] = useState<string>('外回り');
   const [currentStations, setCurrentStations] = useState<string[]>([]); // 複数駅対応
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalStation, setModalStation] = useState<string | null>(null);
+  const [modalTime, setModalTime] = useState<string | null>(null);
 
   // line名・方向の正規化関数
   function normalizeLineAndDirection(rawLine: string): { line: string, direction: string } {
@@ -360,6 +365,75 @@ export default function TrainPositionPage() {
 
   const stations = LINE_STATIONS[lineCode] || LINE_STATIONS.JY1;
   const lineColor = LINE_COLORS[lineCode] || '#666';
+
+  // モーダルを開く関数
+  const handleTrainIconClick = (stationName: string) => {
+    setModalStation(stationName);
+    setModalTime(new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }));
+    setModalOpen(true);
+  };
+
+  // モーダルの内容を作成
+  const renderModal = () => {
+    if (!modalStation) return null;
+    // 進捗計算
+    const stationIndex = stations.findIndex(s => s.name === modalStation);
+    const totalStations = stations.length;
+    const progress = ((stationIndex + 1) / totalStations) * 100;
+    // 路線名から画像URLを取得
+    const trainImageUrl = TRAIN_IMAGE_URLS[lineName] || DEFAULT_TRAIN_IMAGE_URL;
+    return (
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
+        <Box sx={{
+          position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh', bgcolor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', zIndex: 1300
+        }}>
+          <Paper sx={{ width: '100%', maxWidth: 480, mx: 'auto', borderRadius: '20px 20px 0 0', p: 3, pb: 5, bgcolor: '#222', color: '#fff', position: 'relative' }}>
+            {/* 閉じるボタン */}
+            <IconButton onClick={() => setModalOpen(false)} sx={{ position: 'absolute', top: 16, right: 16, color: '#fff' }}>
+              <CloseIcon />
+            </IconButton>
+            {/* 電車画像 */}
+            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: 2 }}>
+              <img src={trainImageUrl} alt="電車" style={{ width: 280, height: 180, borderRadius: 10, objectFit: 'cover' }} />
+            </Box>
+            {/* 路線名・種別・方向 */}
+            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{lineName}（E235系）</Typography>
+            <Typography sx={{ color: '#9acd32', fontSize: 16, mb: 0.5 }}>各駅停車</Typography>
+            <Typography sx={{ fontSize: 16, mb: 2 }}>{direction}</Typography>
+            {/* 停車中/発車・駅名・到着時刻 */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Box sx={{ bgcolor: '#b71c1c', color: '#fff', borderRadius: 1, px: 1.5, py: 0.5, fontSize: 14, fontWeight: 700, mr: 2 }}>停車中</Box>
+              <Typography sx={{ fontSize: 16 }}>{modalStation} → {modalTime}</Typography>
+            </Box>
+            {/* 情報 */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: '#aaa' }}>平均速度</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>37km/h</Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: '#aaa' }}>所要時間</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>4分</Typography>
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: 13, color: '#aaa' }}>列車番号</Typography>
+                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>1234F</Typography>
+              </Box>
+            </Box>
+            {/* 進捗バー */}
+            <Box sx={{ mb: 1 }}>
+              <Typography sx={{ fontSize: 13, color: '#aaa', mb: 0.5 }}>通過駅数 / 総駅数</Typography>
+              <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4, bgcolor: '#333', '& .MuiLinearProgress-bar': { bgcolor: '#9acd32' } }} />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                <Typography sx={{ fontSize: 13 }}>{stationIndex + 1}駅</Typography>
+                <Typography sx={{ fontSize: 13 }}>{totalStations}駅</Typography>
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
+      </Modal>
+    );
+  };
 
   return (
     <Box sx={{ p: 3, maxWidth: 800, mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }}>
@@ -448,16 +522,12 @@ export default function TrainPositionPage() {
                       textAlign: 'center',
                       overflow: 'visible',
                       zIndex: 10,
-                      ...(currentStations.includes(normalizeStationName(station.name)) ? {} : { transform: 'translateX(-16px)' })
+                      margin: '0 auto',
                     }}
                   >
                     <Typography 
                       variant="h6" 
-                      sx={{ 
-                        fontWeight: 600, 
-                        color: '#222',
-                        fontSize: '1rem'
-                      }}
+                      sx={{ fontWeight: 600, color: '#222', fontSize: '1rem' }}
                     >
                       {station.name}
                     </Typography>
@@ -465,9 +535,10 @@ export default function TrainPositionPage() {
                   {/* 電車マークは駅名枠の外側に余白をつけて表示 */}
                   {currentStations.includes(normalizeStationName(station.name)) && (
                     <img
-                      src={TRAIN_ICON_URLS[lineName] || DEFAULT_TRAIN_ICON_URL}
+                      src={TRAIN_IMAGE_URLS[lineName] || DEFAULT_TRAIN_IMAGE_URL}
                       alt="電車"
-                      style={{ width: 32, height: 32, marginLeft: 8 }}
+                      style={{ width: 48, height: 48, marginLeft: 16, cursor: 'pointer' }}
+                      onClick={() => handleTrainIconClick(station.name)}
                     />
                   )}
                 </Box>
@@ -476,6 +547,7 @@ export default function TrainPositionPage() {
           </Box>
         </Box>
       </Box>
+      {renderModal()}
     </Box>
   );
 } 
