@@ -329,20 +329,18 @@ export default function TrainPositionPage() {
   }
 
   useEffect(() => {
-    console.log('列車位置情報画面が読み込まれました');
-    console.log('現在のURL:', window.location.href);
-    
     // URLから路線名・方向を取得
     const urlParams = new URLSearchParams(window.location.search);
     const rawLine = urlParams.get('line') || '山手線（外回り）';
     const { line, direction } = normalizeLineAndDirection(rawLine);
-    console.log('取得した路線名:', line);
     setLineName(line);
     setDirection(direction);
     const code = getLineCode(line);
-    console.log('路線コード:', code);
     setLineCode(code);
+  }, []);
 
+  useEffect(() => {
+    if (!lineName || !lineCode || !direction) return;
     // fetch-discord-messages.jsから列車位置情報を取得
     const fetchTrainPositions = () => {
       fetch('/.netlify/functions/fetch-discord-messages')
@@ -352,7 +350,7 @@ export default function TrainPositionPage() {
           const filtered = data.trainMessages.filter((msg: any) => {
             const parts = msg.content.split('/');
             const msgLine = normalizeStationName(parts[0] || '');
-            const viewLine = normalizeStationName(line);
+            const viewLine = normalizeStationName(lineName);
             const msgDir = normalizeStationName(parts[1] || '');
             const viewDir = normalizeStationName(direction);
             return (
@@ -410,9 +408,9 @@ export default function TrainPositionPage() {
     fetchTrainPositions();
     const interval = setInterval(fetchTrainPositions, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [lineName, lineCode, direction]);
 
-  const stations = LINE_STATIONS[lineCode] || LINE_STATIONS.JY1;
+  const stations = lineCode && LINE_STATIONS[lineCode] ? LINE_STATIONS[lineCode] : [];
   const lineColor = LINE_COLORS[lineCode] || '#666';
 
   // モーダルを開く関数
@@ -484,6 +482,9 @@ export default function TrainPositionPage() {
     );
   };
 
+  if (!lineName || !lineCode || !direction || stations.length === 0) {
+    return null; // またはローディング表示
+  }
   return (
     <Box sx={{ p: 3, maxWidth: 800, mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }}>
       {/* ヘッダー */}
