@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import {
   Box,
   Container,
@@ -42,7 +42,7 @@ const DiscordIcon = () => (
   />
 );
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +94,6 @@ export default function LoginPage() {
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            // フラグメントベースの認証を避けるため、response_typeを明示的に指定
             response_type: 'code',
           },
         },
@@ -235,5 +234,13 @@ export default function LoginPage() {
         </Box>
       </Card>
     </Container>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
   );
 } 
