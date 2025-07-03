@@ -351,10 +351,14 @@ export default function TrainPositionPage() {
           if (data.trainMessages && Array.isArray(data.trainMessages)) {
             const filtered = data.trainMessages.filter((msg: any) => {
               const parts = msg.content.split('/');
+              const msgLine = normalizeStationName(parts[0]);
+              const viewLine = normalizeStationName(line);
+              const msgDir = normalizeStationName(parts[1]);
+              const viewDir = normalizeStationName(direction);
               return (
                 parts.length === 3 &&
-                normalizeStationName(parts[0]).includes(normalizeStationName(line)) &&
-                normalizeStationName(parts[1]).includes(normalizeStationName(direction))
+                (msgLine.includes(viewLine) || viewLine.includes(msgLine)) &&
+                (msgDir.includes(viewDir) || viewDir.includes(msgDir))
               );
             });
             if (filtered.length > 0) {
