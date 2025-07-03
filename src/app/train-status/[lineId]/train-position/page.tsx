@@ -348,56 +348,49 @@ export default function TrainPositionPage() {
       fetch('/.netlify/functions/fetch-discord-messages')
         .then(res => res.json())
         .then(data => {
-          if (data.trainMessages && Array.isArray(data.trainMessages)) {
-            const filtered = data.trainMessages.filter((msg: any) => {
-              const parts = msg.content.split('/');
-              const msgLine = normalizeStationName(parts[0]);
-              const viewLine = normalizeStationName(line);
-              const msgDir = normalizeStationName(parts[1]);
-              const viewDir = normalizeStationName(direction);
-              return (
-                parts.length === 3 &&
-                (msgLine.includes(viewLine) || viewLine.includes(msgLine)) &&
-                (msgDir.includes(viewDir) || viewDir.includes(msgDir))
-              );
-            });
-            if (filtered.length > 0) {
-              const latest = filtered[0];
-              const parts = latest.content.split('/');
-              const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
-              // 駅が変わったら状態遷移
-              if (lastStationRef.current !== station) {
-                setCurrentStations([station]);
-                setTrainState('stopped');
-                setBetweenStations(null);
-                lastStationRef.current = station;
-                if (timerRef.current) clearTimeout(timerRef.current);
-                setMoveAnim(false);
-                timerRef.current = setTimeout(() => {
-                  setTrainState('between');
-                  const idx = stations.findIndex(s => normalizeStationName(s.name) === station);
-                  if (idx !== -1 && idx < stations.length - 1) {
-                    setBetweenStations([
-                      normalizeStationName(stations[idx].name),
-                      normalizeStationName(stations[idx+1].name)
-                    ]);
-                    setMoveAnim(true);
-                  } else {
-                    setBetweenStations(null);
-                    setMoveAnim(false);
-                  }
-                  timerRef.current = setTimeout(() => {
-                    setTrainState('stopped');
-                    setBetweenStations(null);
-                    setMoveAnim(false);
-                  }, 10000);
-                }, 10000);
-              }
-            } else {
-              setCurrentStations([]);
+          console.log('APIデータ:', data.trainMessages);
+          const filtered = data.trainMessages.filter((msg: any) => {
+            const parts = msg.content.split('/');
+            const msgLine = normalizeStationName(parts[0] || '');
+            const viewLine = normalizeStationName(line);
+            const msgDir = normalizeStationName(parts[1] || '');
+            const viewDir = normalizeStationName(direction);
+            return (
+              (msgLine.includes(viewLine) || viewLine.includes(msgLine)) &&
+              (msgDir.includes(viewDir) || viewDir.includes(msgDir))
+            );
+          });
+          if (filtered.length > 0) {
+            const latest = filtered[0];
+            const parts = latest.content.split('/');
+            const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
+            // 駅が変わったら状態遷移
+            if (lastStationRef.current !== station) {
+              setCurrentStations([station]);
               setTrainState('stopped');
               setBetweenStations(null);
-              lastStationRef.current = null;
+              lastStationRef.current = station;
+              if (timerRef.current) clearTimeout(timerRef.current);
+              setMoveAnim(false);
+              timerRef.current = setTimeout(() => {
+                setTrainState('between');
+                const idx = stations.findIndex(s => normalizeStationName(s.name) === station);
+                if (idx !== -1 && idx < stations.length - 1) {
+                  setBetweenStations([
+                    normalizeStationName(stations[idx].name),
+                    normalizeStationName(stations[idx+1].name)
+                  ]);
+                  setMoveAnim(true);
+                } else {
+                  setBetweenStations(null);
+                  setMoveAnim(false);
+                }
+                timerRef.current = setTimeout(() => {
+                  setTrainState('stopped');
+                  setBetweenStations(null);
+                  setMoveAnim(false);
+                }, 10000);
+              }, 10000);
             }
           } else {
             setCurrentStations([]);
