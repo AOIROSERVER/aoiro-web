@@ -326,14 +326,16 @@ export default function TrainPositionPage() {
                 parts[1].includes(direction)
               );
             });
-            // 最新の到着駅をすべて配列で保持（重複除去）
-            const stations = Array.from(new Set(filtered.map((msg: any) => {
-              const parts = msg.content.split('/');
-              return normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
-            }))) as string[];
-            console.log('currentStations:', stations);
-            console.log('direction:', direction);
-            setCurrentStations(stations);
+            // 最新の到着駅だけをcurrentStationsにセット
+            if (filtered.length > 0) {
+              const latest = filtered[0]; // 一番新しいメッセージ
+              const parts = latest.content.split('/');
+              const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
+              setCurrentStations([station]);
+              console.log('currentStations:', [station]);
+            } else {
+              setCurrentStations([]);
+            }
           } else {
             setCurrentStations([]);
           }
