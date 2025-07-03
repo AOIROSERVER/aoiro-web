@@ -543,20 +543,21 @@ export default function TrainPositionPage() {
                       {station.name}
                     </Typography>
                   </Box>
-                  {/* 電車マークは駅名枠の外側に余白をつけて表示 */}
-                  {currentStations.includes(normalizeStationName(station.name)) && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2 }}>
+                  {/* 電車マークと野球ベース or 空白スペース */}
+                  {currentStations.includes(normalizeStationName(station.name)) ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2, width: 48 }}>
                       <img
                         src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
                         alt="電車"
                         style={{ width: 48, height: 48, cursor: 'pointer' }}
                         onClick={() => handleTrainIconClick(station.name)}
                       />
-                      {/* 進行方向に逆向きの野球ベース型（三角形）SVG */}
                       <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
                         <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
                       </svg>
                     </Box>
+                  ) : (
+                    <Box sx={{ width: 48, height: 68, ml: 2 }} />
                   )}
                 </Box>
               </Box>
