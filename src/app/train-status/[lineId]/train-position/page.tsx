@@ -282,7 +282,7 @@ export default function TrainPositionPage() {
   const [lineName, setLineName] = useState<string>('');
   const [lineCode, setLineCode] = useState<string>('JY1');
   const [direction, setDirection] = useState<string>('外回り');
-  const [trainStation, setTrainStation] = useState<string | null>(null);
+  const [currentStations, setCurrentStations] = useState<string[]>([]); // 複数駅対応
 
   // line名・方向の正規化関数
   function normalizeLineAndDirection(rawLine: string): { line: string, direction: string } {
@@ -311,22 +311,38 @@ export default function TrainPositionPage() {
     console.log('路線コード:', code);
     setLineCode(code);
 
-    // 列車位置情報APIを取得する関数
-    const fetchTrainPosition = () => {
-      fetch(`/api/train-position?line=${encodeURIComponent(line)}&direction=${encodeURIComponent(direction)}`)
+    // fetch-discord-messages.jsから列車位置情報を取得
+    const fetchTrainPositions = () => {
+      fetch('/.netlify/functions/fetch-discord-messages')
         .then(res => res.json())
         .then(data => {
-          if (data.station) {
-            setTrainStation(data.station);
+          if (data.trainMessages && Array.isArray(data.trainMessages)) {
+            // この路線・この方向の最新の駅名を抽出
+            const filtered = data.trainMessages.filter((msg: any) => {
+              const parts = msg.content.split('/');
+              return (
+                parts.length === 3 &&
+                parts[0].includes(line) &&
+                parts[1].includes(direction)
+              );
+            });
+            // 最新の到着駅をすべて配列で保持（重複除去）
+            const stations = Array.from(new Set(filtered.map((msg: any) => {
+              const parts = msg.content.split('/');
+              return normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
+            }))) as string[];
+            console.log('currentStations:', stations);
+            console.log('direction:', direction);
+            setCurrentStations(stations);
           } else {
-            setTrainStation(null);
+            setCurrentStations([]);
           }
         })
-        .catch(() => setTrainStation(null));
+        .catch(() => setCurrentStations([]));
     };
 
-    fetchTrainPosition(); // 初回取得
-    const interval = setInterval(fetchTrainPosition, 5000); // 5秒ごとに再取得
+    fetchTrainPositions();
+    const interval = setInterval(fetchTrainPositions, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -420,8 +436,7 @@ export default function TrainPositionPage() {
                       textAlign: 'center',
                       overflow: 'visible',
                       zIndex: 10,
-                      ...(trainStation && station.name && normalizeStationName(station.name) === normalizeStationName(trainStation)
-                        ? {} : { transform: 'translateX(-16px)' })
+                      ...(currentStations.includes(normalizeStationName(station.name)) ? {} : { transform: 'translateX(-16px)' })
                     }}
                   >
                     <Typography 
@@ -436,8 +451,7 @@ export default function TrainPositionPage() {
                     </Typography>
                   </Box>
                   {/* 電車マークは駅名枠の外側に余白をつけて表示 */}
-                  {trainStation && station.name &&
-                    normalizeStationName(station.name) === normalizeStationName(trainStation) && (
+                  {currentStations.includes(normalizeStationName(station.name)) && (
                     <TrainIcon sx={{ color: lineColor, fontSize: 28, ml: 2 }} />
                   )}
                 </Box>
