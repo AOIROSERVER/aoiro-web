@@ -231,6 +231,16 @@ const LINE_COLORS: Record<string, string> = {
   Z: '#f39c12'    // 半蔵門線
 };
 
+// 路線ごとの電車アイコン画像URL
+const TRAIN_ICON_URLS: Record<string, string> = {
+  '山手線': 'https://i.imgur.com/K04At9r.png',
+  '京浜東北線': 'https://i.imgur.com/ZfkSjHa.png',
+  '中央線': 'https://i.imgur.com/5k2USuI.png',
+  '総武線': 'https://i.imgur.com/RadEwgh.png',
+  '東海道新幹線': 'https://i.imgur.com/rKubwpB.png',
+};
+const DEFAULT_TRAIN_ICON_URL = 'https://i.imgur.com/K04At9r.png'; // デフォルトは山手線
+
 // 路線コードを取得
 const getLineCode = (lineName: string): string => {
   if (lineName.includes('山手線（内回り）')) {
@@ -454,7 +464,11 @@ export default function TrainPositionPage() {
                   </Box>
                   {/* 電車マークは駅名枠の外側に余白をつけて表示 */}
                   {currentStations.includes(normalizeStationName(station.name)) && (
-                    <TrainIcon sx={{ color: lineColor, fontSize: 28, ml: 2 }} />
+                    <img
+                      src={TRAIN_ICON_URLS[lineName] || DEFAULT_TRAIN_ICON_URL}
+                      alt="電車"
+                      style={{ width: 32, height: 32, marginLeft: 8 }}
+                    />
                   )}
                 </Box>
               </Box>
