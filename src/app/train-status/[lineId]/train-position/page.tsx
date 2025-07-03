@@ -353,8 +353,8 @@ export default function TrainPositionPage() {
               const parts = msg.content.split('/');
               return (
                 parts.length === 3 &&
-                parts[0].includes(line) &&
-                parts[1].includes(direction)
+                normalizeStationName(parts[0]).includes(normalizeStationName(line)) &&
+                normalizeStationName(parts[1]).includes(normalizeStationName(direction))
               );
             });
             if (filtered.length > 0) {
