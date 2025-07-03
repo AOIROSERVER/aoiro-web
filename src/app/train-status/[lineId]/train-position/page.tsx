@@ -586,42 +586,55 @@ export default function TrainPositionPage() {
                   </Box>
                   {/* 電車マークと野球ベース or 空白スペース */}
                   {trainState === 'stopped' && currentStations.includes(normalizeStationName(station.name)) ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2, width: 48, position: 'relative' }}>
-                      {/* Googleマップ風の白い半透明円エフェクト */}
-                      <span style={{
-                        position: 'absolute',
-                        left: '50%',
-                        top: 24,
-                        width: 56,
-                        height: 56,
-                        background: 'rgba(200,200,200,0.5)',
-                        borderRadius: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        filter: 'blur(2px)',
-                        zIndex: 1,
-                        pointerEvents: 'none',
-                      }} />
-                      <img
-                        src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
-                        alt="電車"
-                        style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
-                        className="train-icon-hover"
-                        onClick={() => handleTrainIconClick(station.name)}
-                      />
-                      <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
-                        <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
-                      </svg>
+                    <Box sx={{ position: 'relative', width: 48, height: 68, ml: 2 }}>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: '100%',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          zIndex: 3,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {/* Googleマップ風の白い半透明円エフェクト */}
+                        <span style={{
+                          position: 'absolute',
+                          left: '50%',
+                          top: 24,
+                          width: 56,
+                          height: 56,
+                          background: 'rgba(200,200,200,0.5)',
+                          borderRadius: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          filter: 'blur(2px)',
+                          zIndex: 1,
+                          pointerEvents: 'none',
+                        }} />
+                        <img
+                          src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                          alt="電車"
+                          style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
+                          className="train-icon-hover"
+                          onClick={() => handleTrainIconClick(station.name)}
+                        />
+                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
+                          <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                        </svg>
+                      </Box>
                     </Box>
                   ) : trainState === 'between' && betweenStations &&
                     betweenStations[0] === normalizeStationName(station.name) && index < stations.length - 1 ? (
-                    <Box sx={{ position: 'relative', width: 48, height: 64, ml: 2 }}>
+                    <Box sx={{ position: 'relative', width: 48, height: 68, ml: 2 }}>
                       <Box
                         className={`train-move-between train-icon-hover`}
                         style={{
                           position: 'absolute',
-                          left: '50%',
-                          top: 0,
-                          transform: moveAnim ? 'translate(-50%, 64px)' : 'translate(-50%, 0)',
+                          left: '100%',
+                          top: '50%',
+                          transform: moveAnim ? 'translateY(64px)' : 'translateY(-50%)',
                           transition: 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)',
                           zIndex: 3,
                           display: 'flex',
