@@ -2,7 +2,7 @@
 import { Box, Typography, Card, Modal, Paper, LinearProgress, IconButton } from "@mui/material";
 import TrainIcon from "@mui/icons-material/Train";
 import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import './train-icon-anim.css';
 
 // 路線ごとの駅データを定義（主要駅一覧に合わせる）
@@ -315,6 +315,7 @@ export default function TrainPositionPage() {
   const lastStationRef = useRef<string|null>(null);
   const timerRef = useRef<any>(null);
   const [moveAnim, setMoveAnim] = useState(false);
+  const stations = useMemo(() => (lineCode && LINE_STATIONS[lineCode] ? LINE_STATIONS[lineCode] : []), [lineCode]);
 
   // line名・方向の正規化関数
   function normalizeLineAndDirection(rawLine: string): { line: string, direction: string } {
@@ -408,9 +409,8 @@ export default function TrainPositionPage() {
     fetchTrainPositions();
     const interval = setInterval(fetchTrainPositions, 5000);
     return () => clearInterval(interval);
-  }, [lineName, lineCode, direction]);
+  }, [lineName, lineCode, direction, stations]);
 
-  const stations = lineCode && LINE_STATIONS[lineCode] ? LINE_STATIONS[lineCode] : [];
   const lineColor = LINE_COLORS[lineCode] || '#666';
 
   // モーダルを開く関数
