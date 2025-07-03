@@ -232,6 +232,17 @@ const LINE_COLORS: Record<string, string> = {
   Z: '#f39c12'    // 半蔵門線
 };
 
+// 駅横アイコン用（イラスト）
+const STATION_TRAIN_ICON_URLS: Record<string, string> = {
+  '山手線': 'https://i.imgur.com/K04At9r.png', // 緑のイラスト
+  '京浜東北線': 'https://i.imgur.com/ZfkSjHa.png', // 水色のイラスト
+  '中央線': 'https://i.imgur.com/5k2USuI.png', // オレンジのイラスト
+  '総武線': 'https://i.imgur.com/RadEwgh.png', // 黄色のイラスト
+  '東海道新幹線': 'https://i.imgur.com/rKubwpB.png', // 新幹線イラスト
+  'あきが丘線': 'https://i.imgur.com/1Q9Qw2A.png', // 紫のイラスト（仮）
+};
+const DEFAULT_STATION_TRAIN_ICON_URL = 'https://i.imgur.com/K04At9r.png';
+
 // 路線ごとの電車画像URLを指定
 const TRAIN_IMAGE_URLS: Record<string, string> = {
   '山手線': 'https://i.imgur.com/Wu8a0Pv.png',
@@ -535,7 +546,7 @@ export default function TrainPositionPage() {
                   {/* 電車マークは駅名枠の外側に余白をつけて表示 */}
                   {currentStations.includes(normalizeStationName(station.name)) && (
                     <img
-                      src={TRAIN_IMAGE_URLS[lineName] || DEFAULT_TRAIN_IMAGE_URL}
+                      src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
                       alt="電車"
                       style={{ width: 48, height: 48, marginLeft: 16, cursor: 'pointer' }}
                       onClick={() => handleTrainIconClick(station.name)}
