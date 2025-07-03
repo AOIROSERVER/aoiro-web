@@ -634,7 +634,7 @@ export default function TrainPositionPage() {
                           position: 'absolute',
                           left: '100%',
                           top: '50%',
-                          transform: moveAnim ? 'translateY(64px)' : 'translateY(-50%)',
+                          transform: moveAnim ? 'translateY(132px)' : 'translateY(-50%)',
                           transition: 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)',
                           zIndex: 3,
                           display: 'flex',
