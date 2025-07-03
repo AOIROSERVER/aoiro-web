@@ -3,6 +3,7 @@ import { Box, Typography, Card, Modal, Paper, LinearProgress, IconButton } from 
 import TrainIcon from "@mui/icons-material/Train";
 import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useState } from "react";
+import './train-icon-anim.css';
 
 // 路線ごとの駅データを定義（主要駅一覧に合わせる）
 const LINE_STATIONS: Record<string, Array<{ name: string; code: string }>> = {
@@ -545,11 +546,25 @@ export default function TrainPositionPage() {
                   </Box>
                   {/* 電車マークと野球ベース or 空白スペース */}
                   {currentStations.includes(normalizeStationName(station.name)) ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2, width: 48 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2, width: 48, position: 'relative' }}>
+                      {/* Googleマップ風の白い半透明円エフェクト */}
+                      <span style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: 24,
+                        width: 56,
+                        height: 56,
+                        background: 'rgba(255,255,255,0.7)',
+                        borderRadius: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        filter: 'blur(2px)',
+                        zIndex: 1,
+                        pointerEvents: 'none',
+                      }} />
                       <img
                         src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
                         alt="電車"
-                        style={{ width: 48, height: 48, cursor: 'pointer' }}
+                        style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
                         onClick={() => handleTrainIconClick(station.name)}
                       />
                       <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
