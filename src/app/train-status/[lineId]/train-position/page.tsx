@@ -32,7 +32,7 @@ const LINE_STATIONS: Record<string, Array<{ name: string; code: string }>> = {
   // 京浜東北線
   JK: [
     { name: '大井町', code: 'JK01' },
-    { name: '浜松', code: 'JK02' },
+    { name: '浜松町', code: 'JK02' },
     { name: '有楽町', code: 'JK03' },
     { name: '東京', code: 'JK04' },
     { name: '秋葉原', code: 'JK05' },
