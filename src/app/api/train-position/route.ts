@@ -29,11 +29,11 @@ export async function GET(req: NextRequest) {
     // lineとdirectionで該当する列車位置のみ返す
     const train = data.positions.find(
       (t: any) => t.line === line && t.direction === direction
-    );
-    if (!train) {
-      return NextResponse.json({ error: 'No train position found' }, { status: 404 });
-    }
-    return NextResponse.json(train);
+  );
+  if (!train) {
+    return NextResponse.json({ error: 'No train position found' }, { status: 404 });
+  }
+  return NextResponse.json(train);
   } catch (error) {
     return NextResponse.json({ error: 'Server error', details: String(error) }, { status: 500 });
   }

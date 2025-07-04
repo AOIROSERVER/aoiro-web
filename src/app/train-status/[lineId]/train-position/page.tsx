@@ -32,7 +32,7 @@ const LINE_STATIONS: Record<string, Array<{ name: string; code: string }>> = {
   // 京浜東北線
   JK: [
     { name: '大井町', code: 'JK01' },
-    { name: '浜松町', code: 'JK02' },
+    { name: '浜松', code: 'JK02' },
     { name: '有楽町', code: 'JK03' },
     { name: '東京', code: 'JK04' },
     { name: '秋葉原', code: 'JK05' },
@@ -319,14 +319,20 @@ export default function TrainPositionPage() {
 
   // line名・方向の正規化関数
   function normalizeLineAndDirection(rawLine: string): { line: string, direction: string } {
-    // 例: "山手線（外回り）" → line: "山手線", direction: "外回り"
+    // 例: "京浜東北線（上り）" → line: "京浜東北線", direction: "上り"
     const match = rawLine.match(/^(.*?)(?:[（(](.*?)[)）])?$/);
     if (match) {
       const line = match[1].replace(/\s/g, '');
-      const direction = match[2] ? match[2].replace(/\s/g, '') : (line.includes('外回り') ? '外回り' : '内回り');
+      let direction = match[2] ? match[2].replace(/\s/g, '') : '';
+      // 京浜東北線などはdirectionを「上り」または「下り」に強制
+      if (line.includes('京浜東北線') && (!direction || !['上り','下り'].includes(direction))) {
+        direction = '上り'; // デフォルトを上りに
+      } else if (!direction) {
+        direction = (line.includes('外回り') ? '外回り' : '内回り');
+      }
       return { line, direction };
     }
-    return { line: rawLine, direction: '外回り' };
+    return { line: rawLine, direction: '上り' };
   }
 
   useEffect(() => {
@@ -359,13 +365,16 @@ export default function TrainPositionPage() {
               (msgDir.includes(viewDir) || viewDir.includes(msgDir))
             );
           });
+          console.log('filtered:', filtered);
           if (filtered.length > 0) {
             const latest = filtered[0];
             const parts = latest.content.split('/');
             const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
+            console.log('API駅名:', station);
+            setCurrentStations([station]);
+            console.log('currentStations set:', [station]);
             // 駅が変わったら状態遷移
             if (lastStationRef.current !== station) {
-              setCurrentStations([station]);
               setTrainState('stopped');
               setBetweenStations(null);
               lastStationRef.current = station;
@@ -373,7 +382,7 @@ export default function TrainPositionPage() {
               setMoveAnim(false);
               timerRef.current = setTimeout(() => {
                 setTrainState('between');
-                const idx = stations.findIndex(s => normalizeStationName(s.name) === station);
+                const idx = stations.findIndex(s => normalizeStationName(s.name).includes(station) || station.includes(normalizeStationName(s.name)));
                 if (idx !== -1 && idx < stations.length - 1) {
                   setBetweenStations([
                     normalizeStationName(stations[idx].name),
@@ -393,6 +402,7 @@ export default function TrainPositionPage() {
             }
           } else {
             setCurrentStations([]);
+            console.log('currentStations set: []');
             setTrainState('stopped');
             setBetweenStations(null);
             lastStationRef.current = null;
@@ -400,6 +410,7 @@ export default function TrainPositionPage() {
         })
         .catch(() => {
           setCurrentStations([]);
+          console.log('currentStations set: []');
           setTrainState('stopped');
           setBetweenStations(null);
           lastStationRef.current = null;
@@ -545,7 +556,15 @@ export default function TrainPositionPage() {
           
           {/* 駅と列車 */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-            {stations.map((station, index) => (
+            {stations.map((station, index) => {
+              // デバッグ用ログ
+              console.log('描画駅:', station.name, '→', normalizeStationName(station.name));
+              console.log('currentStations:', currentStations);
+
+              // 山手線かどうか判定
+              const isYamanote = lineCode === 'JY1' || lineCode === 'JY2' || lineName.includes('山手線');
+
+              return (
               <Box
                 key={station.code}
                 sx={{
@@ -557,8 +576,11 @@ export default function TrainPositionPage() {
                   zIndex: 2
                 }}
               >
-                {/* 駅名枠と電車マークを完全分離して横並び */}
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
+                    {/* 山手線は従来通り右側のみ */}
+                    {isYamanote ? (
+                      <>
+                        {/* 駅名 */}
                   <Box
                     sx={{
                       display: 'block',
@@ -572,104 +594,175 @@ export default function TrainPositionPage() {
                       textAlign: 'center',
                       overflow: 'visible',
                       zIndex: 10,
-                      margin: '0 auto',
+                            margin: '0 auto',
                     }}
                   >
                     <Typography 
                       variant="h6" 
-                      sx={{ fontWeight: 600, color: '#222', fontSize: '1rem' }}
+                            sx={{ fontWeight: 600, color: '#222', fontSize: '1rem' }}
                     >
                       {station.name}
                     </Typography>
                   </Box>
-                  {/* 電車マークと野球ベース or 空白スペース */}
-                  {trainState === 'stopped' && currentStations.includes(normalizeStationName(station.name)) ? (
-                    <Box sx={{ position: 'relative', width: 48, height: 68, ml: 2 }}>
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          left: '100%',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          zIndex: 3,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                        }}
-                      >
-                        {/* Googleマップ風の白い半透明円エフェクト */}
-                        <span style={{
-                          position: 'absolute',
-                          left: '50%',
-                          top: 24,
-                          width: 56,
-                          height: 56,
-                          background: 'rgba(200,200,200,0.5)',
-                          borderRadius: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          filter: 'blur(2px)',
-                          zIndex: 1,
-                          pointerEvents: 'none',
-                        }} />
-                        <img
-                          src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
-                          alt="電車"
-                          style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
-                          className="train-icon-hover"
-                          onClick={() => handleTrainIconClick(station.name)}
-                        />
-                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
-                          <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
-                        </svg>
-                      </Box>
-                    </Box>
-                  ) : trainState === 'between' && betweenStations &&
-                    betweenStations[0] === normalizeStationName(station.name) && index < stations.length - 1 ? (
-                    <Box sx={{ position: 'relative', width: 48, height: 68, ml: 2 }}>
-                      <Box
-                        className={`train-move-between train-icon-hover`}
-                        style={{
-                          position: 'absolute',
-                          left: '100%',
-                          top: '50%',
-                          transform: moveAnim ? 'translateY(400px)' : 'translateY(-50%)',
-                          transition: 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)',
-                          zIndex: 3,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                        }}
-                      >
-                        {/* Googleマップ風の白い半透明円エフェクト */}
-                        <span style={{
-                          position: 'absolute',
-                          left: '50%',
-                          top: 24,
-                          width: 56,
-                          height: 56,
-                          background: 'rgba(200,200,200,0.5)',
-                          borderRadius: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          filter: 'blur(2px)',
-                          zIndex: 1,
-                          pointerEvents: 'none',
-                        }} />
-                        <img
-                          src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
-                          alt="電車(駅間)"
-                          style={{ width: 48, height: 48, filter: 'brightness(0.95)', opacity: 0.85, zIndex: 2 }}
-                        />
-                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4, zIndex: 2 }}>
-                          <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
-                        </svg>
-                      </Box>
-                    </Box>
-                  ) : (
-                    <Box sx={{ width: 48, height: 68, ml: 2 }} />
+                        {/* 電車マーク（右側・下方向アニメーション） */}
+                        {currentStations.some(cs => normalizeStationName(station.name).includes(cs) || cs.includes(normalizeStationName(station.name))) && (
+                          <Box sx={{ position: 'relative', width: 48, height: 68, ml: 2 }}>
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                left: '100%',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                zIndex: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <span style={{
+                                position: 'absolute',
+                                left: '50%',
+                                top: '50%',
+                                width: 56,
+                                height: 56,
+                                background: 'rgba(200,200,200,0.5)',
+                                borderRadius: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                filter: 'blur(2px)',
+                                zIndex: 1,
+                                pointerEvents: 'none',
+                              }} />
+                              <img
+                                src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                                alt="電車"
+                                style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2, transition: 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)', transform: 'translateY(400px)' }}
+                                className="train-icon-hover"
+                                onClick={() => handleTrainIconClick(station.name)}
+                              />
+                              {/* 上方面は下向き三角形を下に */}
+                              <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: 2 }}>
+                                <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                              </svg>
+                            </Box>
+                          </Box>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {/* 下りマーク（左側・上方向アニメーション） */}
+                        {currentStations.some(cs => normalizeStationName(station.name).includes(cs) || cs.includes(normalizeStationName(station.name))) && (
+                          <Box sx={{ position: 'relative', width: 48, height: 68, mr: 2 }}>
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                right: '100%',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                zIndex: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                              }}
+                            >
+                              {/* 下りは上向き三角形を一番前（上）に */}
+                              <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginBottom: 12, zIndex: 4, position: 'relative', display: 'block' }}>
+                                <polygon points="14,0 0,20 28,20" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                              </svg>
+                              <span style={{
+                                position: 'absolute',
+                                left: '50%',
+                                top: '50%',
+                                width: 56,
+                                height: 56,
+                                background: 'rgba(200,200,200,0.5)',
+                                borderRadius: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                filter: 'blur(2px)',
+                                zIndex: 1,
+                                pointerEvents: 'none',
+                              }} />
+                              <img
+                                src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                                alt="電車(下り)"
+                                style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2, transition: 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)', transform: 'translateY(-400px)' }}
+                                className="train-icon-hover"
+                                onClick={() => handleTrainIconClick(station.name)}
+                              />
+                            </Box>
+                          </Box>
+                        )}
+                        {/* 駅名 */}
+                        <Box
+                          sx={{
+                            display: 'block',
+                            backgroundColor: 'white',
+                            border: `2px solid ${lineColor}`,
+                            borderRadius: 2,
+                            px: 2,
+                            py: 1,
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                            width: 140,
+                            textAlign: 'center',
+                            overflow: 'visible',
+                            zIndex: 10,
+                            margin: '0 auto',
+                          }}
+                        >
+                          <Typography 
+                            variant="h6" 
+                            sx={{ fontWeight: 600, color: '#222', fontSize: '1rem' }}
+                          >
+                            {station.name}
+                          </Typography>
+                        </Box>
+                        {/* 上りマーク（右側・下方向アニメーション） */}
+                        {currentStations.some(cs => normalizeStationName(station.name).includes(cs) || cs.includes(normalizeStationName(station.name))) && (
+                          <Box sx={{ position: 'relative', width: 48, height: 68, ml: 2 }}>
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                left: '100%',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                zIndex: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <span style={{
+                                position: 'absolute',
+                                left: '50%',
+                                top: '50%',
+                                width: 56,
+                                height: 56,
+                                background: 'rgba(200,200,200,0.5)',
+                                borderRadius: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                filter: 'blur(2px)',
+                                zIndex: 1,
+                                pointerEvents: 'none',
+                              }} />
+                              <img
+                                src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                                alt="電車(上り)"
+                                style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2, transition: 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)', transform: 'translateY(400px)' }}
+                                className="train-icon-hover"
+                                onClick={() => handleTrainIconClick(station.name)}
+                              />
+                              {/* 上りは下向き三角形を一番後（下）に */}
+                              <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: 2, zIndex: 4, position: 'relative' }}>
+                                <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                              </svg>
+                            </Box>
+                          </Box>
+                        )}
+                      </>
                   )}
                 </Box>
               </Box>
-            ))}
+              );
+            })}
           </Box>
         </Box>
       </Box>
