@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { Box, Typography, Card, Modal, Paper, LinearProgress, IconButton } from "@mui/material";
 import TrainIcon from "@mui/icons-material/Train";
 import CloseIcon from '@mui/icons-material/Close';
@@ -302,6 +303,9 @@ function normalizeStationName(name: string): string {
     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)); // 全角→半角
 }
 
+// 均等な高さの定数
+const ROW_HEIGHT = 72;
+
 export default function TrainPositionPage() {
   const [lineName, setLineName] = useState<string>('');
   const [lineCode, setLineCode] = useState<string>('JY1');
@@ -394,6 +398,12 @@ export default function TrainPositionPage() {
     const progress = ((stationIndex + 1) / totalStations) * 100;
     // 路線名から画像URLを取得
     const trainImageUrl = TRAIN_IMAGE_URLS[lineName] || DEFAULT_TRAIN_IMAGE_URL;
+    // 駅ごとに路線記号の数字部分を連番で表示
+    const match = lineCode.match(/^([A-Z]+)/i);
+    const lineAlpha = match ? match[1] : lineCode;
+    const lineNum = (stationIndex + 1).toString();
+    // 駅名が長い場合はフォントサイズを小さくする
+    const isLongName = modalStation.length >= 8;
     return (
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <Box sx={{
@@ -501,82 +511,132 @@ export default function TrainPositionPage() {
               width: 4,
               backgroundColor: lineColor,
               borderRadius: 2,
-              zIndex: 1
+              zIndex: 100
             }}
           />
           
-          {/* 駅と列車 */}
+          {/* 駅ドット（中央線上の白丸）を全駅分絶対配置で描画 */}
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-            {stations.map((station, index) => (
-              <Box
-                key={station.code}
-                sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  py: 4,
-                  position: 'relative',
-                  zIndex: 2
-                }}
-              >
-                {/* 駅名枠と電車マークを完全分離して横並び */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1 }}>
-                  <Box
-                    sx={{
-                      display: 'block',
-                      backgroundColor: 'white',
-                      border: `2px solid ${lineColor}`,
-                      borderRadius: 2,
-                      px: 2,
-                      py: 1,
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      width: 140,
-                      textAlign: 'center',
-                      overflow: 'visible',
-                      zIndex: 10,
-                      margin: '0 auto',
-                    }}
-                  >
-                    <Typography 
-                      variant="h6" 
-                      sx={{ fontWeight: 600, color: '#222', fontSize: '1rem' }}
+            {stations.map((station, index) => {
+              // 駅ごとに路線記号の数字部分を連番で表示
+              const match = lineCode.match(/^([A-Z]+)/i);
+              const lineAlpha = match ? match[1] : lineCode;
+              const lineNum = (index + 1).toString();
+              // 駅名が長い場合はフォントサイズを小さくする
+              const isLongName = station.name.length >= 8;
+              return (
+                <React.Fragment key={station.code}>
+                  {/* 1駅分の行 */}
+                  <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', minHeight: `${ROW_HEIGHT}px`, background: '#f3f3f3' }}>
+                    {/* 駅名ボックス */}
+                    <Box
+                      sx={{
+                        width: 140,
+                        minWidth: 100,
+                        backgroundColor: 'white',
+                        border: `2px solid ${lineColor}`,
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        textAlign: 'left',
+                        overflow: 'visible',
+                        zIndex: 100,
+                        marginLeft: 0,
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        mr: 2,
+                      }}
                     >
-                      {station.name}
-                    </Typography>
-                  </Box>
-                  {/* 電車マークと野球ベース or 空白スペース */}
-                  {currentStations.includes(normalizeStationName(station.name)) ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', ml: 2, width: 48, position: 'relative' }}>
-                      {/* Googleマップ風の白い半透明円エフェクト */}
-                      <span style={{
+                      {/* 路線記号バッジ */}
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '8px',
+                          backgroundColor: 'white',
+                          border: `2px solid ${lineColor}`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#0d2a70',
+                          marginRight: 1,
+                          mr: 1,
+                          p: 0,
+                          lineHeight: 1,
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          flexGrow: 0,
+                          alignSelf: 'flex-start',
+                        }}
+                      >
+                        <span style={{ fontSize: '11px', fontWeight: 700, lineHeight: 1 }}>{lineAlpha}</span>
+                        {lineNum && <span style={{ fontSize: '15px', fontWeight: 700, lineHeight: 1 }}>{lineNum}</span>}
+                      </Box>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ fontWeight: 600, color: '#222', fontSize: isLongName ? '0.85rem' : '1rem', textAlign: 'left', ml: 1 }}
+                      >
+                        {station.name}
+                      </Typography>
+                    </Box>
+                    {/* 中央線（縦線） */}
+                    <Box sx={{ position: 'absolute', left: '50%', top: 0, height: '100%', width: 4, background: lineColor, borderRadius: 2, zIndex: 1, transform: 'translateX(-50%)' }} />
+                    {/* 駅ドット（白丸） */}
+                    <Box
+                      sx={{
                         position: 'absolute',
                         left: '50%',
-                        top: 24,
-                        width: 56,
-                        height: 56,
-                        background: 'rgba(200,200,200,0.5)',
-                        borderRadius: '50%',
+                        top: '50%',
                         transform: 'translate(-50%, -50%)',
-                        filter: 'blur(2px)',
-                        zIndex: 1,
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        background: '#fff',
+                        border: `4px solid ${lineColor}`,
+                        zIndex: 100,
                         pointerEvents: 'none',
-                      }} />
-                      <img
-                        src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
-                        alt="電車"
-                        style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2 }}
-                        onClick={() => handleTrainIconClick(station.name)}
-                      />
-                      <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: -4 }}>
-                        <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
-                      </svg>
-                    </Box>
-                  ) : (
-                    <Box sx={{ width: 48, height: 68, ml: 2 }} />
+                      }}
+                    />
+                    {/* 電車マーク（駅ドットの左側） */}
+                    {currentStations.includes(normalizeStationName(station.name)) && (
+                      <Box sx={{ position: 'absolute', left: 'calc(50% - 56px)', top: '50%', transform: 'translate(-50%, -50%)', width: 48, height: 68, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', zIndex: 3 }}>
+                        {/* Googleマップ風の白い半透明円エフェクト */}
+                        <span style={{
+                          position: 'absolute',
+                          left: '50%',
+                          top: 24,
+                          width: 56,
+                          height: 56,
+                          background: 'rgba(200,200,200,0.5)',
+                          borderRadius: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          filter: 'blur(2px)',
+                          zIndex: 1,
+                          pointerEvents: 'none',
+                        }} />
+                        <img
+                          src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                          alt="電車"
+                          className="train-icon-hover"
+                          style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2, animation: 'train-hover 2s ease-in-out infinite' }}
+                          onClick={() => handleTrainIconClick(station.name)}
+                        />
+                        {/* 野球ベース（三角形） */}
+                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: 0 }}>
+                          <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                        </svg>
+                      </Box>
+                    )}
+                  </Box>
+                  {/* 駅間（白背景） ※最後の駅の後ろには表示しない */}
+                  {index < stations.length - 1 && (
+                    <Box sx={{ width: '100%', height: `${ROW_HEIGHT}px`, background: '#fff' }} />
                   )}
-                </Box>
-              </Box>
-            ))}
+                </React.Fragment>
+              );
+            })}
           </Box>
         </Box>
       </Box>
