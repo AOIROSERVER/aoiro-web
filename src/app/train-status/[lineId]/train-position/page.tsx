@@ -3,7 +3,7 @@ import React from "react";
 import { Box, Typography, Card, Modal, Paper, LinearProgress, IconButton } from "@mui/material";
 import TrainIcon from "@mui/icons-material/Train";
 import CloseIcon from '@mui/icons-material/Close';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import './train-icon-anim.css';
 
 // 路線ごとの駅データを定義（主要駅一覧に合わせる）
@@ -314,72 +314,118 @@ export default function TrainPositionPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalStation, setModalStation] = useState<string | null>(null);
   const [modalTime, setModalTime] = useState<string | null>(null);
+  const [trainState, setTrainState] = useState<'stopped'|'between'>('stopped');
+  const [betweenStations, setBetweenStations] = useState<[string, string]|null>(null);
+  const lastStationRef = useRef<string|null>(null);
+  const timerRef = useRef<any>(null);
+  const [moveAnim, setMoveAnim] = useState(false);
+  const stations = useMemo(() => (lineCode && LINE_STATIONS[lineCode] ? LINE_STATIONS[lineCode] : []), [lineCode]);
 
   // line名・方向の正規化関数
   function normalizeLineAndDirection(rawLine: string): { line: string, direction: string } {
-    // 例: "山手線（外回り）" → line: "山手線", direction: "外回り"
+    // 例: "京浜東北線（上り）" → line: "京浜東北線", direction: "上り"
     const match = rawLine.match(/^(.*?)(?:[（(](.*?)[)）])?$/);
     if (match) {
       const line = match[1].replace(/\s/g, '');
-      const direction = match[2] ? match[2].replace(/\s/g, '') : (line.includes('外回り') ? '外回り' : '内回り');
+      let direction = match[2] ? match[2].replace(/\s/g, '') : '';
+      // 京浜東北線などはdirectionを「上り」または「下り」に強制
+      if (line.includes('京浜東北線') && (!direction || !['上り','下り'].includes(direction))) {
+        direction = '上り'; // デフォルトを上りに
+      } else if (!direction) {
+        direction = (line.includes('外回り') ? '外回り' : '内回り');
+      }
       return { line, direction };
     }
-    return { line: rawLine, direction: '外回り' };
+    return { line: rawLine, direction: '上り' };
   }
 
   useEffect(() => {
-    console.log('列車位置情報画面が読み込まれました');
-    console.log('現在のURL:', window.location.href);
-    
     // URLから路線名・方向を取得
     const urlParams = new URLSearchParams(window.location.search);
     const rawLine = urlParams.get('line') || '山手線（外回り）';
     const { line, direction } = normalizeLineAndDirection(rawLine);
-    console.log('取得した路線名:', line);
     setLineName(line);
     setDirection(direction);
     const code = getLineCode(line);
-    console.log('路線コード:', code);
     setLineCode(code);
+  }, []);
 
+  useEffect(() => {
+    if (!lineName || !lineCode || !direction) return;
     // fetch-discord-messages.jsから列車位置情報を取得
     const fetchTrainPositions = () => {
       fetch('/.netlify/functions/fetch-discord-messages')
         .then(res => res.json())
         .then(data => {
-          if (data.trainMessages && Array.isArray(data.trainMessages)) {
-            // この路線・この方向の最新の駅名を抽出
-            const filtered = data.trainMessages.filter((msg: any) => {
-              const parts = msg.content.split('/');
-              return (
-                parts.length === 3 &&
-                parts[0].includes(line) &&
-                parts[1].includes(direction)
-              );
-            });
-            // 最新の到着駅だけをcurrentStationsにセット
-            if (filtered.length > 0) {
-              const latest = filtered[0]; // 一番新しいメッセージ
-              const parts = latest.content.split('/');
-              const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
-              setCurrentStations([station]);
-              console.log('currentStations:', [station]);
-            } else {
-              setCurrentStations([]);
+          console.log('APIデータ:', data.trainMessages);
+          const filtered = data.trainMessages.filter((msg: any) => {
+            const parts = msg.content.split('/');
+            const msgLine = normalizeStationName(parts[0] || '');
+            const viewLine = normalizeStationName(lineName);
+            const msgDir = normalizeStationName(parts[1] || '');
+            const viewDir = normalizeStationName(direction);
+            return (
+              (msgLine.includes(viewLine) || viewLine.includes(msgLine)) &&
+              (msgDir.includes(viewDir) || viewDir.includes(msgDir))
+            );
+          });
+          console.log('filtered:', filtered);
+          if (filtered.length > 0) {
+            const latest = filtered[0];
+            const parts = latest.content.split('/');
+            const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
+            console.log('API駅名:', station);
+            setCurrentStations([station]);
+            console.log('currentStations set:', [station]);
+            // 駅が変わったら状態遷移
+            if (lastStationRef.current !== station) {
+              setTrainState('stopped');
+              setBetweenStations(null);
+              lastStationRef.current = station;
+              if (timerRef.current) clearTimeout(timerRef.current);
+              setMoveAnim(false);
+              timerRef.current = setTimeout(() => {
+                setTrainState('between');
+                const idx = stations.findIndex(s => normalizeStationName(s.name).includes(station) || station.includes(normalizeStationName(s.name)));
+                if (idx !== -1 && idx < stations.length - 1) {
+                  setBetweenStations([
+                    normalizeStationName(stations[idx].name),
+                    normalizeStationName(stations[idx+1].name)
+                  ]);
+                  setMoveAnim(true);
+                } else {
+                  setBetweenStations(null);
+                  setMoveAnim(false);
+                }
+                timerRef.current = setTimeout(() => {
+                  setTrainState('stopped');
+                  setBetweenStations(null);
+                  setMoveAnim(false);
+                }, 10000);
+              }, 10000);
             }
           } else {
             setCurrentStations([]);
+            console.log('currentStations set: []');
+            setTrainState('stopped');
+            setBetweenStations(null);
+            lastStationRef.current = null;
           }
         })
-        .catch(() => setCurrentStations([]));
+        .catch(() => {
+          setCurrentStations([]);
+          console.log('currentStations set: []');
+          setTrainState('stopped');
+          setBetweenStations(null);
+          lastStationRef.current = null;
+        });
     };
 
     fetchTrainPositions();
     const interval = setInterval(fetchTrainPositions, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [lineName, lineCode, direction, stations]);
 
-  const stations = LINE_STATIONS[lineCode] || LINE_STATIONS.JY1;
   const lineColor = LINE_COLORS[lineCode] || '#666';
 
   // モーダルを開く関数
@@ -457,6 +503,9 @@ export default function TrainPositionPage() {
     );
   };
 
+  if (!lineName || !lineCode || !direction || stations.length === 0) {
+    return null; // またはローディング表示
+  }
   return (
     <Box sx={{ p: 3, maxWidth: 800, mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }}>
       {/* ヘッダー */}

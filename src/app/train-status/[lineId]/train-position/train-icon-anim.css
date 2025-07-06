@@ -47,4 +47,10 @@
   transform: scale(1.1) translateY(-2px);
   filter: brightness(1.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* 駅間移動アニメーション */
+.train-move-between {
+  transition: transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1);
+  will-change: transform;
 } 
