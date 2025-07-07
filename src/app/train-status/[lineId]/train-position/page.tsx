@@ -550,6 +550,44 @@ export default function TrainPositionPage() {
 
       {/* 路線図 */}
       <Box sx={{ p: 4, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+        {/* 上り・下り表記（山手線以外） */}
+        {(lineCode !== 'JY1' && lineCode !== 'JY2') && (
+          <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 4 }}>
+            {/* 中央線の上部に配置 */}
+            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 4, zIndex: 200, top: -10 }}>
+              <Typography
+                sx={{
+                  fontWeight: direction === '上り' ? 'bold' : 400,
+                  color: '#333',
+                  fontSize: 16,
+                  letterSpacing: 1,
+                  backgroundColor: 'white',
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 1,
+                  border: '1px solid #ddd',
+                }}
+              >
+                上り
+              </Typography>
+              <Typography
+                sx={{
+                  fontWeight: direction === '下り' ? 'bold' : 400,
+                  color: '#333',
+                  fontSize: 16,
+                  letterSpacing: 1,
+                  backgroundColor: 'white',
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 1,
+                  border: '1px solid #ddd',
+                }}
+              >
+                下り
+              </Typography>
+            </Box>
+          </Box>
+        )}
         <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
           {/* 縦線（中央配置） */}
           <Box
