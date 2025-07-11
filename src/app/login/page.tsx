@@ -95,7 +95,8 @@ function LoginContent() {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      console.log(`🔄 Starting ${provider} OAuth login...`);
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
@@ -104,9 +105,30 @@ function LoginContent() {
           },
         },
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error(`❌ ${provider} OAuth error:`, error);
+        throw error;
+      }
+      
+      console.log(`✅ ${provider} OAuth initiated successfully`);
+      console.log('OAuth data:', data);
     } catch (err: any) {
-      setError(err.error_description || err.message);
+      console.error(`❌ ${provider} login error:`, err);
+      let errorMessage = err.error_description || err.message;
+      
+      // Discord特有のエラーメッセージ
+      if (provider === 'discord') {
+        if (err.message?.includes('redirect_uri')) {
+          errorMessage = 'DiscordのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
+        } else if (err.message?.includes('client_id')) {
+          errorMessage = 'DiscordのクライアントID設定に問題があります。管理者にお問い合わせください。';
+        } else if (err.message?.includes('scope')) {
+          errorMessage = 'Discordのスコープ設定に問題があります。管理者にお問い合わせください。';
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
