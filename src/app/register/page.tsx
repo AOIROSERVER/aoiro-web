@@ -11,7 +11,7 @@ import {
   Link,
   Alert,
 } from "@mui/material";
-import { Email, Lock, Login as LoginIcon } from "@mui/icons-material";
+import { Email, Lock, Person, Login as RegisterIcon, Tag } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -42,48 +42,105 @@ const DiscordIcon = () => (
   />
 );
 
-function LoginContent() {
+function RegisterContent() {
+  const [username, setUsername] = useState("");
+  const [gameTag, setGameTag] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { supabase } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // URLパラメータからエラーとメッセージを取得
+  // URLパラメータからエラーを取得
   useEffect(() => {
     const errorParam = searchParams.get('error');
-    const messageParam = searchParams.get('message');
-    
     if (errorParam) {
       switch (errorParam) {
         case 'session_error':
-          setError('セッションの設定に失敗しました。再度ログインしてください。');
+          setError('セッションの設定に失敗しました。再度登録してください。');
           break;
         case 'auth_error':
           setError('認証に失敗しました。再度お試しください。');
           break;
         default:
-          setError('ログインに失敗しました。再度お試しください。');
+          setError('登録に失敗しました。再度お試しください。');
       }
-    } else if (messageParam === 'registration_success') {
-      setError(null);
-      setSuccessMessage('アカウントが正常に作成されました。確認メールをご確認ください。');
     }
   }, [searchParams]);
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     setLoading(true);
     setError(null);
+
+    // バリデーション
+    if (!username || !gameTag || !email || !password || !confirmPassword) {
+      setError('すべての項目を入力してください');
+      setLoading(false);
+      return;
+    }
+
+    // ゲームタグのバリデーション
+    if (gameTag.length < 3) {
+      setError('ゲームタグは3文字以上で入力してください');
+      setLoading(false);
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(gameTag)) {
+      setError('ゲームタグは英数字、ハイフン、アンダースコアのみ使用できます');
+      setLoading(false);
+      return;
+    }
+
+    // ゲームタグの重複チェック
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: existingGameTag, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('game_tag', gameTag)
+        .single();
+
+      if (existingGameTag) {
+        setError('このゲームタグは既に使用されています');
+        setLoading(false);
+        return;
+      }
+    } catch (error) {
+      // エラーが発生した場合（レコードが見つからない場合）は重複していない
+    }
+
+    if (password !== confirmPassword) {
+      setError('パスワードが一致しません');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('パスワードは6文字以上で入力してください');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            username: username,
+            game_tag: gameTag,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
       });
+      
       if (error) throw error;
-      router.push("/more"); // ログイン成功後、その他ページへ
+      
+      // 登録成功後、確認メール送信の案内
+      router.push("/login?message=registration_success");
     } catch (err: any) {
       setError(err.error_description || err.message);
     } finally {
@@ -123,19 +180,52 @@ function LoginContent() {
           }}
         >
           <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
-            AOIROidにログイン
+            AOIROidアカウント作成
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={3}>
-            アカウントにアクセスします
+            新しいアカウントを作成します
           </Typography>
 
           {/* エラー表示 */}
           {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
-          
-          {/* 成功メッセージ表示 */}
-          {successMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{successMessage}</Alert>}
 
-          {/* メール・パスワード入力 */}
+          {/* ユーザー名入力 */}
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="username"
+            label="ユーザー名"
+            name="username"
+            autoComplete="username"
+            autoFocus
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={loading}
+            InputProps={{
+              startAdornment: <Person sx={{ color: "text.disabled", mr: 1 }} />,
+            }}
+          />
+
+          {/* ゲームタグ入力 */}
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="gameTag"
+            label="ゲームタグ"
+            name="gameTag"
+            autoComplete="off"
+            value={gameTag}
+            onChange={(e) => setGameTag(e.target.value)}
+            disabled={loading}
+            helperText="英数字、ハイフン、アンダースコアのみ使用可能（3文字以上）"
+            InputProps={{
+              startAdornment: <Tag sx={{ color: "text.disabled", mr: 1 }} />,
+            }}
+          />
+
+          {/* メールアドレス入力 */}
           <TextField
             margin="normal"
             required
@@ -144,7 +234,6 @@ function LoginContent() {
             label="メールアドレス"
             name="email"
             autoComplete="email"
-            autoFocus
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
@@ -152,6 +241,8 @@ function LoginContent() {
               startAdornment: <Email sx={{ color: "text.disabled", mr: 1 }} />,
             }}
           />
+
+          {/* パスワード入力 */}
           <TextField
             margin="normal"
             required
@@ -160,7 +251,7 @@ function LoginContent() {
             label="パスワード"
             type="password"
             id="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
@@ -169,17 +260,35 @@ function LoginContent() {
             }}
           />
 
-          {/* ログインボタン */}
+          {/* パスワード確認入力 */}
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="confirmPassword"
+            label="パスワード確認"
+            type="password"
+            id="confirmPassword"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={loading}
+            InputProps={{
+              startAdornment: <Lock sx={{ color: "text.disabled", mr: 1 }} />,
+            }}
+          />
+
+          {/* 登録ボタン */}
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            onClick={handleLogin}
+            onClick={handleRegister}
             disabled={loading}
-            startIcon={<LoginIcon />}
+            startIcon={<RegisterIcon />}
             sx={{ mt: 3, mb: 2, py: 1.5, bgcolor: "#4A90E2" }}
           >
-            {loading ? 'ログイン中...' : 'ログイン'}
+            {loading ? '登録中...' : 'アカウント作成'}
           </Button>
 
           {/* ソーシャルログイン */}
@@ -192,7 +301,7 @@ function LoginContent() {
             startIcon={<GoogleIcon />}
             sx={{ mb: 1.5 }}
           >
-            Googleでログイン
+            Googleで登録
           </Button>
           <Button
             fullWidth
@@ -201,7 +310,7 @@ function LoginContent() {
             disabled={loading}
             startIcon={<MicrosoftIcon />}
           >
-            Microsoftでログイン
+            Microsoftで登録
           </Button>
           <Button
             fullWidth
@@ -211,33 +320,20 @@ function LoginContent() {
             startIcon={<DiscordIcon />}
             sx={{ mt: 1.5 }}
           >
-            Discordでログイン
-          </Button>
-          {/* 管理者ログインボタン */}
-          <Button
-            fullWidth
-            variant="outlined"
-            color="secondary"
-            sx={{ mt: 1, mb: 2 }}
-            onClick={() => router.push('/admin-login')}
-          >
-            管理者ログイン
+            Discordで登録
           </Button>
 
           {/* リンク */}
           <Box
             sx={{
               display: "flex",
-              justifyContent: "space-between",
+              justifyContent: "center",
               width: "100%",
               mt: 2,
             }}
           >
-            <Link href="/reset-password" variant="body2">
-              パスワードを忘れましたか？
-            </Link>
-            <Link href="/register" variant="body2">
-              新規登録はこちら
+            <Link href="/login" variant="body2">
+              すでにアカウントをお持ちの方はこちら
             </Link>
           </Box>
         </Box>
@@ -246,10 +342,10 @@ function LoginContent() {
   );
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <Suspense>
-      <LoginContent />
+      <RegisterContent />
     </Suspense>
   );
 } 

@@ -225,6 +225,13 @@ export default function MorePage() {
             プライバシー
           </Button>
         </Grid>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<AccountCircle sx={{ color: "#4A90E2" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/profile')}
+          >
+            プロフィール
+          </Button>
+        </Grid>
       </Grid>
 
       {/* その他 */}
@@ -251,6 +258,13 @@ export default function MorePage() {
             onClick={() => router.push('/about')}
           >
             アプリについて
+          </Button>
+        </Grid>
+        <Grid item xs={4}>
+          <Button fullWidth variant="outlined" startIcon={<Info sx={{ color: "#E74C3C" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/test-auth')}
+          >
+            認証テスト
           </Button>
         </Grid>
       </Grid>

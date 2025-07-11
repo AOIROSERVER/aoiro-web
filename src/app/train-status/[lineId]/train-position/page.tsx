@@ -316,6 +316,7 @@ export default function TrainPositionPage() {
   const [modalTime, setModalTime] = useState<string | null>(null);
   const [trainState, setTrainState] = useState<'stopped'|'between'>('stopped');
   const [betweenStations, setBetweenStations] = useState<[string, string]|null>(null);
+  const [currentDirection, setCurrentDirection] = useState<string>('上り'); // 現在の電車の方向
   const lastStationRef = useRef<string|null>(null);
   const timerRef = useRef<any>(null);
   const [moveAnim, setMoveAnim] = useState(false);
@@ -346,6 +347,12 @@ export default function TrainPositionPage() {
     const { line, direction } = normalizeLineAndDirection(rawLine);
     setLineName(line);
     setDirection(direction);
+    // currentDirectionも初期化
+    if (direction === '下り') {
+      setCurrentDirection('下り');
+    } else {
+      setCurrentDirection('上り');
+    }
     const code = getLineCode(line);
     setLineCode(code);
   }, []);
@@ -374,9 +381,27 @@ export default function TrainPositionPage() {
             const latest = filtered[0];
             const parts = latest.content.split('/');
             const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
+            const messageDirection = parts[1] || '';
             console.log('API駅名:', station);
+            console.log('メッセージ方向:', messageDirection);
+            console.log('現在のcurrentDirection:', currentDirection);
+            
+            // 方向情報を解析してcurrentDirectionを更新
+            let newDirection = currentDirection; // デフォルトは現在の方向
+            if (messageDirection.includes('下り')) {
+              newDirection = '下り';
+              console.log('下り方向を検出、currentDirectionを下りに設定');
+            } else if (messageDirection.includes('上り')) {
+              newDirection = '上り';
+              console.log('上り方向を検出、currentDirectionを上りに設定');
+            } else {
+              console.log('方向情報が見つからないため、現在の方向を維持:', currentDirection);
+            }
+            
+            setCurrentDirection(newDirection);
             setCurrentStations([station]);
             console.log('currentStations set:', [station]);
+            console.log('currentDirection set:', newDirection);
             // 駅が変わったら状態遷移
             if (lastStationRef.current !== station) {
               setTrainState('stopped');
@@ -688,7 +713,23 @@ export default function TrainPositionPage() {
                     />
                     {/* 電車マーク（駅ドットの左側） */}
                     {currentStations.includes(normalizeStationName(station.name)) && (
-                      <Box sx={{ position: 'absolute', left: 'calc(50% - 56px)', top: '50%', transform: 'translate(-50%, -50%)', width: 48, height: 68, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', zIndex: 3 }}>
+                      <Box sx={{ 
+                        position: 'absolute', 
+                        left: currentDirection === '下り' ? 'calc(50% + 56px)' : 'calc(50% - 56px)', 
+                        top: '50%', 
+                        transform: 'translate(-50%, -50%)', 
+                        width: 48, 
+                        height: 68, 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justifyContent: 'flex-start', 
+                        zIndex: 3 
+                      }}
+                      onClick={() => {
+                        console.log('電車マーククリック - 駅:', station.name, '方向:', currentDirection);
+                      }}
+                      >
                         {/* Googleマップ風の白い半透明円エフェクト */}
                         <span style={{
                           position: 'absolute',
