@@ -160,6 +160,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         } else if (event === "USER_UPDATED") {
           console.log('🔄 User updated');
+        } else if (event === "INITIAL_SESSION") {
+          console.log('🔄 Initial session loaded');
+          if (session) {
+            console.log('✅ Initial session found:', session.user.email);
+          } else {
+            console.log('❌ No initial session found');
+          }
         }
         
         setLoading(false);

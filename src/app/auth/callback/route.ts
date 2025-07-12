@@ -185,12 +185,66 @@ export async function GET(request: Request) {
         console.log('User:', data.user?.email)
         console.log('User metadata:', data.user?.user_metadata)
         console.log('App metadata:', data.user?.app_metadata)
+        console.log('Session data:', {
+          hasSession: !!data.session,
+          sessionUser: data.session?.user?.email,
+          accessToken: data.session?.access_token ? 'present' : 'missing',
+          refreshToken: data.session?.refresh_token ? 'present' : 'missing'
+        })
         
         // セッションが正常に作成されたかチェック
         if (!data.session) {
           console.error('❌ No session created after code exchange')
           console.error('Exchange data:', data)
-          return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
+          
+          // セッションが作成されない場合の代替処理
+          console.log('🔄 Attempting alternative session handling...')
+          
+          // ユーザー情報が存在する場合は、セッションなしでも続行
+          if (data.user) {
+            console.log('✅ User data available, proceeding without session')
+            console.log('User ID:', data.user.id)
+            console.log('User Email:', data.user.email)
+            
+            // セッションなしでもユーザープロフィールを作成
+            console.log('👤 Creating user profile without session...')
+            const { username, game_tag } = data.user.user_metadata || {}
+            
+            let displayName = username
+            let gameTag = game_tag
+            
+            if (data.user.app_metadata?.provider === 'google') {
+              console.log('🔍 Google user detected')
+              displayName = data.user.user_metadata?.full_name || 
+                           data.user.user_metadata?.name || 
+                           data.user.email?.split('@')[0] ||
+                           `google_${data.user.id.slice(0, 8)}`
+              
+              gameTag = data.user.user_metadata?.email?.split('@')[0] || 
+                        `google_${data.user.id.slice(0, 8)}`
+            }
+            
+            try {
+              const { error: profileError } = await supabase
+                .from('user_profiles')
+                .upsert({
+                  id: data.user.id,
+                  username: displayName,
+                  game_tag: gameTag,
+                })
+              
+              if (profileError) {
+                console.error('❌ Profile creation error:', profileError)
+              } else {
+                console.log('✅ Profile created successfully without session')
+              }
+            } catch (profileError) {
+              console.error('❌ Profile creation exception:', profileError)
+            }
+          } else {
+            console.error('❌ No user data available')
+            return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
+          }
         }
         
         // 新規登録かどうかをチェック

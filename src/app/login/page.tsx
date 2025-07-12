@@ -82,7 +82,7 @@ function LoginContent() {
     if (errorParam) {
       switch (errorParam) {
         case 'session_error':
-          setError('セッションの設定に失敗しました。再度ログインしてください。');
+          setError('セッションの設定に失敗しました。ブラウザのキャッシュをクリアして再度お試しください。');
           break;
         case 'auth_error':
           setError('認証に失敗しました。再度お試しください。');
