@@ -80,7 +80,65 @@ function StatusIcon({ status }: { status: string }) {
 export default function TrainStatusPage() {
   const router = useRouter();
   const [lines, setLines] = useState<any[]>([]);
-  const { loading, isAdmin } = useAuth();
+  const { loading, isAdmin, user, session } = useAuth();
+
+  // 認証状態の確認（デバッグ用に一時的に無効化）
+  useEffect(() => {
+    console.log('🔍 Train Status Page - Auth Check:');
+    console.log('Loading:', loading);
+    console.log('User:', user);
+    console.log('Session:', session);
+    console.log('Is Admin:', isAdmin);
+    console.log('Current pathname:', window.location.pathname);
+    console.log('Current URL:', window.location.href);
+    
+    // デバッグ用：認証チェックを一時的に無効化
+    console.log('🚧 DEBUG MODE: Authentication check disabled for testing');
+    console.log('✅ Proceeding to show train status page regardless of auth state');
+    
+    // 元の認証チェック（コメントアウト）
+    /*
+    // ローディング中は待機
+    if (loading) {
+      console.log('⏳ Still loading, waiting...');
+      return;
+    }
+    
+    // ユーザーが認証されていない場合
+    if (!user) {
+      console.log('❌ User not authenticated, redirecting to login');
+      console.log('User check details:', {
+        userExists: !!user,
+        userEmail: user ? (user as any).email : 'undefined',
+        userID: user ? (user as any).id : 'undefined',
+        sessionExists: !!session,
+        sessionUser: session?.user?.email || 'undefined'
+      });
+      router.push('/login');
+      return;
+    }
+    
+    // ユーザーが認証されている場合
+    console.log('✅ User authenticated:', user.email);
+    console.log('User metadata:', user.user_metadata);
+    console.log('App metadata:', user.app_metadata);
+    
+    // セッションの詳細確認
+    if (session) {
+      console.log('Session details:', {
+        access_token: session.access_token ? 'present' : 'missing',
+        refresh_token: session.refresh_token ? 'present' : 'missing',
+        expires_at: session.expires_at,
+        user_id: session.user?.id,
+        user_email: session.user?.email
+      });
+    } else {
+      console.log('⚠️ No session found but user exists');
+    }
+    
+    console.log('✅ Auth check completed successfully');
+    */
+  }, [loading, user, session, isAdmin, router]);
 
   useEffect(() => {
     const fetchLines = async () => {
@@ -110,9 +168,12 @@ export default function TrainStatusPage() {
     fetchLines();
   }, []);
 
+  // デバッグ用：ローディング状態も一時的に無効化
+  /*
   if (loading) {
     return <Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /><Typography mt={2}>認証確認中...</Typography></Box>;
   }
+  */
 
   return (
     <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>

@@ -27,19 +27,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // 初期セッション取得
     const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      setUser(session?.user ?? null);
+      console.log('🔄 Getting initial session...');
       
-      const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
-      const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
-      setIsAdmin(isSupabaseAdmin || isLocalAdmin);
-      
-      if (session?.user) {
-        localStorage.removeItem('admin');
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Error getting initial session:', error);
+        }
+        
+        console.log('Initial session:', session);
+        console.log('Initial user:', session?.user);
+        console.log('Session details:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userEmail: session?.user?.email,
+          accessToken: session?.access_token ? 'present' : 'missing',
+          refreshToken: session?.refresh_token ? 'present' : 'missing',
+          expiresAt: session?.expires_at,
+          tokenType: session?.token_type
+        });
+        
+        // セッションが存在する場合はローカルストレージに保存
+        if (session && typeof window !== 'undefined') {
+          console.log('💾 Saving session to localStorage...');
+          localStorage.setItem('aoiro-auth-token', JSON.stringify(session));
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
+        const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
+        setIsAdmin(isSupabaseAdmin || isLocalAdmin);
+        
+        if (session?.user) {
+          localStorage.removeItem('admin');
+          console.log('✅ User authenticated on initial load:', session.user.email);
+        } else {
+          console.log('❌ No user found on initial load');
+        }
+      } catch (error) {
+        console.error('❌ Exception during initial session load:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     getInitialSession();
@@ -47,7 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 認証状態変更の監視
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('認証状態変更:', event, session?.user?.email);
+        console.log('🔄 Auth state change:', event, session?.user?.email);
+        console.log('Event details:', {
+          event,
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userEmail: session?.user?.email,
+          currentPath: window.location.pathname
+        });
         
         setSession(session);
         setUser(session?.user ?? null);
@@ -58,15 +97,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         if (event === "SIGNED_IN" && session) {
           localStorage.removeItem('admin');
+          console.log('✅ User signed in successfully:', session.user.email);
+          
           // 認証成功後のリダイレクト
           if (window.location.pathname === '/') {
+            console.log('🔄 Redirecting to train-status from home page');
             router.push('/train-status');
           }
         } else if (event === "SIGNED_OUT") {
+          console.log('❌ User signed out');
           setSession(null);
           setUser(null);
           setIsAdmin(false);
           router.push("/login");
+        } else if (event === "TOKEN_REFRESHED") {
+          console.log('🔄 Token refreshed');
+        } else if (event === "USER_UPDATED") {
+          console.log('🔄 User updated');
         }
         
         setLoading(false);

@@ -48,9 +48,31 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { supabase } = useAuth();
+  const { supabase, user, session } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // 認証状態の確認
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      console.log('🔍 Checking auth status...');
+      console.log('User:', user);
+      console.log('Session:', session);
+      
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log('Current session:', currentSession);
+      
+      if (currentSession?.user) {
+        console.log('✅ User is authenticated:', currentSession.user.email);
+        console.log('User metadata:', currentSession.user.user_metadata);
+        console.log('App metadata:', currentSession.user.app_metadata);
+      } else {
+        console.log('❌ No active session found');
+      }
+    };
+    
+    checkAuthStatus();
+  }, [supabase, user, session]);
 
   // URLパラメータからエラーとメッセージを取得
   useEffect(() => {
@@ -64,6 +86,9 @@ function LoginContent() {
           break;
         case 'auth_error':
           setError('認証に失敗しました。再度お試しください。');
+          break;
+        case 'pkce_error':
+          setError('認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。');
           break;
         default:
           setError('ログインに失敗しました。再度お試しください。');
@@ -96,28 +121,64 @@ function LoginContent() {
     setError(null);
     try {
       console.log(`🔄 Starting ${provider} OAuth login...`);
+      console.log('Current origin:', window.location.origin);
+      console.log('Current URL:', window.location.href);
+      
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('Redirect URL:', redirectUrl);
+      
+      // セッションをクリアしてから新しい認証を開始
+      console.log('🧹 Clearing existing session...');
+      await supabase.auth.signOut();
+      
+      // プロバイダーごとに適切な設定を分ける
+      const oauthOptions: any = {
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: false,
+      };
+      
+      // Discordのみにresponse_type: 'code'を追加
+      if (provider === 'discord') {
+        oauthOptions.queryParams = {
+          response_type: 'code',
+        };
+      }
+      
+      console.log(`📡 Initiating ${provider} OAuth with options:`, oauthOptions);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            response_type: 'code',
-          },
-        },
+        options: oauthOptions,
       });
       
       if (error) {
         console.error(`❌ ${provider} OAuth error:`, error);
+        console.error('Error details:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          stack: error.stack
+        });
         throw error;
       }
       
       console.log(`✅ ${provider} OAuth initiated successfully`);
       console.log('OAuth data:', data);
+      console.log('Provider:', provider);
+      console.log('Redirect URL used:', redirectUrl);
+      
+      // ブラウザリダイレクトが自動的に行われる
+      console.log('🔄 Waiting for browser redirect...');
+      
     } catch (err: any) {
       console.error(`❌ ${provider} login error:`, err);
-      let errorMessage = err.error_description || err.message;
+      console.error('Full error object:', err);
+      console.error('Error type:', typeof err);
+      console.error('Error keys:', Object.keys(err || {}));
       
-      // Discord特有のエラーメッセージ
+      let errorMessage = err.error_description || err.message || '認証に失敗しました';
+      
+      // プロバイダー別のエラーメッセージ
       if (provider === 'discord') {
         if (err.message?.includes('redirect_uri')) {
           errorMessage = 'DiscordのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
@@ -125,9 +186,43 @@ function LoginContent() {
           errorMessage = 'DiscordのクライアントID設定に問題があります。管理者にお問い合わせください。';
         } else if (err.message?.includes('scope')) {
           errorMessage = 'Discordのスコープ設定に問題があります。管理者にお問い合わせください。';
+        } else if (err.message?.includes('invalid_grant')) {
+          errorMessage = 'Discordの認証コードが無効です。再度お試しください。';
+        } else if (err.message?.includes('unauthorized_client')) {
+          errorMessage = 'Discordのクライアント認証に失敗しました。設定を確認してください。';
+        } else if (err.message?.includes('bad_code_verifier')) {
+          errorMessage = '認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。';
+        }
+      } else if (provider === 'google') {
+        console.error('Google OAuth詳細エラー:', {
+          message: err.message,
+          status: err.status,
+          name: err.name,
+          stack: err.stack
+        });
+        
+        if (err.message?.includes('redirect_uri')) {
+          errorMessage = 'GoogleのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
+        } else if (err.message?.includes('client_id')) {
+          errorMessage = 'GoogleのクライアントID設定に問題があります。管理者にお問い合わせください。';
+        } else if (err.message?.includes('invalid_grant')) {
+          errorMessage = 'Googleの認証コードが無効です。再度お試しください。';
+        } else if (err.message?.includes('unauthorized_client')) {
+          errorMessage = 'Googleのクライアント認証に失敗しました。設定を確認してください。';
+        } else if (err.message?.includes('access_denied')) {
+          errorMessage = 'Googleログインがキャンセルされました。再度お試しください。';
+        } else if (err.message?.includes('popup_closed')) {
+          errorMessage = 'Googleログインのポップアップが閉じられました。再度お試しください。';
+        } else if (err.message?.includes('network')) {
+          errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
+        } else if (err.message?.includes('auth_error')) {
+          errorMessage = 'Google認証でエラーが発生しました。ブラウザのキャッシュをクリアして再度お試しください。';
+        } else {
+          errorMessage = `Googleログインエラー: ${err.message || '不明なエラーが発生しました'}`;
         }
       }
       
+      console.error(`Final error message for ${provider}:`, errorMessage);
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -152,7 +247,18 @@ function LoginContent() {
           </Typography>
 
           {/* エラー表示 */}
-          {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+              <Typography variant="body2" component="div">
+                {error}
+              </Typography>
+              {error.includes('Google') && (
+                <Typography variant="caption" component="div" sx={{ mt: 1 }}>
+                  詳細なエラー情報を確認するには、ブラウザの開発者ツール（F12）のコンソールを確認してください。
+                </Typography>
+              )}
+            </Alert>
+          )}
           
           {/* 成功メッセージ表示 */}
           {successMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{successMessage}</Alert>}

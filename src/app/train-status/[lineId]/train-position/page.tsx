@@ -371,6 +371,22 @@ export default function TrainPositionPage() {
             const viewLine = normalizeStationName(lineName);
             const msgDir = normalizeStationName(parts[1] || '');
             const viewDir = normalizeStationName(direction);
+            
+            console.log('フィルタリング詳細:', {
+              message: msg.content,
+              msgLine,
+              viewLine,
+              msgDir,
+              viewDir,
+              lineMatch: msgLine.includes(viewLine) || viewLine.includes(msgLine),
+              dirMatch: msgDir.includes(viewDir) || viewDir.includes(msgDir)
+            });
+            
+            // 京浜東北線の場合は路線名のみでフィルタリング（方向は後で判定）
+            if (lineName.includes('京浜東北線')) {
+              return msgLine.includes(viewLine) || viewLine.includes(msgLine);
+            }
+            
             return (
               (msgLine.includes(viewLine) || viewLine.includes(msgLine)) &&
               (msgDir.includes(viewDir) || viewDir.includes(msgDir))
@@ -385,23 +401,70 @@ export default function TrainPositionPage() {
             console.log('API駅名:', station);
             console.log('メッセージ方向:', messageDirection);
             console.log('現在のcurrentDirection:', currentDirection);
+            console.log('路線名:', lineName);
+            console.log('京浜東北線判定:', lineName.includes('京浜東北線'));
             
             // 方向情報を解析してcurrentDirectionを更新
             let newDirection = currentDirection; // デフォルトは現在の方向
-            if (messageDirection.includes('下り')) {
-              newDirection = '下り';
-              console.log('下り方向を検出、currentDirectionを下りに設定');
-            } else if (messageDirection.includes('上り')) {
-              newDirection = '上り';
-              console.log('上り方向を検出、currentDirectionを上りに設定');
+            
+            // 京浜東北線の場合の方向判定を強化
+            if (lineName.includes('京浜東北線')) {
+              console.log('京浜東北線方向判定開始 - messageDirection:', messageDirection);
+              console.log('京浜東北線方向判定詳細:', {
+                has下り: messageDirection.includes('下り'),
+                has外回り: messageDirection.includes('外回り'),
+                has南行: messageDirection.includes('南行'),
+                has南向き: messageDirection.includes('南向き'),
+                has上り: messageDirection.includes('上り'),
+                has内回り: messageDirection.includes('内回り'),
+                has北行: messageDirection.includes('北行'),
+                has北向き: messageDirection.includes('北向き')
+              });
+              
+              // メッセージ全体からも方向を検出
+              const fullMessage = latest.content;
+              console.log('京浜東北線メッセージ全体:', fullMessage);
+              
+              if (messageDirection.includes('下り') || messageDirection.includes('外回り') || messageDirection.includes('南行') || messageDirection.includes('南向き') || fullMessage.includes('下り')) {
+                newDirection = '下り';
+                console.log('京浜東北線下り方向を検出、currentDirectionを下りに設定');
+              } else if (messageDirection.includes('上り') || messageDirection.includes('内回り') || messageDirection.includes('北行') || messageDirection.includes('北向き') || fullMessage.includes('上り')) {
+                newDirection = '上り';
+                console.log('京浜東北線上り方向を検出、currentDirectionを上りに設定');
+              } else {
+                console.log('京浜東北線: 方向情報が見つからないため、現在の方向を維持:', currentDirection);
+              }
             } else {
-              console.log('方向情報が見つからないため、現在の方向を維持:', currentDirection);
+              // 他の路線の場合
+              if (messageDirection.includes('下り')) {
+                newDirection = '下り';
+                console.log('下り方向を検出、currentDirectionを下りに設定');
+              } else if (messageDirection.includes('上り')) {
+                newDirection = '上り';
+                console.log('上り方向を検出、currentDirectionを上りに設定');
+              } else {
+                console.log('方向情報が見つからないため、現在の方向を維持:', currentDirection);
+              }
+            }
+            
+            // 京浜東北線の終点駅での方向変更処理
+            if (lineName.includes('京浜東北線')) {
+              const normalizedStation = normalizeStationName(station);
+              console.log('京浜東北線駅名正規化:', station, '→', normalizedStation);
+              if (normalizedStation === '上野') {
+                console.log('京浜東北線上野駅到着 - 方向を下りに変更');
+                newDirection = '下り';
+              } else if (normalizedStation === '大井町') {
+                console.log('京浜東北線大井町駅到着 - 方向を上りに変更');
+                newDirection = '上り';
+              }
             }
             
             setCurrentDirection(newDirection);
             setCurrentStations([station]);
             console.log('currentStations set:', [station]);
             console.log('currentDirection set:', newDirection);
+            console.log('電車マーク位置:', newDirection === '下り' ? '右側（下り方向）' : '左側（上り方向）');
             // 駅が変わったら状態遷移
             if (lastStationRef.current !== station) {
               setTrainState('stopped');
@@ -480,46 +543,69 @@ export default function TrainPositionPage() {
         <Box sx={{
           position: 'fixed', left: 0, top: 0, width: '100vw', height: '100vh', bgcolor: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', zIndex: 1300
         }}>
-          <Paper sx={{ width: '100%', maxWidth: 480, mx: 'auto', borderRadius: '20px 20px 0 0', p: 3, pb: 5, bgcolor: '#222', color: '#fff', position: 'relative' }}>
+          <Paper sx={{ width: '100%', maxWidth: 480, mx: 'auto', borderRadius: '20px 20px 0 0', p: 0, pb: 5, bgcolor: '#222', color: '#fff', position: 'relative' }}>
             {/* 閉じるボタン */}
-            <IconButton onClick={() => setModalOpen(false)} sx={{ position: 'absolute', top: 16, right: 16, color: '#fff' }}>
-              <CloseIcon />
+            <IconButton
+              onClick={() => setModalOpen(false)}
+              sx={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                zIndex: 2,
+                width: 40,
+                height: 40,
+                bgcolor: 'rgba(0,0,0,0.4)',
+                color: '#fff',
+                '&:hover': {
+                  bgcolor: 'rgba(0,0,0,0.7)',
+                  color: '#ff5252',
+                },
+                borderRadius: '50%',
+                boxShadow: 2,
+                transition: 'all 0.2s',
+                p: 0,
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 28 }} />
             </IconButton>
             {/* 電車画像 */}
-            <Box sx={{ width: '100%', display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <img src={trainImageUrl} alt="電車" style={{ width: 280, height: 180, borderRadius: 10, objectFit: 'cover' }} />
+            <Box sx={{ width: '100%' }}>
+              <img src={trainImageUrl} alt="電車" style={{ width: '100%', height: 250, borderRadius: '20px 20px 0 0', objectFit: 'cover', display: 'block' }} />
             </Box>
-            {/* 路線名・種別・方向 */}
-            <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{lineName}（E235系）</Typography>
-            <Typography sx={{ color: '#9acd32', fontSize: 16, mb: 0.5 }}>各駅停車</Typography>
-            <Typography sx={{ fontSize: 16, mb: 2 }}>{direction}</Typography>
-            {/* 停車中/発車・駅名・到着時刻 */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Box sx={{ bgcolor: '#b71c1c', color: '#fff', borderRadius: 1, px: 1.5, py: 0.5, fontSize: 14, fontWeight: 700, mr: 2 }}>停車中</Box>
-              <Typography sx={{ fontSize: 16 }}>{modalStation} → {modalTime}</Typography>
-            </Box>
-            {/* 情報 */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 13, color: '#aaa' }}>平均速度</Typography>
-                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>37km/h</Typography>
+            {/* 以下、内容部分だけpaddingをつける */}
+            <Box sx={{ p: 3 }}>
+              {/* 路線名・種別・方向 */}
+              <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{lineName}（E235系）</Typography>
+              <Typography sx={{ color: '#9acd32', fontSize: 16, mb: 0.5 }}>各駅停車</Typography>
+              <Typography sx={{ fontSize: 16, mb: 2 }}>{currentDirection}</Typography>
+              {/* 停車中/発車・駅名・到着時刻 */}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ bgcolor: '#b71c1c', color: '#fff', borderRadius: 1, px: 1.5, py: 0.5, fontSize: 14, fontWeight: 700, mr: 2 }}>停車中</Box>
+                <Typography sx={{ fontSize: 16 }}>{modalStation} → {modalTime}</Typography>
               </Box>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 13, color: '#aaa' }}>所要時間</Typography>
-                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>4分</Typography>
+              {/* 情報 */}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 13, color: '#aaa' }}>平均速度</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: 16 }}>37km/h</Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 13, color: '#aaa' }}>所要時間</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: 16 }}>4分</Typography>
+                </Box>
+                <Box sx={{ textAlign: 'center' }}>
+                  <Typography sx={{ fontSize: 13, color: '#aaa' }}>列車番号</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: 16 }}>1234F</Typography>
+                </Box>
               </Box>
-              <Box sx={{ textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 13, color: '#aaa' }}>列車番号</Typography>
-                <Typography sx={{ fontWeight: 700, fontSize: 16 }}>1234F</Typography>
-              </Box>
-            </Box>
-            {/* 進捗バー */}
-            <Box sx={{ mb: 1 }}>
-              <Typography sx={{ fontSize: 13, color: '#aaa', mb: 0.5 }}>通過駅数 / 総駅数</Typography>
-              <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4, bgcolor: '#333', '& .MuiLinearProgress-bar': { bgcolor: '#9acd32' } }} />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                <Typography sx={{ fontSize: 13 }}>{stationIndex + 1}駅</Typography>
-                <Typography sx={{ fontSize: 13 }}>{totalStations}駅</Typography>
+              {/* 進捗バー */}
+              <Box sx={{ mb: 1 }}>
+                <Typography sx={{ fontSize: 13, color: '#aaa', mb: 0.5 }}>通過駅数 / 総駅数</Typography>
+                <LinearProgress variant="determinate" value={progress} sx={{ height: 8, borderRadius: 4, bgcolor: '#333', '& .MuiLinearProgress-bar': { bgcolor: '#9acd32' } }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                  <Typography sx={{ fontSize: 13 }}>{stationIndex + 1}駅</Typography>
+                  <Typography sx={{ fontSize: 13 }}>{totalStations}駅</Typography>
+                </Box>
               </Box>
             </Box>
           </Paper>
@@ -658,6 +744,15 @@ export default function TrainPositionPage() {
                         display: 'flex',
                         alignItems: 'flex-start',
                         mr: 2,
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: '#f5f5f5',
+                          transform: 'scale(1.02)',
+                          transition: 'all 0.2s ease-in-out'
+                        }
+                      }}
+                      onClick={() => {
+                        window.location.href = `/station-info/${station.name}`;
                       }}
                     >
                       {/* 路線記号バッジ */}
@@ -716,7 +811,7 @@ export default function TrainPositionPage() {
                       <Box sx={{ 
                         position: 'absolute', 
                         left: currentDirection === '下り' ? 'calc(50% + 56px)' : 'calc(50% - 56px)', 
-                        top: '50%', 
+                        top: currentDirection === '下り' ? 'calc(50% + 20px)' : 'calc(50% - 0px)', 
                         transform: 'translate(-50%, -50%)', 
                         width: 48, 
                         height: 68, 
@@ -727,7 +822,7 @@ export default function TrainPositionPage() {
                         zIndex: 3 
                       }}
                       onClick={() => {
-                        console.log('電車マーククリック - 駅:', station.name, '方向:', currentDirection);
+                        console.log('電車マーククリック - 駅:', station.name, '方向:', currentDirection, '路線:', lineName);
                       }}
                       >
                         {/* Googleマップ風の白い半透明円エフェクト */}
@@ -752,7 +847,13 @@ export default function TrainPositionPage() {
                           onClick={() => handleTrainIconClick(station.name)}
                         />
                         {/* 野球ベース（三角形） */}
-                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ marginTop: 0 }}>
+                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ 
+                          position: 'absolute',
+                          top: currentDirection === '下り' ? -20 : 50,
+                          left: currentDirection === '下り' ? 'calc(50% + 0px)' : 'calc(50% - 14px)',
+                          transform: `translateX(-50%) ${currentDirection === '下り' ? 'rotate(180deg)' : 'none'}`,
+                          zIndex: 3
+                        }}>
                           <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
                         </svg>
                       </Box>

@@ -153,6 +153,8 @@ function RegisterContent() {
     setError(null);
     try {
       console.log(`🔄 Starting ${provider} OAuth registration...`);
+      console.log('Current origin:', window.location.origin);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
