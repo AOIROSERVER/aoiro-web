@@ -66,12 +66,19 @@ export async function GET(request: Request) {
         
         if (sessionError) {
           console.error('❌ Session setting error:', sessionError)
+          console.error('Session error details:', {
+            message: sessionError.message,
+            status: sessionError.status,
+            name: sessionError.name,
+            stack: sessionError.stack
+          })
           return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
         }
         
         if (!data.session) {
           console.error('❌ No session created')
-          return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
+          console.error('Session data:', data)
+          return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
         }
         
         console.log('✅ Session set successfully with Supabase code')
@@ -133,6 +140,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(requestUrl.origin + next)
       } else {
         // 通常のOAuthコードの処理
+        console.log('🔄 Processing OAuth code...')
         const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
         
         if (exchangeError) {
@@ -177,6 +185,13 @@ export async function GET(request: Request) {
         console.log('User:', data.user?.email)
         console.log('User metadata:', data.user?.user_metadata)
         console.log('App metadata:', data.user?.app_metadata)
+        
+        // セッションが正常に作成されたかチェック
+        if (!data.session) {
+          console.error('❌ No session created after code exchange')
+          console.error('Exchange data:', data)
+          return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
+        }
         
         // 新規登録かどうかをチェック
         if (data.user && !data.user.email_confirmed_at) {
@@ -238,6 +253,11 @@ export async function GET(request: Request) {
       }
     } catch (error) {
       console.error('❌ Code exchange exception:', error)
+      console.error('Exception details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error: error
+      })
       return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
     }
   } else if (accessToken && refreshToken) {
@@ -251,6 +271,18 @@ export async function GET(request: Request) {
       
       if (sessionError) {
         console.error('❌ Session setting error:', sessionError)
+        console.error('Session error details:', {
+          message: sessionError.message,
+          status: sessionError.status,
+          name: sessionError.name,
+          stack: sessionError.stack
+        })
+        return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
+      }
+      
+      if (!data.session) {
+        console.error('❌ No session created with tokens')
+        console.error('Token session data:', data)
         return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
       }
       
@@ -264,6 +296,11 @@ export async function GET(request: Request) {
       }
     } catch (error) {
       console.error('❌ Session error:', error)
+      console.error('Session exception details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error: error
+      })
       return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
     }
   } else {

@@ -13,83 +13,145 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 
 export default function DebugSessionPage() {
-  const [sessionInfo, setSessionInfo] = useState<string>("");
+  const [debugInfo, setDebugInfo] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const { supabase, user, session, loading: authLoading } = useAuth();
+  const { supabase, user, session } = useAuth();
 
-  const checkSession = async () => {
+  const checkSessionStatus = async () => {
     setLoading(true);
-    setSessionInfo("");
+    setDebugInfo("");
     
     try {
-      console.log('🔍 Checking session details...');
+      console.log('🔍 Checking session status...');
       
       // 現在のセッションを取得
-      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        setSessionInfo(`Session Error: ${error.message}\n\nError Details: ${JSON.stringify(error, null, 2)}`);
-        return;
-      }
+      const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
       
       // 現在のユーザーを取得
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
       
-      if (userError) {
-        setSessionInfo(`User Error: ${userError.message}\n\nError Details: ${JSON.stringify(userError, null, 2)}`);
-        return;
-      }
+      // ローカルストレージの状態を確認
+      const localStorageSession = typeof window !== 'undefined' ? localStorage.getItem('aoiro-auth-token') : null;
       
-      const info = {
-        currentSession: currentSession,
-        currentUser: currentUser,
-        contextUser: user,
-        contextSession: session,
-        authLoading: authLoading,
+      // クッキーの状態を確認
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const debugData = {
+        session: {
+          exists: !!currentSession,
+          user: currentSession?.user?.email,
+          accessToken: currentSession?.access_token ? 'present' : 'missing',
+          refreshToken: currentSession?.refresh_token ? 'present' : 'missing',
+          expiresAt: currentSession?.expires_at,
+          error: sessionError?.message
+        },
+        user: {
+          exists: !!currentUser,
+          email: currentUser?.email,
+          id: currentUser?.id,
+          provider: currentUser?.app_metadata?.provider,
+          error: userError?.message
+        },
         localStorage: {
-          admin: localStorage.getItem('admin'),
-          aoiroAuthToken: localStorage.getItem('aoiro-auth-token'),
+          session: localStorageSession ? 'present' : 'missing',
+          parsed: localStorageSession ? JSON.parse(localStorageSession) : null
+        },
+        cookies: {
+          count: Object.keys(cookies).length,
+          keys: Object.keys(cookies),
+          authCookies: Object.keys(cookies).filter(key => key.includes('auth') || key.includes('supabase'))
+        },
+        context: {
+          hasUser: !!user,
+          hasSession: !!session,
+          userEmail: user?.email,
+          sessionUser: session?.user?.email
         }
       };
       
-      setSessionInfo(`Session Check Results:\n\n${JSON.stringify(info, null, 2)}`);
+      console.log('Session debug data:', debugData);
+      setDebugInfo(JSON.stringify(debugData, null, 2));
       
     } catch (error: any) {
-      setSessionInfo(`Exception Error: ${error.message}\n\nFull Error: ${JSON.stringify(error, null, 2)}`);
+      console.error('❌ Session check failed:', error);
+      setDebugInfo(`Session check error: ${error.message}\n\nFull error: ${JSON.stringify(error, null, 2)}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const refreshSession = async () => {
+  const clearAllData = async () => {
     setLoading(true);
-    setSessionInfo("");
+    setDebugInfo("");
     
     try {
-      console.log('🔄 Refreshing session...');
+      console.log('🧹 Clearing all session data...');
       
-      const { data, error } = await supabase.auth.refreshSession();
+      // Supabaseセッションをクリア
+      await supabase.auth.signOut();
       
-      if (error) {
-        setSessionInfo(`Refresh Error: ${error.message}\n\nError Details: ${JSON.stringify(error, null, 2)}`);
-      } else {
-        setSessionInfo(`Session Refreshed Successfully:\n\n${JSON.stringify(data, null, 2)}`);
+      // ローカルストレージをクリア
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('aoiro-auth-token');
+        localStorage.removeItem('admin');
+        
+        // 認証関連のクッキーをクリア
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
       }
+      
+      setDebugInfo("All session data cleared successfully");
+      
     } catch (error: any) {
-      setSessionInfo(`Refresh Exception: ${error.message}\n\nFull Error: ${JSON.stringify(error, null, 2)}`);
+      console.error('❌ Clear data failed:', error);
+      setDebugInfo(`Clear data error: ${error.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  const clearSession = async () => {
+  const testGoogleOAuth = async () => {
+    setLoading(true);
+    setDebugInfo("");
+    
     try {
-      await supabase.auth.signOut();
-      setSessionInfo("Session cleared successfully");
+      console.log('🧪 Testing Google OAuth...');
+      
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('Redirect URL:', redirectUrl);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
+        },
+      });
+      
+      if (error) {
+        console.error('❌ Google OAuth error:', error);
+        setDebugInfo(`Google OAuth Error: ${error.message}\n\nError Details: ${JSON.stringify(error, null, 2)}`);
+      } else {
+        console.log('✅ Google OAuth initiated successfully');
+        setDebugInfo(`Google OAuth initiated successfully\n\nData: ${JSON.stringify(data, null, 2)}`);
+      }
+      
     } catch (error: any) {
-      setSessionInfo(`Clear Session Error: ${error.message}`);
+      console.error('❌ Test failed:', error);
+      setDebugInfo(`Test error: ${error.message}\n\nFull error: ${JSON.stringify(error, null, 2)}`);
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    checkSessionStatus();
+  }, []);
 
   return (
     <Container component="main" maxWidth="md" sx={{ pt: 8 }}>
@@ -102,73 +164,68 @@ export default function DebugSessionPage() {
           }}
         >
           <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
-            セッション状態デバッグ
+            セッション診断
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={3}>
-            認証セッションの詳細を確認します
+            セッション設定の問題を診断します
           </Typography>
 
           <Box sx={{ width: '100%', mb: 3 }}>
             <Button
               fullWidth
               variant="contained"
-              onClick={checkSession}
+              onClick={checkSessionStatus}
               disabled={loading}
               sx={{ mb: 2 }}
             >
-              {loading ? 'セッション確認中...' : 'セッション確認'}
+              {loading ? '診断中...' : 'セッション状態確認'}
             </Button>
             
             <Button
               fullWidth
               variant="outlined"
-              onClick={refreshSession}
+              onClick={clearAllData}
               disabled={loading}
               sx={{ mb: 2 }}
             >
-              セッション更新
+              全データクリア
             </Button>
             
             <Button
               fullWidth
               variant="outlined"
-              onClick={clearSession}
+              onClick={testGoogleOAuth}
+              disabled={loading}
               sx={{ mb: 2 }}
             >
-              セッションクリア
+              Google OAuth テスト
             </Button>
           </Box>
 
-          {sessionInfo && (
+          {debugInfo && (
             <Alert severity="info" sx={{ width: '100%', mb: 2 }}>
               <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}>
-                {sessionInfo}
+                {debugInfo}
               </Typography>
             </Alert>
           )}
 
-          <Box sx={{ width: '100%', mt: 2 }}>
-            <Typography variant="h6" mb={2}>
-              現在の認証状態
+          <Divider sx={{ width: '100%', my: 2 }} />
+          
+          <Typography variant="h6" mb={2}>
+            現在の状態
+          </Typography>
+          
+          <Box sx={{ width: '100%', textAlign: 'left' }}>
+            <Typography variant="body2" color="text.secondary">
+              <strong>認証コンテキスト:</strong>
+              <br />
+              • ユーザー: {user ? user.email : 'なし'}
+              <br />
+              • セッション: {session ? 'あり' : 'なし'}
+              <br />
+              • ローディング: {loading ? 'はい' : 'いいえ'}
             </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={15}
-              value={JSON.stringify({
-                user: user,
-                session: session,
-                loading: authLoading,
-                localStorage: {
-                  admin: typeof window !== 'undefined' ? localStorage.getItem('admin') : null,
-                  aoiroAuthToken: typeof window !== 'undefined' ? localStorage.getItem('aoiro-auth-token') : null,
-                }
-              }, null, 2)}
-              InputProps={{
-                readOnly: true,
-              }}
-              sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
-            />
           </Box>
         </Box>
       </Card>

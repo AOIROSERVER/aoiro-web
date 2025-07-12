@@ -88,6 +88,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           currentPath: window.location.pathname
         });
         
+        // セッションの詳細ログ
+        if (session) {
+          console.log('Session details:', {
+            accessToken: session.access_token ? 'present' : 'missing',
+            refreshToken: session.refresh_token ? 'present' : 'missing',
+            expiresAt: session.expires_at,
+            tokenType: session.token_type,
+            user: {
+              id: session.user.id,
+              email: session.user.email,
+              provider: session.user.app_metadata?.provider
+            }
+          });
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -99,6 +114,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.removeItem('admin');
           console.log('✅ User signed in successfully:', session.user.email);
           
+          // セッションをローカルストレージに保存
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('aoiro-auth-token', JSON.stringify(session));
+              console.log('💾 Session saved to localStorage');
+            } catch (error) {
+              console.error('❌ Error saving session to localStorage:', error);
+            }
+          }
+          
           // 認証成功後のリダイレクト
           if (window.location.pathname === '/') {
             console.log('🔄 Redirecting to train-status from home page');
@@ -109,9 +134,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null);
           setUser(null);
           setIsAdmin(false);
+          
+          // ローカルストレージからセッションを削除
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.removeItem('aoiro-auth-token');
+              console.log('🧹 Session removed from localStorage');
+            } catch (error) {
+              console.error('❌ Error removing session from localStorage:', error);
+            }
+          }
+          
           router.push("/login");
         } else if (event === "TOKEN_REFRESHED") {
           console.log('🔄 Token refreshed');
+          
+          // 更新されたセッションをローカルストレージに保存
+          if (session && typeof window !== 'undefined') {
+            try {
+              localStorage.setItem('aoiro-auth-token', JSON.stringify(session));
+              console.log('💾 Refreshed session saved to localStorage');
+            } catch (error) {
+              console.error('❌ Error saving refreshed session to localStorage:', error);
+            }
+          }
         } else if (event === "USER_UPDATED") {
           console.log('🔄 User updated');
         }
