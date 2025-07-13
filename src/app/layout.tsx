@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Header from "./Header";
 import ClientThemeProvider from "./ClientThemeProvider";
 import { AuthProvider } from "../contexts/AuthContext";
+import Footer from "./Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,7 +19,10 @@ export default function RootLayout({ children }: { children: any }) {
         <ClientThemeProvider>
           <AuthProvider>
             <Header />
-            {children}
+            <main style={{ minHeight: 'calc(100vh - 56px - 120px)' }}>
+              {children}
+            </main>
+            <Footer />
           </AuthProvider>
         </ClientThemeProvider>
       </body>

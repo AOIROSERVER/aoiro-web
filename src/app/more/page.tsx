@@ -269,10 +269,6 @@ export default function MorePage() {
         </Grid>
       </Grid>
 
-      {/* フッター */}
-      <Box textAlign="center" color="text.secondary" mt={4}>
-        <Typography variant="body2">© 2024 AOIRO SERVER</Typography>
-      </Box>
     </Box>
   );
 } 

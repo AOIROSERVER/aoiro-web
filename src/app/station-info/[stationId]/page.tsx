@@ -200,21 +200,6 @@ export default function StationDetailPage() {
         <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><DirectionsCar sx={{ mr: 1, color: 'success.main' }} />駅レンタカー</Typography>
         <Typography>駅前ロータリー</Typography>
       </Paper>
-      {/* フッター */}
-      <Box sx={{ background: '#05004c', color: '#fff', py: 4, mt: 6 }}>
-        <Box sx={{ maxWidth: 900, mx: 'auto', textAlign: 'center' }}>
-          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 2, mb: 2 }}>
-            <Box sx={{ borderLeft: '2px solid #fff', height: 20, mx: 1 }} />
-            <Link href="#" color="inherit" underline="hover" sx={{ fontSize: 16, fontWeight: 400 }}>プライバシーポリシー</Link>
-            <Box sx={{ borderLeft: '2px solid #fff', height: 20, mx: 1 }} />
-            <Link href="#" color="inherit" underline="hover" sx={{ fontSize: 16, fontWeight: 400 }}>お問い合わせ</Link>
-            <Box sx={{ borderLeft: '2px solid #fff', height: 20, mx: 1 }} />
-            <Link href="#" color="inherit" underline="hover" sx={{ fontSize: 16, fontWeight: 400 }}>提供クレジット</Link>
-            <Box sx={{ borderLeft: '2px solid #fff', height: 20, mx: 1 }} />
-          </Box>
-          <Typography sx={{ fontSize: 18, fontWeight: 400, mt: 1 }}>Copyright © 2024 AOIROSERVER All Rights Reserved.</Typography>
-        </Box>
-      </Box>
     </Box>
   );
 } 
