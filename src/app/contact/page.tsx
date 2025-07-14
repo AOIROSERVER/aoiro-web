@@ -256,7 +256,7 @@ export default function ContactPage() {
             <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
               <HCaptcha
                 ref={captchaRef}
-                sitekey="10000000-ffff-ffff-ffff-000000000001"
+                sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY || "10000000-ffff-ffff-ffff-000000000001"}
                 onVerify={handleCaptchaVerify}
                 onExpire={handleCaptchaExpire}
                 onError={handleCaptchaError}
