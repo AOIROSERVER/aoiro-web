@@ -3,7 +3,9 @@ import { Inter } from "next/font/google";
 import Header from "./Header";
 import ClientThemeProvider from "./ClientThemeProvider";
 import { AuthProvider } from "../contexts/AuthContext";
-import Footer from "./Footer";
+import dynamic from "next/dynamic";
+
+const Footer = dynamic(() => import("./Footer"), { ssr: false });
 
 const inter = Inter({ subsets: ["latin"] });
 
