@@ -4,12 +4,19 @@ import nodemailer from 'nodemailer';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { contactType, name, email, device, subject, message } = body;
+    const { contactType, name, email, device, subject, message, captchaToken } = body;
 
     // バリデーション
     if (!contactType || !name || !email || !device || !subject || !message) {
       return NextResponse.json(
         { error: '必須項目が不足しています' },
+        { status: 400 }
+      );
+    }
+
+    if (!captchaToken) {
+      return NextResponse.json(
+        { error: 'hCaptchaの認証が必要です' },
         { status: 400 }
       );
     }
@@ -21,6 +28,37 @@ export async function POST(request: NextRequest) {
         { error: '正しいメールアドレスを入力してください' },
         { status: 400 }
       );
+    }
+
+    // hCaptchaの検証（本番環境では実際のhCaptcha APIを使用）
+    // 開発環境では簡易チェック
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        const hcaptchaResponse = await fetch('https://hcaptcha.com/siteverify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            secret: process.env.HCAPTCHA_SECRET_KEY || '',
+            response: captchaToken,
+          }),
+        });
+
+        const hcaptchaResult = await hcaptchaResponse.json();
+        if (!hcaptchaResult.success) {
+          return NextResponse.json(
+            { error: 'hCaptchaの認証に失敗しました' },
+            { status: 400 }
+          );
+        }
+      } catch (error) {
+        console.error('hCaptcha検証エラー:', error);
+        return NextResponse.json(
+          { error: 'hCaptchaの検証に失敗しました' },
+          { status: 500 }
+        );
+      }
     }
 
     // メール送信設定

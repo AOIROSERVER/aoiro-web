@@ -1,8 +1,9 @@
 "use client";
 import { Box, Typography, TextField, Button, Alert, Paper, Divider, FormControl, InputLabel, Select, MenuItem, FormControlLabel, Checkbox } from "@mui/material";
 import { ArrowBack, Email, Send, Warning } from "@mui/icons-material";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import HCaptcha from "@hcaptcha/react-hcaptcha";
 
 export default function ContactPage() {
   const [contactType, setContactType] = useState("");
@@ -12,14 +13,21 @@ export default function ContactPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [agreement, setAgreement] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<HCaptcha>(null);
   const router = useRouter();
 
   const handleSend = async () => {
     if (!contactType || !name || !email || !device || !subject || !message || !agreement) {
       setError("全ての必須項目を入力し、同意事項にチェックしてください");
+      return;
+    }
+
+    if (!captchaToken) {
+      setError("hCaptchaの認証を完了してください");
       return;
     }
 
@@ -46,7 +54,8 @@ export default function ContactPage() {
           email,
           device,
           subject,
-          message
+          message,
+          captchaToken
         }),
       });
 
@@ -62,6 +71,19 @@ export default function ContactPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCaptchaVerify = (token: string) => {
+    setCaptchaToken(token);
+  };
+
+  const handleCaptchaExpire = () => {
+    setCaptchaToken("");
+  };
+
+  const handleCaptchaError = () => {
+    setError("hCaptchaの認証に失敗しました。もう一度お試しください。");
+    setCaptchaToken("");
   };
 
   return (
@@ -212,9 +234,9 @@ export default function ContactPage() {
                 本フォームの送信をもって、以下の内容に同意いただいたものとみなします：
               </Typography>
               <Box component="ul" sx={{ color: '#856404', pl: 3, mb: 2, fontSize: '14px' }}>
-                <li>提出した情報が正確かつ事実に基づくものであること</li>
-                <li>提出された情報に基づいて対応を行うこと</li>
-                <li>提出された情報は対応以外の目的には使用されないこと</li>
+                <li>本フォームは、当社への質問や要望を送信するためのもので、送信された情報はサービス向上のために使用されます。</li>
+                <li>他者を誹謗中傷する内容、不正行為、営業活動など、当社が不適切と判断する内容の送信は禁止です。</li>
+                <li>提供された個人情報は、当社のプライバシーポリシーに従って適切に管理されます。</li>
                 <li>プライバシーポリシーに同意すること</li>
               </Box>
               <FormControlLabel
@@ -230,6 +252,18 @@ export default function ContactPage() {
               />
             </Paper>
 
+            {/* hCaptcha */}
+            <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+              <HCaptcha
+                ref={captchaRef}
+                sitekey="10000000-ffff-ffff-ffff-000000000001"
+                onVerify={handleCaptchaVerify}
+                onExpire={handleCaptchaExpire}
+                onError={handleCaptchaError}
+                theme="light"
+              />
+            </Box>
+
             {/* 送信ボタン */}
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button
@@ -242,7 +276,7 @@ export default function ContactPage() {
               <Button
                 variant="contained"
                 onClick={handleSend}
-                disabled={loading}
+                disabled={loading || !agreement || !captchaToken}
                 startIcon={loading ? null : <Send />}
                 sx={{ 
                   minWidth: 120,
