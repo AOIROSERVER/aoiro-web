@@ -65,7 +65,7 @@ export default function ContactPage() {
         throw new Error(result.error || '送信に失敗しました');
       }
 
-      setSent(true);
+    setSent(true);
     } catch (error) {
       setError(error instanceof Error ? error.message : "送信に失敗しました。もう一度お試しください。");
     } finally {
@@ -121,7 +121,7 @@ export default function ContactPage() {
           ご質問やご要望がございましたら、以下のフォームにご記入ください
         </Typography>
 
-        {sent ? (
+      {sent ? (
           <Paper sx={{ p: 4, textAlign: 'center' }}>
             <Alert severity="success" sx={{ mb: 2 }}>
               お問い合わせを送信しました！

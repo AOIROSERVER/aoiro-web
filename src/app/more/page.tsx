@@ -23,6 +23,7 @@ import {
   InfoOutlined,
   Login,
   Logout,
+  Cloud,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -261,12 +262,13 @@ export default function MorePage() {
           </Button>
         </Grid>
         <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<Info sx={{ color: "#E74C3C" }} />} sx={{ borderRadius: 2 }}
-            onClick={() => router.push('/test-auth')}
+          <Button fullWidth variant="outlined" startIcon={<Cloud sx={{ color: "#4A90E2" }} />} sx={{ borderRadius: 2 }}
+            onClick={() => router.push('/status')}
           >
-            認証テスト
+            稼働状況
           </Button>
         </Grid>
+
       </Grid>
 
     </Box>

@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: any }) {
         <ClientThemeProvider>
           <AuthProvider>
             <Header />
-            <main style={{ minHeight: 'calc(100vh - 56px - 120px)' }}>
+            <main>
               {children}
             </main>
             <Footer />

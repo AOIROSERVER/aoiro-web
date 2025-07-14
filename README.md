@@ -28,6 +28,10 @@ EMAIL_PASS=your_gmail_app_password
 NEXT_PUBLIC_HCAPTCHA_SITE_KEY=your_hcaptcha_site_key
 HCAPTCHA_SECRET_KEY=your_hcaptcha_secret_key
 
+# Minecraftサーバー設定
+MINECRAFT_SERVER_HOST=your_minecraft_server_host
+MINECRAFT_SERVER_PORT=your_minecraft_server_port
+
 # その他の設定
 NEXT_PUBLIC_SITE_URL=your_site_url
 ```
@@ -53,7 +57,16 @@ NEXT_PUBLIC_SITE_URL=your_site_url
 - Site Key: `10000000-ffff-ffff-ffff-000000000001`
 - Secret Key: `0x0000000000000000000000000000000000000000`
 
-### 5. 開発サーバーの起動
+### 5. Minecraftサーバー設定
+
+運行状況ページでMinecraftサーバーの稼働状況を表示する機能があります：
+
+1. `MINECRAFT_SERVER_HOST`にサーバーのIPアドレスを設定
+2. `MINECRAFT_SERVER_PORT`にサーバーのポート番号を設定
+
+**注意**: セキュリティのため、実際のサーバー情報は環境変数で管理し、Gitにコミットしないでください。
+
+### 6. 開発サーバーの起動
 
 ```bash
 npm run dev

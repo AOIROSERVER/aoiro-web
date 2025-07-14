@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { label: '運行情報', path: '/train-status' },
   { label: '乗換案内', path: '/transfer' },
   { label: '道路状況', path: '/road-status' },
+  { label: '稼働状況', path: '/status' },
   { label: 'その他', path: '/more' },
 ];
 

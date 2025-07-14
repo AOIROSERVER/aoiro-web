@@ -1,11 +1,12 @@
 "use client";
 import { Box, Card, Typography, IconButton, CircularProgress } from "@mui/material";
-import { Train, Settings } from "@mui/icons-material";
+import { Train, Settings, Computer, SignalCellular4Bar, SignalCellular0Bar } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import dynamic from 'next/dynamic';
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { subscribeUserToPush } from '../../lib/pushNotification';
+import { FaUsers, FaServer } from 'react-icons/fa';
 
 // 路線の表示順序を定義
 const lineOrder = [
@@ -80,7 +81,92 @@ function StatusIcon({ status }: { status: string }) {
 export default function TrainStatusPage() {
   const router = useRouter();
   const [lines, setLines] = useState<any[]>([]);
+  const [serverStatus, setServerStatus] = useState<{ 
+    online: boolean; 
+    responseTime: number | null;
+    playerCount?: number;
+    maxPlayers?: number;
+    version?: string | null;
+    motd?: string | null;
+    gamemode?: string | null;
+    map?: string | null;
+  }>({ online: false, responseTime: null });
   const { loading, isAdmin, user, session } = useAuth();
+
+  // サーバー状況をチェックする関数
+  const checkServerStatus = async () => {
+    const startTime = Date.now();
+    try {
+      // プロキシAPIを使用してMinecraft Bedrockサーバーのステータスをチェック
+      const response = await fetch(`/api/minecraft-status`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // タイムアウトを10秒に設定（Minecraftサーバーは応答が遅い場合がある）
+        signal: AbortSignal.timeout(10000)
+      });
+      
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('MinecraftサーバーAPIレスポンス:', data);
+        
+        // Minecraftサーバーがオンラインかどうかをチェック
+        if (data.online) {
+          console.log('✅ サーバーはオンラインです');
+          setServerStatus({ 
+            online: true, 
+            responseTime,
+            playerCount: data.players?.online || 0,
+            maxPlayers: data.players?.max || 0,
+            version: data.version || 'Unknown',
+            motd: data.motd?.clean?.[0] || 'AOIROSERVER',
+            gamemode: data.gamemode || 'Unknown',
+            map: data.map?.clean || 'Unknown'
+          });
+        } else {
+          console.log('❌ サーバーはオフラインです');
+          setServerStatus({ 
+            online: false, 
+            responseTime: null,
+            playerCount: 0,
+            maxPlayers: 0,
+            version: null,
+            motd: null,
+            gamemode: null,
+            map: null
+          });
+        }
+      } else {
+        console.log('❌ APIレスポンスが正常ではありません');
+        setServerStatus({ 
+          online: false, 
+          responseTime: null,
+          playerCount: 0,
+          maxPlayers: 0,
+          version: null,
+          motd: null,
+          gamemode: null,
+          map: null
+        });
+      }
+    } catch (error) {
+      console.error('Minecraftサーバー接続エラー:', error);
+      setServerStatus({ 
+        online: false, 
+        responseTime: null,
+        playerCount: 0,
+        maxPlayers: 0,
+        version: null,
+        motd: null,
+        gamemode: null,
+        map: null
+      });
+    }
+  };
 
   // 認証状態の確認（デバッグ用に一時的に無効化）
   useEffect(() => {
@@ -168,6 +254,13 @@ export default function TrainStatusPage() {
     fetchLines();
   }, []);
 
+  // サーバー状況を定期的にチェック
+  useEffect(() => {
+    checkServerStatus();
+    const interval = setInterval(checkServerStatus, 300000); // 5分（300秒）ごとにチェック
+    return () => clearInterval(interval);
+  }, []);
+
   // デバッグ用：ローディング状態も一時的に無効化
   /*
   if (loading) {
@@ -176,7 +269,7 @@ export default function TrainStatusPage() {
   */
 
   return (
-    <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
       <Box sx={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -192,6 +285,7 @@ export default function TrainStatusPage() {
           </IconButton>
         )}
       </Box>
+
       {/* 路線図カード */}
       <Box sx={{ px: 2, mt: 2, mb: 2 }}>
         <Box sx={{
@@ -237,7 +331,7 @@ export default function TrainStatusPage() {
         </Box>
       </Box>
       {/* 路線リスト */}
-      <Box sx={{ px: 2, pb: 2 }}>
+      <Box sx={{ px: 2, pb: 2, flex: 1 }}>
         {lines.map((line, idx) => {
           // デバッグ用：色の値を計算
           let finalColor = line.color || defaultLineColors[line.id] || '#1a237e';
