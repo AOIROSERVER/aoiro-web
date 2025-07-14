@@ -1,9 +1,10 @@
 "use client";
-import { Box, Typography, IconButton, Button, Paper, Select, MenuItem, TextField, Collapse } from "@mui/material";
+import { Box, Typography, IconButton, Button, Paper, Select, MenuItem, TextField, Collapse, Alert } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { SupabaseNotification } from "../../../components/SupabaseNotification";
@@ -51,6 +52,7 @@ export default function TrainStatusManagement() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   // 路線を定義された順序でソートする関数
   const sortLines = (linesData: any[]) => {
@@ -120,9 +122,39 @@ export default function TrainStatusManagement() {
       setEditValues({});
       // 保存後に再取得（ソート済み）
       await fetchLines();
+      setMessage({ type: 'success', text: '運行情報を保存しました' });
     } catch (e) {
       console.error('Error saving train status:', e);
-      alert('運行情報の保存に失敗しました。');
+      setMessage({ type: 'error', text: '運行情報の保存に失敗しました' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendTestNotification = async (line: any) => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/test-train-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lineId: line.id,
+          lineName: line.name,
+          status: line.status,
+          details: line.detail || ''
+        }),
+      });
+
+      if (response.ok) {
+        setMessage({ type: 'success', text: `${line.name}のテスト通知を送信しました` });
+      } else {
+        throw new Error('テスト通知の送信に失敗しました');
+      }
+    } catch (error) {
+      console.error('テスト通知送信エラー:', error);
+      setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
     } finally {
       setLoading(false);
     }
@@ -142,6 +174,15 @@ export default function TrainStatusManagement() {
           <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20 }}>運行状況管理</Typography>
         </Box>
       </Box>
+
+      {/* メッセージ表示 */}
+      {message && (
+        <Box sx={{ px: 2, py: 1 }}>
+          <Alert severity={message.type} onClose={() => setMessage(null)}>
+            {message.text}
+          </Alert>
+        </Box>
+      )}
       {/* 路線リスト */}
       <Box sx={{ px: 2, pt: 2 }}>
         {lines.map((line) => (
@@ -154,7 +195,18 @@ export default function TrainStatusManagement() {
                   <IconButton color="inherit" onClick={handleCancel}><CloseIcon /></IconButton>
                 </>
               ) : (
-                <Button variant="outlined" startIcon={<EditIcon />} onClick={() => handleEdit(line)}>編集</Button>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button 
+                    variant="outlined" 
+                    size="small"
+                    startIcon={<NotificationsIcon />} 
+                    onClick={() => sendTestNotification(line)}
+                    disabled={loading}
+                  >
+                    テスト通知
+                  </Button>
+                  <Button variant="outlined" startIcon={<EditIcon />} onClick={() => handleEdit(line)}>編集</Button>
+                </Box>
               )}
             </Box>
             <Collapse in={editId === line.id}>

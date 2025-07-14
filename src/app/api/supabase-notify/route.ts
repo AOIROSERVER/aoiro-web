@@ -3,7 +3,7 @@ import { supabase } from '../../../lib/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { lineId, lineName, status, details } = await request.json();
+    const { lineId, lineName, status, details, isAnonymous = false, email } = await request.json();
 
     // 通知メッセージの作成
     const notificationMessage = {
@@ -21,12 +21,35 @@ export async function POST(request: Request) {
       }
     };
 
-    // アクティブな通知トークンを取得
-    const { data: tokens, error: tokenError } = await supabase
-      .from('notification_tokens')
-      .select('*')
-      .eq('is_active', true)
-      .eq('device_type', 'web');
+    let tokens = [];
+    let tokenError = null;
+
+    if (isAnonymous) {
+      // 匿名ユーザー用のトークンを取得
+      const { data: anonymousTokens, error: anonymousTokenError } = await supabase
+        .from('anonymous_notification_tokens')
+        .select('*')
+        .eq('is_active', true)
+        .eq('device_type', 'web');
+
+      if (email) {
+        // 特定のメールアドレスのみに送信
+        tokens = anonymousTokens?.filter(token => token.email === email) || [];
+      } else {
+        tokens = anonymousTokens || [];
+      }
+      tokenError = anonymousTokenError;
+    } else {
+      // ログインユーザー用のトークンを取得
+      const { data: userTokens, error: userTokenError } = await supabase
+        .from('notification_tokens')
+        .select('*')
+        .eq('is_active', true)
+        .eq('device_type', 'web');
+
+      tokens = userTokens || [];
+      tokenError = userTokenError;
+    }
 
     if (tokenError) {
       console.error('トークン取得エラー:', tokenError);
@@ -45,19 +68,36 @@ export async function POST(request: Request) {
         // 注意: 実際の実装では、VAPIDキーを使用してプッシュ通知を送信する必要があります
         // ここでは簡易版として、通知履歴に保存するだけにします
         
-        // 通知履歴に保存
-        const { error: historyError } = await supabase
-          .from('notification_history')
-          .insert({
-            user_id: token.user_id,
-            line_id: lineId,
-            line_name: lineName,
-            status: status,
-            message: notificationMessage.body
-          });
+        if (isAnonymous) {
+          // 匿名ユーザー用の通知履歴に保存
+          const { error: historyError } = await supabase
+            .from('anonymous_email_notification_history')
+            .insert({
+              email: token.email,
+              line_id: lineId,
+              line_name: lineName,
+              status: status,
+              message: notificationMessage.body
+            });
 
-        if (historyError) {
-          console.error('通知履歴保存エラー:', historyError);
+          if (historyError) {
+            console.error('匿名ユーザー通知履歴保存エラー:', historyError);
+          }
+        } else {
+          // ログインユーザー用の通知履歴に保存
+          const { error: historyError } = await supabase
+            .from('notification_history')
+            .insert({
+              user_id: token.user_id,
+              line_id: lineId,
+              line_name: lineName,
+              status: status,
+              message: notificationMessage.body
+            });
+
+          if (historyError) {
+            console.error('通知履歴保存エラー:', historyError);
+          }
         }
 
         return { success: true, tokenId: token.id };

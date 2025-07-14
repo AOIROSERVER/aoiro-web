@@ -1,5 +1,5 @@
 "use client";
-import { Box, Typography, Switch, FormControlLabel, Button, Divider } from "@mui/material";
+import { Box, Typography, Switch, FormControlLabel, Button, Divider, Paper } from "@mui/material";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Email, Notifications } from "@mui/icons-material";
@@ -18,6 +18,17 @@ export default function NotificationSettingsPage() {
   return (
     <Box sx={{ p: 3, maxWidth: 480, mx: "auto", backgroundColor: '#fff', minHeight: '100vh' }}>
       <Typography variant="h5" fontWeight="bold" mb={2} color="#222">通知設定</Typography>
+      
+      <Paper sx={{ p: 2, mb: 3, bgcolor: '#f8f9fa' }}>
+        <Typography variant="body2" color="text.secondary">
+          列車の遅延や運転見合わせなどの情報をメールで受け取ることができます。
+          メールアドレスを登録するだけで簡単に設定できます。
+        </Typography>
+        <Typography variant="body2" color="primary" sx={{ mt: 1, fontWeight: 'bold' }}>
+          💡 推奨: 上のボタンからメールアドレスを登録してください
+        </Typography>
+      </Paper>
+      
       <Divider sx={{ mb: 2 }} />
       
       <FormControlLabel
@@ -46,12 +57,31 @@ export default function NotificationSettingsPage() {
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Email />}
+          onClick={() => router.push('/settings/anonymous-email-notification')}
+          sx={{ justifyContent: 'flex-start', p: 2 }}
+        >
+          📧 メールアドレスを登録して遅延情報を受け取る
+        </Button>
+        
+        <Button
           variant="outlined"
           startIcon={<Notifications />}
           onClick={() => router.push('/train-status/management')}
           sx={{ justifyContent: 'flex-start', p: 2 }}
         >
-          プッシュ通知設定
+          プッシュ通知設定（ログイン必要）
+        </Button>
+        
+        <Button
+          variant="outlined"
+          startIcon={<Notifications />}
+          onClick={() => router.push('/settings/anonymous-push-notification')}
+          sx={{ justifyContent: 'flex-start', p: 2 }}
+        >
+          プッシュ通知設定（ログイン不要）
         </Button>
         
         <Button
@@ -60,7 +90,16 @@ export default function NotificationSettingsPage() {
           onClick={() => router.push('/settings/email-notification')}
           sx={{ justifyContent: 'flex-start', p: 2 }}
         >
-          メール通知設定
+          メール通知設定（ログイン必要）
+        </Button>
+        
+        <Button
+          variant="outlined"
+          startIcon={<Notifications />}
+          onClick={() => router.push('/settings/anonymous-notification-management')}
+          sx={{ justifyContent: 'flex-start', p: 2 }}
+        >
+          匿名通知設定管理
         </Button>
       </Box>
       

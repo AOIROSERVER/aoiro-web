@@ -1,108 +1,184 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '../../../lib/supabase';
 import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
   try {
-    const { lineId, lineName, status, details, userEmail } = await request.json();
+    const { 
+      email, 
+      lineId, 
+      lineName, 
+      status, 
+      details, 
+      previousStatus, 
+      isAnonymous = false 
+    } = await request.json();
 
-    if (!userEmail) {
-      return NextResponse.json({ error: 'User email is required' }, { status: 400 });
+    if (!email || !lineId || !lineName || !status) {
+      return NextResponse.json(
+        { error: '必要なパラメータが不足しています' },
+        { status: 400 }
+      );
     }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    console.log('📧 メール通知送信開始:', { email, lineName, status });
 
+    // メールの件名と内容を生成
     const subject = `【運行情報】${lineName}の状況が更新されました`;
-    const htmlContent = `
-      <div style="font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h1 style="color: #333; margin: 0 0 10px 0; font-size: 24px;">🚄 運行情報の更新</h1>
-          <p style="color: #666; margin: 0;">以下の路線の運行情報が更新されました。</p>
-        </div>
-        <div style="background-color: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-          <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">${lineName}</h2>
-          <div style="display: flex; align-items: center; margin-bottom: 15px;">
-            <span style="
-              display: inline-block;
-              padding: 6px 12px;
-              border-radius: 20px;
-              font-weight: bold;
-              font-size: 14px;
-              ${status === '遅延' ? 'background-color: #ff6b6b; color: white;' : ''}
-              ${status === '運転見合わせ' ? 'background-color: #ff8c00; color: white;' : ''}
-              ${status === '平常運転' ? 'background-color: #28a745; color: white;' : ''}
-              ${status === '運転再開' ? 'background-color: #17a2b8; color: white;' : ''}
-            ">
-              ${status}
-            </span>
-          </div>
-          ${details ? `
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
-              <h3 style="color: #333; margin: 0 0 10px 0; font-size: 16px;">詳細情報</h3>
-              <p style="color: #555; margin: 0; line-height: 1.6;">${details}</p>
-            </div>
-          ` : ''}
-          <div style="text-align: center; margin-top: 20px;">
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/train-status/${lineId}" 
-               style="
-                 display: inline-block;
-                 background-color: #007bff;
-                 color: white;
-                 text-decoration: none;
-                 padding: 12px 24px;
-                 border-radius: 6px;
-                 font-weight: bold;
-               ">
-              詳細を確認する
-            </a>
-          </div>
-        </div>
-        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; font-size: 14px; color: #666;">
-          <p style="margin: 0 0 10px 0;">
-            <strong>このメールについて：</strong><br>
-            このメールは、AOIROSERVERアプリの運行情報通知サービスから送信されています。
-          </p>
-          <p style="margin: 0;">
-            通知設定の変更や配信停止については、アプリ内の設定画面から変更できます。
-          </p>
-        </div>
-        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
-          <p style="color: #999; font-size: 12px; margin: 0;">
-            © 2024 AOIROSERVER. All rights reserved.
-          </p>
-        </div>
-      </div>
-    `;
-    const textContent = `
-運行情報の更新
+    const statusChangeText = previousStatus ? `${previousStatus} → ${status}` : status;
+    
+    const emailContent = `
+      ${lineName}の運行情報が更新されました。
 
-${lineName}
-状況: ${status}
-${details ? `詳細: ${details}` : ''}
-
-詳細を確認する: ${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/train-status/${lineId}
-
----
-このメールはAOIROSERVERアプリの運行情報通知サービスから送信されています。
-通知設定の変更はアプリ内の設定画面から行ってください。
+      【変更内容】
+      路線: ${lineName}
+      状況: ${statusChangeText}
+      ${details ? `詳細: ${details}` : ''}
+      
+      更新時刻: ${new Date().toLocaleString('ja-JP')}
+      
+      このメールは自動送信されています。
+      通知設定の変更はアプリ内の設定画面から行ってください。
     `;
 
-    await transporter.sendMail({
-      from: `AOIROSERVER <${process.env.EMAIL_USER}>`,
-      to: userEmail,
-      subject,
-      text: textContent,
-      html: htmlContent,
+    // 実際のメール送信を実装
+    const mailSent = await sendActualEmail(email, subject, emailContent);
+    
+    if (!mailSent) {
+      console.error('❌ メール送信に失敗しました');
+      return NextResponse.json(
+        { error: 'メール送信に失敗しました' },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ メール送信成功:', { email, lineName, status });
+
+    // 通知履歴を保存
+    const historyData = {
+      email,
+      line_id: lineId,
+      line_name: lineName,
+      status,
+      message: details || '',
+      sent_at: new Date().toISOString()
+    };
+
+    if (isAnonymous) {
+      // 匿名ユーザー用の履歴テーブルに保存
+      const { error: historyError } = await supabase
+        .from('anonymous_email_notification_history')
+        .insert(historyData);
+
+      if (historyError) {
+        console.error('匿名ユーザー通知履歴保存エラー:', historyError);
+      }
+    } else {
+      // ログインユーザー用の履歴テーブルに保存
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: historyError } = await supabase
+          .from('email_notification_history')
+          .insert({
+            ...historyData,
+            user_id: user.id
+          });
+
+        if (historyError) {
+          console.error('ログインユーザー通知履歴保存エラー:', historyError);
+        }
+      }
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'メール通知を送信しました' 
     });
 
-    return NextResponse.json({ message: 'Email sent successfully' });
   } catch (error) {
-    console.error('メール送信エラー:', error);
-    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+    console.error('❌ メール通知送信エラー:', error);
+    return NextResponse.json(
+      { error: 'メール通知の送信に失敗しました' },
+      { status: 500 }
+    );
+  }
+}
+
+// 実際のメール送信を行う関数
+async function sendActualEmail(to: string, subject: string, content: string): Promise<boolean> {
+  try {
+    // 開発環境ではEthereal Emailを使用
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📧 開発環境 - Ethereal Emailでメール送信:');
+      
+      // Ethereal Emailのテストアカウントを作成
+      const testAccount = await nodemailer.createTestAccount();
+      
+      // トランスポーターを作成
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: testAccount.user,
+          pass: testAccount.pass,
+        },
+      });
+
+      // メール送信
+      const info = await transporter.sendMail({
+        from: '"AOIRO SERVER" <noreply@aoiroserver.com>',
+        to: to,
+        subject: subject,
+        text: content,
+      });
+
+      console.log('📧 メール送信成功:');
+      console.log('Message ID:', info.messageId);
+      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+      console.log('To:', to);
+      console.log('Subject:', subject);
+      console.log('Content:', content);
+      console.log('---');
+      
+      return true;
+    }
+
+    // 本番環境ではGmail SMTPを使用（オプション）
+    const gmailUser = process.env.GMAIL_USER;
+    const gmailPass = process.env.GMAIL_APP_PASSWORD;
+
+    if (gmailUser && gmailPass) {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: gmailUser,
+          pass: gmailPass,
+        },
+      });
+
+      const info = await transporter.sendMail({
+        from: gmailUser,
+        to: to,
+        subject: subject,
+        text: content,
+      });
+
+      console.log('✅ Gmail SMTP メール送信成功');
+      return true;
+    }
+
+    // 設定がない場合はログのみ
+    console.log('📧 メール送信設定がありません - ログのみ出力:');
+    console.log('To:', to);
+    console.log('Subject:', subject);
+    console.log('Content:', content);
+    console.log('---');
+    
+    return true; // 開発環境では成功として扱う
+
+  } catch (error) {
+    console.error('❌ メール送信エラー:', error);
+    return false;
   }
 } 

@@ -10,8 +10,10 @@ import {
   Divider,
   Link,
   Alert,
+  Fade,
+  Slide,
 } from "@mui/material";
-import { Email, Lock, Login as LoginIcon } from "@mui/icons-material";
+import { Email, Lock, Login as LoginIcon, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -45,6 +47,7 @@ const DiscordIcon = () => (
 function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -230,147 +233,367 @@ function LoginContent() {
   };
 
   return (
-    <Container component="main" maxWidth="xs" sx={{ pt: 8 }}>
-      <Card sx={{ p: 4, borderRadius: 3, boxShadow: 3 }}>
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
-            AOIROidにログイン
-          </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            アカウントにアクセスします
-          </Typography>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 4,
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%)',
+          zIndex: 0,
+        }
+      }}
+    >
+      <Container component="main" maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+        <Slide direction="up" in={true} timeout={800}>
+          <Card 
+            sx={{ 
+              p: 4, 
+              borderRadius: 4, 
+              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+              background: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb)',
+              }
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <Fade in={true} timeout={1000}>
+                <Box sx={{ textAlign: 'center', mb: 4 }}>
+                  <Typography 
+                    component="h1" 
+                    variant="h4" 
+                    fontWeight="bold" 
+                    mb={1}
+                    sx={{
+                      background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      fontSize: { xs: '1.75rem', sm: '2.125rem' }
+                    }}
+                  >
+                    AOIROidにログイン
+                  </Typography>
+                  <Typography 
+                    variant="body1" 
+                    color="text.secondary" 
+                    sx={{ 
+                      fontSize: '1.1rem',
+                      opacity: 0.8
+                    }}
+                  >
+                    アカウントを作成して、より便利に
+                  </Typography>
+                </Box>
+              </Fade>
 
-          {/* エラー表示 */}
-          {error && (
-            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-              <Typography variant="body2" component="div">
-                {error}
-              </Typography>
-              {error.includes('Google') && (
-                <Typography variant="caption" component="div" sx={{ mt: 1 }}>
-                  詳細なエラー情報を確認するには、ブラウザの開発者ツール（F12）のコンソールを確認してください。
-                </Typography>
+              {/* エラー表示 */}
+              {error && (
+                <Fade in={true} timeout={500}>
+                  <Alert 
+                    severity="error" 
+                    sx={{ 
+                      width: '100%', 
+                      mb: 3,
+                      borderRadius: 2,
+                      '& .MuiAlert-icon': {
+                        color: '#d32f2f'
+                      }
+                    }}
+                  >
+                    <Typography variant="body2" component="div">
+                      {error}
+                    </Typography>
+                    {error.includes('Google') && (
+                      <Typography variant="caption" component="div" sx={{ mt: 1 }}>
+                        詳細なエラー情報を確認するには、ブラウザの開発者ツール（F12）のコンソールを確認してください。
+                      </Typography>
+                    )}
+                  </Alert>
+                </Fade>
               )}
-            </Alert>
-          )}
-          
-          {/* 成功メッセージ表示 */}
-          {successMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{successMessage}</Alert>}
+              
+              {/* 成功メッセージ表示 */}
+              {successMessage && (
+                <Fade in={true} timeout={500}>
+                  <Alert 
+                    severity="success" 
+                    sx={{ 
+                      width: '100%', 
+                      mb: 3,
+                      borderRadius: 2
+                    }}
+                  >
+                    {successMessage}
+                  </Alert>
+                </Fade>
+              )}
 
-          {/* メール・パスワード入力 */}
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="email"
-            label="メールアドレス"
-            name="email"
-            autoComplete="email"
-            autoFocus
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
-            InputProps={{
-              startAdornment: <Email sx={{ color: "text.disabled", mr: 1 }} />,
-            }}
-          />
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            name="password"
-            label="パスワード"
-            type="password"
-            id="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
-            InputProps={{
-              startAdornment: <Lock sx={{ color: "text.disabled", mr: 1 }} />,
-            }}
-          />
+              {/* メール・パスワード入力 */}
+              <Fade in={true} timeout={1200}>
+                <Box sx={{ width: '100%', mb: 3 }}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    id="email"
+                    label="メールアドレス"
+                    name="email"
+                    autoComplete="email"
+                    autoFocus
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '&:hover fieldset': {
+                          borderColor: '#667eea',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#667eea',
+                        },
+                      },
+                    }}
+                    InputProps={{
+                      startAdornment: <Email sx={{ color: "#667eea", mr: 1 }} />,
+                    }}
+                  />
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="password"
+                    label="パスワード"
+                    type={showPassword ? "text" : "password"}
+                    id="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '&:hover fieldset': {
+                          borderColor: '#667eea',
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: '#667eea',
+                        },
+                      },
+                    }}
+                    InputProps={{
+                      startAdornment: <Lock sx={{ color: "#667eea", mr: 1 }} />,
+                      endAdornment: (
+                        <Button
+                          onClick={() => setShowPassword(!showPassword)}
+                          sx={{ minWidth: 'auto', p: 0.5 }}
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </Button>
+                      ),
+                    }}
+                  />
+                </Box>
+              </Fade>
 
-          {/* ログインボタン */}
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            onClick={handleLogin}
-            disabled={loading}
-            startIcon={<LoginIcon />}
-            sx={{ mt: 3, mb: 2, py: 1.5, bgcolor: "#4A90E2" }}
-          >
-            {loading ? 'ログイン中...' : 'ログイン'}
-          </Button>
+              {/* ログインボタン */}
+              <Fade in={true} timeout={1400}>
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  onClick={handleLogin}
+                  disabled={loading}
+                  startIcon={<LoginIcon />}
+                  sx={{ 
+                    mt: 2, 
+                    mb: 3, 
+                    py: 1.5, 
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                      boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+                      transform: 'translateY(-2px)',
+                    },
+                    '&:disabled': {
+                      background: 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {loading ? 'ログイン中...' : 'ログイン'}
+                </Button>
+              </Fade>
 
-          {/* ソーシャルログイン */}
-          <Divider sx={{ width: "100%", my: 2 }}>または</Divider>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => handleSocialLogin('google')}
-            disabled={loading}
-            startIcon={<GoogleIcon />}
-            sx={{ mb: 1.5 }}
-          >
-            Googleでログイン
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => handleSocialLogin('azure')}
-            disabled={loading}
-            startIcon={<MicrosoftIcon />}
-          >
-            Microsoftでログイン
-          </Button>
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => handleSocialLogin('discord')}
-            disabled={loading}
-            startIcon={<DiscordIcon />}
-            sx={{ mt: 1.5 }}
-          >
-            Discordでログイン
-          </Button>
-          {/* 管理者ログインボタン */}
-          <Button
-            fullWidth
-            variant="outlined"
-            color="secondary"
-            sx={{ mt: 1, mb: 2 }}
-            onClick={() => router.push('/admin-login')}
-          >
-            管理者ログイン
-          </Button>
+              {/* ソーシャルログイン */}
+              <Fade in={true} timeout={1600}>
+                <Box sx={{ width: '100%' }}>
+                  <Divider sx={{ width: "100%", my: 3, '&::before, &::after': { borderColor: 'rgba(0,0,0,0.1)' } }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ px: 2, bgcolor: 'background.paper' }}>
+                      または
+                    </Typography>
+                  </Divider>
+                  
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => handleSocialLogin('google')}
+                    disabled={loading}
+                    startIcon={<GoogleIcon />}
+                    sx={{ 
+                      mb: 2,
+                      borderRadius: 2,
+                      borderColor: '#db4437',
+                      color: '#db4437',
+                      '&:hover': {
+                        borderColor: '#c23321',
+                        backgroundColor: 'rgba(219, 68, 55, 0.04)',
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    Googleでログイン
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => handleSocialLogin('azure')}
+                    disabled={loading}
+                    startIcon={<MicrosoftIcon />}
+                    sx={{ 
+                      mb: 2,
+                      borderRadius: 2,
+                      borderColor: '#00a1f1',
+                      color: '#00a1f1',
+                      '&:hover': {
+                        borderColor: '#0078d4',
+                        backgroundColor: 'rgba(0, 161, 241, 0.04)',
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    Microsoftでログイン
+                  </Button>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={() => handleSocialLogin('discord')}
+                    disabled={loading}
+                    startIcon={<DiscordIcon />}
+                    sx={{ 
+                      mb: 2,
+                      borderRadius: 2,
+                      borderColor: '#5865f2',
+                      color: '#5865f2',
+                      '&:hover': {
+                        borderColor: '#4752c4',
+                        backgroundColor: 'rgba(88, 101, 242, 0.04)',
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                  >
+                    Discordでログイン
+                  </Button>
+                  
+                  {/* 管理者ログインボタン */}
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="secondary"
+                    sx={{ 
+                      mb: 3,
+                      borderRadius: 2,
+                      '&:hover': {
+                        transform: 'translateY(-1px)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
+                    onClick={() => router.push('/admin-login')}
+                  >
+                    管理者ログイン
+                  </Button>
+                </Box>
+              </Fade>
 
-          {/* リンク */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              width: "100%",
-              mt: 2,
-            }}
-          >
-            <Link href="/reset-password" variant="body2">
-              パスワードを忘れましたか？
-            </Link>
-            <Link href="/register" variant="body2">
-              新規登録はこちら
-            </Link>
-          </Box>
-        </Box>
-      </Card>
-    </Container>
+              {/* リンク */}
+              <Fade in={true} timeout={1800}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    width: "100%",
+                    mt: 2,
+                    flexWrap: 'wrap',
+                    gap: 1,
+                  }}
+                >
+                  <Link 
+                    href="/reset-password" 
+                    variant="body2"
+                    sx={{
+                      color: '#667eea',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    パスワードを忘れましたか？
+                  </Link>
+                  <Link 
+                    href="/register" 
+                    variant="body2"
+                    sx={{
+                      color: '#667eea',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    新規登録はこちら
+                  </Link>
+                </Box>
+              </Fade>
+            </Box>
+          </Card>
+        </Slide>
+      </Container>
+    </Box>
   );
 }
 
