@@ -34,18 +34,31 @@ export default function ContactPage() {
     setLoading(true);
 
     try {
-      // 実際のメール送信処理（ここでは模擬）
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // メールアプリを開く
-      const mailtoLink = `mailto:aoiroserver@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
-        `お問い合わせ種類: ${contactType}\nお名前: ${name}\nメールアドレス: ${email}\n使用端末: ${device}\n\nお問い合わせ内容:\n${message}`
-      )}`;
-      
-      window.location.href = mailtoLink;
+      // APIを呼び出してメール送信
+      const response = await fetch('/api/send-contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contactType,
+          name,
+          email,
+          device,
+          subject,
+          message
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || '送信に失敗しました');
+      }
+
       setSent(true);
     } catch (error) {
-      setError("送信に失敗しました。もう一度お試しください。");
+      setError(error instanceof Error ? error.message : "送信に失敗しました。もう一度お試しください。");
     } finally {
       setLoading(false);
     }
@@ -92,7 +105,7 @@ export default function ContactPage() {
               お問い合わせを送信しました！
             </Alert>
             <Typography sx={{ color: '#333', mb: 2 }}>
-              メールアプリが開きました。内容を確認の上、送信してください。
+              お問い合わせを受け付けました。内容を確認の上、ご返信いたします。
             </Typography>
             <Button 
               variant="contained" 
