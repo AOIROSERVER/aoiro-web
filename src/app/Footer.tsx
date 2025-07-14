@@ -14,12 +14,12 @@ export default function Footer() {
     version?: string | null;
   }>({ online: false, responseTime: null });
 
-  // サーバー状況を取得
+  // サーバー状況を取得（稼働状況ページのAPIと連動）
   useEffect(() => {
     const checkServerStatus = async () => {
       const startTime = Date.now();
       try {
-        const response = await fetch(`/api/minecraft-status`, {
+        const response = await fetch(`/api/status`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
           signal: AbortSignal.timeout(10000)
@@ -28,13 +28,19 @@ export default function Footer() {
         const responseTime = endTime - startTime;
         if (response.ok) {
           const data = await response.json();
-          setServerStatus({
-            online: !!data.online,
-            responseTime,
-            playerCount: data.players?.online || 0,
-            maxPlayers: data.players?.max || 0,
-            version: data.version || '-'
-          });
+          // AOIROSERVERサービスを探す
+          const aoiroServer = data.services?.find((service: any) => service.name === 'AOIROSERVER');
+          if (aoiroServer) {
+            setServerStatus({
+              online: aoiroServer.status === 'operational',
+              responseTime: aoiroServer.responseTime || responseTime,
+              playerCount: aoiroServer.playerCount || 0,
+              maxPlayers: aoiroServer.maxPlayers || 0,
+              version: aoiroServer.version || '-'
+            });
+          } else {
+            setServerStatus({ online: false, responseTime: null });
+          }
         } else {
           setServerStatus({ online: false, responseTime: null });
         }
