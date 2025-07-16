@@ -145,8 +145,8 @@ CREATE POLICY "Users can insert own profile" ON user_profiles
 `.env.local`ファイルに以下が設定されているか確認：
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://cqxadmvnsusscsudrmqd.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxeGFkbXZuc3Vzc2NzdWRybXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTUyMjMsImV4cCI6MjA2NTkzMTIyM30.XfQ5KyRUR_9o9PfvySjud0YW-BwHH87jUSX_Em1_F54
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### 5.2 本番環境

@@ -2,11 +2,14 @@
 import { 
   Box, 
   Typography, 
+  Switch, 
+  FormControlLabel, 
   Button, 
   Divider, 
   Paper,
   TextField,
   Alert,
+  Chip,
   Grid,
   Card,
   CardContent,
@@ -15,9 +18,7 @@ import {
   Radio,
   RadioGroup,
   FormControl,
-  FormLabel,
-  Switch,
-  FormControlLabel
+  FormLabel
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -29,8 +30,7 @@ import {
   CheckCircle,
   Schedule,
   Save,
-  Delete,
-  Info
+  Delete
 } from "@mui/icons-material";
 import { supabase } from '../../../lib/supabase';
 
@@ -66,13 +66,12 @@ const lineData: LineInfo[] = [
   { id: 'CA', name: '東海道新幹線', company: 'JR東海' },
 ];
 
-export default function NotificationSettingsPage() {
+export default function TrainNotificationPage() {
   const [email, setEmail] = useState('');
   const [settings, setSettings] = useState<NotificationSetting[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const router = useRouter();
 
   const loadSettings = async (userEmail: string) => {
@@ -226,71 +225,52 @@ export default function NotificationSettingsPage() {
     }
   };
 
+  const getNotificationTypeLabel = (type: string) => {
+    switch (type) {
+      case 'delay_notification': return '遅延情報';
+      case 'suspension_notification': return '運転見合わせ';
+      case 'recovery_notification': return '復旧情報';
+      default: return type;
+    }
+  };
+
+  const getFrequencyLabel = (frequency: string) => {
+    switch (frequency) {
+      case 'immediate': return '即座に通知';
+      case 'daily': return '日次まとめ';
+      case 'weekly': return '週次まとめ';
+      default: return frequency;
+    }
+  };
+
   return (
     <Box sx={{ p: 3, maxWidth: 800, mx: "auto", backgroundColor: '#fff', minHeight: '100vh' }}>
-      {/* ヘッダー */}
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="h3" fontWeight="bold" mb={2} color="#222">
-          <Train sx={{ mr: 2, fontSize: 48, color: '#1976d2' }} />
-          運行情報メールサービス
-        </Typography>
-        <Typography variant="h6" color="text.secondary" mb={1}>
-          さらに便利に。
-        </Typography>
-        <Typography variant="h5" fontWeight="bold" color="#1976d2">
-          運行情報を配信中！！
-        </Typography>
-      </Box>
-
-      {/* サービス説明 */}
-      <Paper sx={{ p: 4, mb: 4, bgcolor: '#f8f9fa', textAlign: 'center' }}>
+      <Typography variant="h4" fontWeight="bold" mb={3} color="#222">
+        <Train sx={{ mr: 1, verticalAlign: 'middle' }} />
+        運行情報メールサービス
+      </Typography>
+      
+      <Paper sx={{ p: 3, mb: 3, bgcolor: '#f8f9fa' }}>
         <Typography variant="h6" mb={2} color="#222">
-          運行情報メールサービスとは？
+          📧 メールアドレス登録
         </Typography>
-        <Typography variant="body1" color="text.secondary" mb={3}>
-          列車の遅延や運転見合わせなどの情報をメールでお届けするサービスです。
-          15分以上の遅れ・運転見合わせが発生または見込まれる場合に、メールでお知らせします。
-          登録は無料です。
+        <Typography variant="body2" color="text.secondary" mb={2}>
+          列車の遅延や運転見合わせなどの情報をメールで受け取ることができます。
+          メールアドレスを登録するだけで簡単に設定できます。
         </Typography>
-      </Paper>
-
-      {/* メールアドレス登録 */}
-      <Paper sx={{ p: 4, mb: 4, bgcolor: '#fff' }}>
-        <Typography variant="h6" mb={3} color="#222">
-          会員登録・登録内容変更方法
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={3}>
-          会員登録・登録内容変更方法はメールでご案内します。
-          「運行情報メールサービス会員規約」と「プライバシーポリシー」をご確認の上、
-          ご同意いただける場合は以下の入力欄にメールアドレスを入力してボタンをクリックしてください。
-        </Typography>
-        
-        <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            label="メールアドレス"
-            value={email}
-            onChange={(e) => handleEmailChange(e.target.value)}
-            placeholder="example@email.com"
-            type="email"
-            sx={{ mb: 2 }}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-            ※メールを受信するには「noreply@aoiroserver.site」からのメールを受信出来るよう、指定受信の設定をお願いいたします。
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
+        <TextField
           fullWidth
-          onClick={() => setShowAdvancedSettings(true)}
-          disabled={!email}
-          sx={{ py: 1.5, fontSize: '1.1rem' }}
-        >
-          同意して次へ
-        </Button>
+          label="メールアドレス"
+          value={email}
+          onChange={(e) => handleEmailChange(e.target.value)}
+          placeholder="example@email.com"
+          type="email"
+          size="small"
+          sx={{ mb: 2 }}
+        />
+        <Typography variant="body2" color="primary" sx={{ fontWeight: 'bold' }}>
+          💡 推奨: メールアドレスを登録して運行情報を受け取ってください
+        </Typography>
       </Paper>
 
       {message && (
@@ -299,10 +279,9 @@ export default function NotificationSettingsPage() {
         </Alert>
       )}
 
-      {/* 詳細設定 */}
-      {showAdvancedSettings && email && (
-        <Paper sx={{ p: 4, mb: 4, bgcolor: '#fff' }}>
-          <Typography variant="h6" mb={3} color="#222">
+      {email && (
+        <>
+          <Typography variant="h6" fontWeight="bold" mb={2} color="#222">
             路線別通知設定
           </Typography>
           
@@ -420,50 +399,42 @@ export default function NotificationSettingsPage() {
               通知設定管理
             </Button>
           </Box>
-        </Paper>
+        </>
       )}
 
-      {/* 注意事項 */}
-      <Paper sx={{ p: 4, mb: 4, bgcolor: '#fff3cd', border: '1px solid #ffeaa7' }}>
-        <Typography variant="h6" mb={2} color="#856404">
-          <Info sx={{ mr: 1, verticalAlign: 'middle' }} />
-          注意事項
-        </Typography>
-        <Box component="ul" sx={{ pl: 2, m: 0 }}>
-          <Typography component="li" variant="body2" color="#856404" mb={1}>
-            悪天候時や運転支障時、システムに関するメールについては、選択していただいた路線・曜日・時間帯に関わらず配信させていただく場合がございます。
-          </Typography>
-          <Typography component="li" variant="body2" color="#856404" mb={1}>
-            インターネット情報の通信遅延などの原因により、メールが届かないことや、到着が遅れることがあります。
-          </Typography>
-          <Typography component="li" variant="body2" color="#856404" mb={1}>
-            メールでお知らせする情報は実際のダイヤの状況と差異がある場合があります。
-          </Typography>
-          <Typography component="li" variant="body2" color="#856404">
-            メール受信やサイト閲覧等に関する通信料はお客さまのご負担となります。
-          </Typography>
-        </Box>
-      </Paper>
+      <Divider sx={{ my: 4 }} />
 
-      {/* リンク */}
-      <Box sx={{ textAlign: 'center', mb: 4 }}>
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          よくあるご質問（FAQ）はこちら。
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          指定受信の方法についてはこちら。
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          運行情報メール会員の退会はこちら。
-        </Typography>
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
-          <Button variant="text" size="small" color="primary">
-            運行情報メールサービス会員規約
-          </Button>
-          <Button variant="text" size="small" color="primary">
-            プライバシーポリシー
-          </Button>
-        </Box>
+      <Typography variant="h6" fontWeight="bold" mb={2} color="#222">
+        通知方法の設定
+      </Typography>
+      
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Button
+          variant="outlined"
+          startIcon={<Email />}
+          onClick={() => router.push('/settings/anonymous-email-notification')}
+          sx={{ justifyContent: 'flex-start', p: 2 }}
+        >
+          基本メール通知設定
+        </Button>
+        
+        <Button
+          variant="outlined"
+          startIcon={<Notifications />}
+          onClick={() => router.push('/settings/anonymous-push-notification')}
+          sx={{ justifyContent: 'flex-start', p: 2 }}
+        >
+          プッシュ通知設定（ログイン不要）
+        </Button>
+        
+        <Button
+          variant="outlined"
+          startIcon={<Email />}
+          onClick={() => router.push('/settings/email-notification')}
+          sx={{ justifyContent: 'flex-start', p: 2 }}
+        >
+          メール通知設定（ログイン必要）
+        </Button>
       </Box>
     </Box>
   );

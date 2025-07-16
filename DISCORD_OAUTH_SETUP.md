@@ -69,7 +69,7 @@ http://localhost:3000/auth/callback
 ```env
 # Supabase設定
 NEXT_PUBLIC_SUPABASE_URL=https://cqxadmvnsusscsudrmqd.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNxeGFkbXZuc3Vzc2NzdWRybXFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNTUyMjMsImV4cCI6MjA2NTkzMTIyM30.XfQ5KyRUR_9o9PfvySjud0YW-BwHH87jUSX_Em1_F54
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # 管理者設定
 NEXT_PUBLIC_ADMIN_SECRET=aoiro_admin_secret_2024

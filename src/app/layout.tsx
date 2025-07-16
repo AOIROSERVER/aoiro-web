@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Header from "./Header";
 import ClientThemeProvider from "./ClientThemeProvider";
 import { AuthProvider } from "../contexts/AuthContext";
+import { ServerStatusProvider } from "../contexts/ServerStatusContext";
 import dynamic from "next/dynamic";
 
 const Footer = dynamic(() => import("./Footer"), { ssr: false });
@@ -20,11 +21,13 @@ export default function RootLayout({ children }: { children: any }) {
       <body className={inter.className}>
         <ClientThemeProvider>
           <AuthProvider>
-            <Header />
-            <main>
-              {children}
-            </main>
-            <Footer />
+            <ServerStatusProvider>
+              <Header />
+              <main>
+                {children}
+              </main>
+              <Footer />
+            </ServerStatusProvider>
           </AuthProvider>
         </ClientThemeProvider>
       </body>

@@ -26,6 +26,7 @@ import {
   Security,
   Speed,
 } from "@mui/icons-material";
+import { useServerStatus } from "../../contexts/ServerStatusContext";
 
 // サービスステータス型
 type ServiceStatus = {
@@ -77,6 +78,7 @@ export default function StatusPage() {
   const [services, setServices] = useState<ServiceStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  const { serverStatus } = useServerStatus();
 
   // サービス定義（実際のサービスのみ）
   const serviceDefinitions: ServiceStatus[] = [
@@ -135,7 +137,16 @@ export default function StatusPage() {
     }
   ];
 
+  // ローカルストレージから最後の更新時間を読み込む
+  useEffect(() => {
+    const savedLastUpdated = localStorage.getItem('status-page-last-updated');
+    if (savedLastUpdated) {
+      setLastUpdated(savedLastUpdated);
+    }
+  }, []);
+
   const checkServiceStatus = async () => {
+    console.log('🔄 ステータスページ: サービスステータスを更新中...', new Date().toLocaleString('ja-JP'));
     setLoading(true);
     
     // 実際のAPIエンドポイントからステータスを取得
@@ -143,26 +154,71 @@ export default function StatusPage() {
       const response = await fetch('/api/status');
       if (response.ok) {
         const data = await response.json();
-        setServices(data.services || serviceDefinitions);
+        console.log('✅ ステータスページ: API更新完了', new Date().toLocaleString('ja-JP'));
+        
+        // AOIROSERVERのステータスを共有コンテキストから取得
+        const updatedServices = data.services.map((service: ServiceStatus) => {
+          if (service.name === 'AOIROSERVER') {
+            return {
+              ...service,
+              status: serverStatus.online ? 'operational' : 'outage',
+              responseTime: serverStatus.responseTime || service.responseTime,
+              playerCount: serverStatus.playerCount || 0,
+              maxPlayers: serverStatus.maxPlayers || 0,
+              version: serverStatus.version || service.version,
+              lastChecked: serverStatus.lastUpdated || service.lastChecked
+            };
+          }
+          return service;
+        });
+        
+        setServices(updatedServices || serviceDefinitions);
+        
+        // APIから取得したlastUpdatedを使用
+        if (data.lastUpdated) {
+          const apiLastUpdated = new Date(data.lastUpdated).toLocaleString('ja-JP');
+          setLastUpdated(apiLastUpdated);
+          localStorage.setItem('status-page-last-updated', apiLastUpdated);
+        } else {
+          const currentTime = new Date().toLocaleString('ja-JP');
+          setLastUpdated(currentTime);
+          localStorage.setItem('status-page-last-updated', currentTime);
+        }
       } else {
+        console.log('❌ ステータスページ: API更新失敗', new Date().toLocaleString('ja-JP'));
         setServices(serviceDefinitions);
+        const currentTime = new Date().toLocaleString('ja-JP');
+        setLastUpdated(currentTime);
+        localStorage.setItem('status-page-last-updated', currentTime);
       }
     } catch (error) {
       console.error('ステータス取得エラー:', error);
       setServices(serviceDefinitions);
+      const currentTime = new Date().toLocaleString('ja-JP');
+      setLastUpdated(currentTime);
+      localStorage.setItem('status-page-last-updated', currentTime);
     }
     
-    setLastUpdated(new Date().toLocaleString('ja-JP'));
     setLoading(false);
   };
 
   useEffect(() => {
+    console.log('🚀 ステータスページ: 初回読み込み開始', new Date().toLocaleString('ja-JP'));
     checkServiceStatus();
     
     // 5分ごとに自動更新
-    const interval = setInterval(checkServiceStatus, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(() => {
+      console.log('⏰ ステータスページ: 5分間隔での自動更新実行', new Date().toLocaleString('ja-JP'));
+      checkServiceStatus();
+    }, 5 * 60 * 1000);
+    
+    console.log('📅 ステータスページ: 5分間隔タイマー設定完了', new Date().toLocaleString('ja-JP'));
+    
+    return () => {
+      console.log('🧹 ステータスページ: タイマークリーンアップ', new Date().toLocaleString('ja-JP'));
+      clearInterval(interval);
+    };
+  }, [serverStatus]); // serverStatusが変更されたら再実行
 
   const overallStatus = services.length > 0 
     ? services.every(s => s.status === 'operational') ? 'operational' : 'degraded'

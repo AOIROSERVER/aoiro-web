@@ -54,6 +54,7 @@ async function checkServiceStatus(service: { name: string; description: string; 
       
       if (response.ok) {
         const data = await response.json();
+        console.log('MinecraftサーバーAPIレスポンス:', JSON.stringify(data, null, 2));
         
         if (data.online) {
           return {
@@ -89,6 +90,7 @@ async function checkServiceStatus(service: { name: string; description: string; 
         };
       }
     } catch (error) {
+      console.error('MinecraftサーバーAPIエラー:', error);
       const responseTime = Date.now() - startTime;
       return {
         name: service.name,
@@ -149,18 +151,65 @@ async function checkServiceStatus(service: { name: string; description: string; 
   }
 }
 
-// モックサービス（実際のチェックができない場合のフォールバック）
-const mockServices: ServiceStatus[] = [
-  {
-    name: 'AOIROSERVER',
-    status: 'operational',
-    responseTime: 120,
-    lastChecked: new Date().toISOString(),
-    description: 'Minecraft Bedrockサーバー',
-    playerCount: 0,
-    maxPlayers: 20,
-    version: '1.20.0'
-  },
+// 動的にAOIROSERVERステータスを取得する関数
+async function getAoiroServerStatus(): Promise<ServiceStatus> {
+  const startTime = Date.now();
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/minecraft-status`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(10000)
+    });
+    
+    const responseTime = Date.now() - startTime;
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('AOIROSERVERステータス確認:', JSON.stringify(data, null, 2));
+      
+      if (data.online) {
+        return {
+          name: 'AOIROSERVER',
+          status: 'operational',
+          responseTime,
+          lastChecked: new Date().toISOString(),
+          description: 'Minecraft Bedrockサーバー',
+          playerCount: data.players?.online || 0,
+          maxPlayers: data.players?.max || 0,
+          version: data.version
+        };
+      } else {
+        return {
+          name: 'AOIROSERVER',
+          status: 'outage',
+          responseTime,
+          lastChecked: new Date().toISOString(),
+          description: 'Minecraft Bedrockサーバー'
+        };
+      }
+    } else {
+      return {
+        name: 'AOIROSERVER',
+        status: 'outage',
+        responseTime: Date.now() - startTime,
+        lastChecked: new Date().toISOString(),
+        description: 'Minecraft Bedrockサーバー'
+      };
+    }
+  } catch (error) {
+    console.error('AOIROSERVERステータス取得エラー:', error);
+    return {
+      name: 'AOIROSERVER',
+      status: 'outage',
+      responseTime: Date.now() - startTime,
+      lastChecked: new Date().toISOString(),
+      description: 'Minecraft Bedrockサーバー'
+    };
+  }
+}
+
+// その他のモックサービス（AOIROSERVER以外）
+const otherMockServices: ServiceStatus[] = [
   {
     name: 'AOIROSERVER公式サイト',
     status: 'operational',
@@ -201,31 +250,73 @@ const mockServices: ServiceStatus[] = [
 ];
 
 export async function GET() {
+  const apiStartTime = new Date();
+  
   try {
     // 実際のサービスチェックを実行
     const statusPromises = services.map(checkServiceStatus);
     const actualStatuses = await Promise.all(statusPromises);
     
-    // 実際のチェック結果とモックサービスを組み合わせ
-    const allServices = [...actualStatuses, ...mockServices.filter(s => 
+    // 実際のチェック結果とその他のモックサービスを組み合わせ
+    const allServices = [...actualStatuses, ...otherMockServices.filter(s => 
       !actualStatuses.some(as => as.name === s.name)
     )];
     
+    const apiEndTime = new Date();
+    const lastUpdated = apiEndTime.toISOString();
+    
+    console.log('📊 ステータスAPI: 全サービスチェック完了', apiEndTime.toLocaleString('ja-JP'));
+    
     return NextResponse.json({
       services: allServices,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated,
       totalServices: allServices.length,
       operationalServices: allServices.filter(s => s.status === 'operational').length
     });
   } catch (error) {
     console.error('ステータスチェックエラー:', error);
     
-    // エラー時はモックデータを返す
-    return NextResponse.json({
-      services: mockServices,
-      lastUpdated: new Date().toISOString(),
-      totalServices: mockServices.length,
-      operationalServices: mockServices.filter(s => s.status === 'operational').length
-    });
+    // エラー時はAOIROSERVERの実際のステータスを取得してからモックデータを返す
+    try {
+      const aoiroServerStatus = await getAoiroServerStatus();
+      const allServices = [aoiroServerStatus, ...otherMockServices];
+      
+      const apiEndTime = new Date();
+      const lastUpdated = apiEndTime.toISOString();
+      
+      console.log('📊 ステータスAPI: フォールバック処理完了', apiEndTime.toLocaleString('ja-JP'));
+      
+      return NextResponse.json({
+        services: allServices,
+        lastUpdated,
+        totalServices: allServices.length,
+        operationalServices: allServices.filter(s => s.status === 'operational').length
+      });
+    } catch (fallbackError) {
+      console.error('フォールバックエラー:', fallbackError);
+      
+      // 最終フォールバック：AOIROSERVERを停止中として扱う
+      const fallbackAoiroServer: ServiceStatus = {
+        name: 'AOIROSERVER',
+        status: 'outage',
+        responseTime: undefined,
+        lastChecked: new Date().toISOString(),
+        description: 'Minecraft Bedrockサーバー'
+      };
+      
+      const allServices = [fallbackAoiroServer, ...otherMockServices];
+      
+      const apiEndTime = new Date();
+      const lastUpdated = apiEndTime.toISOString();
+      
+      console.log('📊 ステータスAPI: 最終フォールバック処理完了', apiEndTime.toLocaleString('ja-JP'));
+      
+      return NextResponse.json({
+        services: allServices,
+        lastUpdated,
+        totalServices: allServices.length,
+        operationalServices: allServices.filter(s => s.status === 'operational').length
+      });
+    }
   }
 } 
