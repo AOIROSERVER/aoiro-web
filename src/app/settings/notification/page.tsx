@@ -445,6 +445,104 @@ export default function NotificationSettingsPage() {
         </Box>
       </Paper>
 
+      {/* テスト通知 */}
+      {email && (
+        <Paper sx={{ p: 4, mb: 4, bgcolor: '#e8f5e8', border: '1px solid #c8e6c9' }}>
+          <Typography variant="h6" mb={2} color="#2e7d32">
+            🧪 テスト通知
+          </Typography>
+          <Typography variant="body2" color="#2e7d32" mb={3}>
+            通知設定をテストするために、テスト通知を送信できます。
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <Button
+              variant="outlined"
+              color="success"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/test-train-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      lineId: 'HA',
+                      lineName: '東急東横線',
+                      status: '遅延',
+                      details: 'テスト通知です',
+                      email: email
+                    })
+                  });
+                  if (response.ok) {
+                    setMessage({ type: 'success', text: '遅延テスト通知を送信しました' });
+                  } else {
+                    setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
+                  }
+                } catch (error) {
+                  setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
+                }
+              }}
+            >
+              遅延テスト通知
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/test-train-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      lineId: 'HA',
+                      lineName: '東急東横線',
+                      status: '運転見合わせ',
+                      details: 'テスト通知です',
+                      email: email
+                    })
+                  });
+                  if (response.ok) {
+                    setMessage({ type: 'success', text: '運転見合わせテスト通知を送信しました' });
+                  } else {
+                    setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
+                  }
+                } catch (error) {
+                  setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
+                }
+              }}
+            >
+              運転見合わせテスト通知
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/test-train-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      lineId: 'HA',
+                      lineName: '東急東横線',
+                      status: '平常運転',
+                      details: 'テスト通知です',
+                      email: email
+                    })
+                  });
+                  if (response.ok) {
+                    setMessage({ type: 'success', text: '復旧テスト通知を送信しました' });
+                  } else {
+                    setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
+                  }
+                } catch (error) {
+                  setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
+                }
+              }}
+            >
+              復旧テスト通知
+            </Button>
+          </Box>
+        </Paper>
+      )}
+
       {/* リンク */}
       <Box sx={{ textAlign: 'center', mb: 4 }}>
         <Typography variant="body2" color="text.secondary" mb={2}>

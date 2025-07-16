@@ -177,9 +177,22 @@ async function sendEmailNotifications(changedLines: any[]) {
       console.error('匿名ユーザー設定取得エラー:', anonymousError);
     }
 
+    console.log('📧 取得した通知設定:', {
+      userSettings: userEmailSettings?.length || 0,
+      anonymousSettings: anonymousEmailSettings?.length || 0
+    });
+
     // 通知対象の路線IDを取得
     const targetLineIds = changedLines.map(line => line.line_id);
     console.log('📧 通知対象路線:', targetLineIds);
+
+    // 通知タイプを判定する関数
+    const getNotificationType = (status: string) => {
+      if (status.includes('遅延')) return 'delay_notification';
+      if (status.includes('運転見合わせ') || status.includes('見合わせ')) return 'suspension_notification';
+      if (status.includes('復旧') || status.includes('運転再開') || status.includes('平常運転')) return 'recovery_notification';
+      return 'delay_notification'; // デフォルト
+    };
 
     // ログインユーザーへの通知
     if (userEmailSettings) {
@@ -187,18 +200,43 @@ async function sendEmailNotifications(changedLines: any[]) {
         targetLineIds.includes(setting.line_id)
       );
 
+      console.log('📧 ログインユーザー通知対象:', userTargetSettings.length, '件');
+
       for (const setting of userTargetSettings) {
         const changedLine = changedLines.find(line => line.line_id === setting.line_id);
         if (changedLine) {
-          await sendEmailNotification({
-            email: setting.email,
-            lineId: changedLine.line_id,
-            lineName: changedLine.name,
-            status: changedLine.status,
-            details: changedLine.detail,
-            previousStatus: changedLine.previousStatus,
-            isAnonymous: false
-          });
+          const notificationType = getNotificationType(changedLine.status);
+          
+          // 通知タイプに応じてフィルタリング
+          let shouldNotify = true;
+          if (setting.delay_notification !== undefined || setting.suspension_notification !== undefined || setting.recovery_notification !== undefined) {
+            switch (notificationType) {
+              case 'delay_notification':
+                shouldNotify = setting.delay_notification;
+                break;
+              case 'suspension_notification':
+                shouldNotify = setting.suspension_notification;
+                break;
+              case 'recovery_notification':
+                shouldNotify = setting.recovery_notification;
+                break;
+            }
+          }
+
+          console.log(`📧 ログインユーザー通知判定: ${setting.email} (${changedLine.name}) - ${notificationType}: ${shouldNotify}`);
+
+          if (shouldNotify) {
+            await sendEmailNotification({
+              email: setting.email,
+              lineId: changedLine.line_id,
+              lineName: changedLine.name,
+              status: changedLine.status,
+              details: changedLine.detail,
+              previousStatus: changedLine.previousStatus,
+              isAnonymous: false,
+              notificationType
+            });
+          }
         }
       }
     }
@@ -209,18 +247,63 @@ async function sendEmailNotifications(changedLines: any[]) {
         targetLineIds.includes(setting.line_id)
       );
 
+      console.log('📧 匿名ユーザー通知対象:', anonymousTargetSettings.length, '件');
+
       for (const setting of anonymousTargetSettings) {
         const changedLine = changedLines.find(line => line.line_id === setting.line_id);
         if (changedLine) {
-          await sendEmailNotification({
-            email: setting.email,
-            lineId: changedLine.line_id,
-            lineName: changedLine.name,
-            status: changedLine.status,
-            details: changedLine.detail,
-            previousStatus: changedLine.previousStatus,
-            isAnonymous: true
-          });
+          const notificationType = getNotificationType(changedLine.status);
+          
+          // 通知タイプに応じてフィルタリング
+          let shouldNotify = true;
+          if (setting.delay_notification !== undefined || setting.suspension_notification !== undefined || setting.recovery_notification !== undefined) {
+            switch (notificationType) {
+              case 'delay_notification':
+                shouldNotify = setting.delay_notification;
+                break;
+              case 'suspension_notification':
+                shouldNotify = setting.suspension_notification;
+                break;
+              case 'recovery_notification':
+                shouldNotify = setting.recovery_notification;
+                break;
+            }
+          }
+
+          console.log(`📧 匿名ユーザー通知判定: ${setting.email} (${changedLine.name}) - ${notificationType}: ${shouldNotify}`);
+
+          if (shouldNotify) {
+            // 通知頻度のチェック
+            const shouldSendImmediate = !setting.notification_frequency || setting.notification_frequency === 'immediate';
+            
+            console.log(`📧 通知頻度チェック: ${setting.email} - ${setting.notification_frequency} -> ${shouldSendImmediate ? '即座送信' : 'まとめ保存'}`);
+            
+            if (shouldSendImmediate) {
+              await sendEmailNotification({
+                email: setting.email,
+                lineId: changedLine.line_id,
+                lineName: changedLine.name,
+                status: changedLine.status,
+                details: changedLine.detail,
+                previousStatus: changedLine.previousStatus,
+                isAnonymous: true,
+                notificationType
+              });
+            } else {
+              // 日次/週次まとめの場合は通知履歴に保存
+              await supabase
+                .from('anonymous_email_notification_history')
+                .insert({
+                  email: setting.email,
+                  line_id: changedLine.line_id,
+                  line_name: changedLine.name,
+                  status: changedLine.status,
+                  message: `${changedLine.status}${changedLine.detail ? `: ${changedLine.detail}` : ''}`,
+                  notification_type: notificationType,
+                  frequency: setting.notification_frequency,
+                });
+            }
+          }
         }
       }
     }
@@ -239,7 +322,8 @@ async function sendEmailNotification({
   status,
   details,
   previousStatus,
-  isAnonymous
+  isAnonymous,
+  notificationType
 }: {
   email: string;
   lineId: string;
@@ -248,6 +332,7 @@ async function sendEmailNotification({
   details: string;
   previousStatus: string;
   isAnonymous: boolean;
+  notificationType?: string;
 }) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/email-notify`, {
@@ -262,7 +347,8 @@ async function sendEmailNotification({
         status,
         details,
         previousStatus,
-        isAnonymous
+        isAnonymous,
+        notificationType
       }),
     });
 
@@ -270,7 +356,7 @@ async function sendEmailNotification({
       throw new Error(`メール送信に失敗: ${response.status}`);
     }
 
-    console.log(`📧 メール通知送信成功: ${email} (${lineName})`);
+    console.log(`📧 メール通知送信成功: ${email} (${lineName}) - ${notificationType}`);
   } catch (error) {
     console.error(`❌ メール通知送信エラー (${email}):`, error);
   }

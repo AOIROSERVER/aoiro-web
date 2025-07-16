@@ -14,6 +14,16 @@ export async function POST(request: Request) {
 
     console.log('🧪 テスト通知開始:', { lineId, lineName, status, details, email });
 
+    // 通知タイプを判定
+    const getNotificationType = (status: string) => {
+      if (status.includes('遅延')) return 'delay_notification';
+      if (status.includes('運転見合わせ') || status.includes('見合わせ')) return 'suspension_notification';
+      if (status.includes('復旧') || status.includes('運転再開') || status.includes('平常運転')) return 'recovery_notification';
+      return 'delay_notification'; // デフォルト
+    };
+
+    const notificationType = getNotificationType(status);
+
     // テスト用の運行情報変更データを作成
     const testChangeData = [{
       line_id: lineId,
@@ -29,7 +39,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ 
       success: true, 
-      message: 'テスト通知を送信しました' 
+      message: 'テスト通知を送信しました',
+      notificationType
     });
 
   } catch (error) {
@@ -42,80 +53,67 @@ export async function POST(request: Request) {
 }
 
 // メール通知を送信する関数
-async function sendEmailNotifications(changedLines: any[], specificEmail?: string) {
+async function sendEmailNotifications(changedLines: any[], targetEmail?: string) {
   try {
     console.log('📧 テストメール通知送信開始');
 
+    // 匿名ユーザー用のメール通知設定を取得
+    const { data: anonymousEmailSettings, error: anonymousError } = await supabase
+      .from('anonymous_email_notification_settings')
+      .select('*')
+      .eq('enabled', true);
+
+    if (anonymousError) {
+      console.error('匿名ユーザー設定取得エラー:', anonymousError);
+    }
+
     // 通知対象の路線IDを取得
     const targetLineIds = changedLines.map(line => line.line_id);
-    console.log('📧 通知対象路線:', targetLineIds);
+    console.log('📧 テスト通知対象路線:', targetLineIds);
 
-    if (specificEmail) {
-      // 特定のメールアドレスにテスト通知を送信
-      const changedLine = changedLines[0];
-      await sendEmailNotification({
-        email: specificEmail,
-        lineId: changedLine.line_id,
-        lineName: changedLine.name,
-        status: changedLine.status,
-        details: changedLine.detail,
-        previousStatus: changedLine.previousStatus,
-        isAnonymous: true
-      });
-    } else {
-      // 全ての設定済みメールアドレスに通知を送信
-      
-      // ログインユーザー用のメール通知設定を取得
-      const { data: userEmailSettings, error: userError } = await supabase
-        .from('email_notification_settings')
-        .select('*')
-        .eq('enabled', true);
+    // 通知タイプを判定する関数
+    const getNotificationType = (status: string) => {
+      if (status.includes('遅延')) return 'delay_notification';
+      if (status.includes('運転見合わせ') || status.includes('見合わせ')) return 'suspension_notification';
+      if (status.includes('復旧') || status.includes('運転再開') || status.includes('平常運転')) return 'recovery_notification';
+      return 'delay_notification'; // デフォルト
+    };
 
-      if (userError) {
-        console.error('ログインユーザー設定取得エラー:', userError);
-      }
+    // 匿名ユーザーへの通知
+    if (anonymousEmailSettings) {
+      let anonymousTargetSettings = anonymousEmailSettings.filter(setting => 
+        targetLineIds.includes(setting.line_id)
+      );
 
-      // 匿名ユーザー用のメール通知設定を取得
-      const { data: anonymousEmailSettings, error: anonymousError } = await supabase
-        .from('anonymous_email_notification_settings')
-        .select('*')
-        .eq('enabled', true);
-
-      if (anonymousError) {
-        console.error('匿名ユーザー設定取得エラー:', anonymousError);
-      }
-
-      // ログインユーザーへの通知
-      if (userEmailSettings) {
-        const userTargetSettings = userEmailSettings.filter(setting => 
-          targetLineIds.includes(setting.line_id)
+      // 特定のメールアドレスが指定されている場合はフィルタリング
+      if (targetEmail) {
+        anonymousTargetSettings = anonymousTargetSettings.filter(setting => 
+          setting.email === targetEmail
         );
+      }
 
-        for (const setting of userTargetSettings) {
-          const changedLine = changedLines.find(line => line.line_id === setting.line_id);
-          if (changedLine) {
-            await sendEmailNotification({
-              email: setting.email,
-              lineId: changedLine.line_id,
-              lineName: changedLine.name,
-              status: changedLine.status,
-              details: changedLine.detail,
-              previousStatus: changedLine.previousStatus,
-              isAnonymous: false
-            });
+      for (const setting of anonymousTargetSettings) {
+        const changedLine = changedLines.find(line => line.line_id === setting.line_id);
+        if (changedLine) {
+          const notificationType = getNotificationType(changedLine.status);
+          
+          // 通知タイプに応じてフィルタリング
+          let shouldNotify = true;
+          if (setting.delay_notification !== undefined || setting.suspension_notification !== undefined || setting.recovery_notification !== undefined) {
+            switch (notificationType) {
+              case 'delay_notification':
+                shouldNotify = setting.delay_notification;
+                break;
+              case 'suspension_notification':
+                shouldNotify = setting.suspension_notification;
+                break;
+              case 'recovery_notification':
+                shouldNotify = setting.recovery_notification;
+                break;
+            }
           }
-        }
-      }
 
-      // 匿名ユーザーへの通知
-      if (anonymousEmailSettings) {
-        const anonymousTargetSettings = anonymousEmailSettings.filter(setting => 
-          targetLineIds.includes(setting.line_id)
-        );
-
-        for (const setting of anonymousTargetSettings) {
-          const changedLine = changedLines.find(line => line.line_id === setting.line_id);
-          if (changedLine) {
+          if (shouldNotify) {
             await sendEmailNotification({
               email: setting.email,
               lineId: changedLine.line_id,
@@ -123,7 +121,8 @@ async function sendEmailNotifications(changedLines: any[], specificEmail?: strin
               status: changedLine.status,
               details: changedLine.detail,
               previousStatus: changedLine.previousStatus,
-              isAnonymous: true
+              isAnonymous: true,
+              notificationType
             });
           }
         }
@@ -144,7 +143,8 @@ async function sendEmailNotification({
   status,
   details,
   previousStatus,
-  isAnonymous
+  isAnonymous,
+  notificationType
 }: {
   email: string;
   lineId: string;
@@ -153,6 +153,7 @@ async function sendEmailNotification({
   details: string;
   previousStatus: string;
   isAnonymous: boolean;
+  notificationType?: string;
 }) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/email-notify`, {
@@ -167,7 +168,8 @@ async function sendEmailNotification({
         status,
         details,
         previousStatus,
-        isAnonymous
+        isAnonymous,
+        notificationType
       }),
     });
 
@@ -175,7 +177,7 @@ async function sendEmailNotification({
       throw new Error(`メール送信に失敗: ${response.status}`);
     }
 
-    console.log(`📧 テストメール通知送信成功: ${email} (${lineName})`);
+    console.log(`📧 テストメール通知送信成功: ${email} (${lineName}) - ${notificationType}`);
   } catch (error) {
     console.error(`❌ テストメール通知送信エラー (${email}):`, error);
   }

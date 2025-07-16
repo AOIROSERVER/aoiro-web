@@ -11,7 +11,8 @@ export async function POST(request: Request) {
       status, 
       details, 
       previousStatus, 
-      isAnonymous = false 
+      isAnonymous = false,
+      notificationType
     } = await request.json();
 
     if (!email || !lineId || !lineName || !status) {
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('📧 メール通知送信開始:', { email, lineName, status });
+    console.log('📧 メール通知送信開始:', { email, lineName, status, notificationType });
 
     // メールの件名と内容を生成
     const subject = `【運行情報】${lineName}の状況が更新されました`;
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('✅ メール送信成功:', { email, lineName, status });
+    console.log('✅ メール送信成功:', { email, lineName, status, notificationType });
 
     // 通知履歴を保存
     const historyData = {
@@ -61,11 +62,12 @@ export async function POST(request: Request) {
       line_name: lineName,
       status,
       message: details || '',
-      sent_at: new Date().toISOString()
+      sent_at: new Date().toISOString(),
+      notification_type: notificationType || 'delay_notification'
     };
 
     if (isAnonymous) {
-      // 匿名ユーザー用の履歴テーブルに保存
+      // 匿名ユーザー用の通知履歴に保存
       const { error: historyError } = await supabase
         .from('anonymous_email_notification_history')
         .insert(historyData);
@@ -74,25 +76,20 @@ export async function POST(request: Request) {
         console.error('匿名ユーザー通知履歴保存エラー:', historyError);
       }
     } else {
-      // ログインユーザー用の履歴テーブルに保存
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error: historyError } = await supabase
-          .from('email_notification_history')
-          .insert({
-            ...historyData,
-            user_id: user.id
-          });
+      // ログインユーザー用の通知履歴に保存
+      const { error: historyError } = await supabase
+        .from('email_notification_history')
+        .insert(historyData);
 
-        if (historyError) {
-          console.error('ログインユーザー通知履歴保存エラー:', historyError);
-        }
+      if (historyError) {
+        console.error('通知履歴保存エラー:', historyError);
       }
     }
 
     return NextResponse.json({ 
       success: true, 
-      message: 'メール通知を送信しました' 
+      message: 'メール通知を送信しました',
+      notificationType 
     });
 
   } catch (error) {
@@ -104,78 +101,43 @@ export async function POST(request: Request) {
   }
 }
 
-// 実際のメール送信を行う関数
 async function sendActualEmail(to: string, subject: string, content: string): Promise<boolean> {
   try {
-    // 開発環境ではEthereal Emailを使用
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📧 開発環境 - Ethereal Emailでメール送信:');
-      
-      // Ethereal Emailのテストアカウントを作成
-      const testAccount = await nodemailer.createTestAccount();
-      
-      // トランスポーターを作成
-      const transporter = nodemailer.createTransport({
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false,
-        auth: {
-          user: testAccount.user,
-          pass: testAccount.pass,
-        },
-      });
+    // 環境変数からメール設定を取得
+    const mailgunApiKey = process.env.MAILGUN_API_KEY;
+    const mailgunDomain = process.env.MAILGUN_DOMAIN;
+    const fromEmail = process.env.FROM_EMAIL || 'noreply@aoiroserver.site';
 
-      // メール送信
-      const info = await transporter.sendMail({
-        from: '"AOIRO SERVER" <noreply@aoiroserver.com>',
-        to: to,
-        subject: subject,
-        text: content,
-      });
-
-      console.log('📧 メール送信成功:');
-      console.log('Message ID:', info.messageId);
-      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
-      console.log('To:', to);
-      console.log('Subject:', subject);
-      console.log('Content:', content);
-      console.log('---');
-      
-      return true;
+    if (!mailgunApiKey || !mailgunDomain) {
+      console.error('❌ Mailgun設定が不足しています');
+      return false;
     }
 
-    // 本番環境ではGmail SMTPを使用（オプション）
-    const gmailUser = process.env.GMAIL_USER;
-    const gmailPass = process.env.GMAIL_APP_PASSWORD;
+    // Mailgun APIを使用してメール送信
+    const formData = new URLSearchParams();
+    formData.append('from', fromEmail);
+    formData.append('to', to);
+    formData.append('subject', subject);
+    formData.append('text', content);
 
-    if (gmailUser && gmailPass) {
-      const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: {
-          user: gmailUser,
-          pass: gmailPass,
-        },
-      });
+    const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${Buffer.from(`api:${mailgunApiKey}`).toString('base64')}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
 
-      const info = await transporter.sendMail({
-        from: gmailUser,
-        to: to,
-        subject: subject,
-        text: content,
-      });
-
-      console.log('✅ Gmail SMTP メール送信成功');
-      return true;
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Mailgun API エラー:', response.status, errorText);
+      return false;
     }
 
-    // 設定がない場合はログのみ
-    console.log('📧 メール送信設定がありません - ログのみ出力:');
-    console.log('To:', to);
-    console.log('Subject:', subject);
-    console.log('Content:', content);
-    console.log('---');
-    
-    return true; // 開発環境では成功として扱う
+    const result = await response.json();
+    console.log('✅ Mailgun送信成功:', result.id);
+    return true;
 
   } catch (error) {
     console.error('❌ メール送信エラー:', error);
