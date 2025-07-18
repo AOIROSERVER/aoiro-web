@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           <div style="background-color: #ffffff; padding: 32px 24px; border-bottom: 1px solid #e1e5e9;">
             <div style="display: flex; align-items: center;">
               <div style="width: 32px; height: 32px; background-color: #dc2626; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <span style="color: white; font-size: 16px; font-weight: bold;">🚂</span>
+                <img src="https://i.imgur.com/LpVQ7YZ.jpeg" style="width: 20px; height: 20px; border-radius: 4px;" alt="電車アイコン" />
               </div>
               <div>
                 <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #1f2937;">運行情報メールサービス</h1>
