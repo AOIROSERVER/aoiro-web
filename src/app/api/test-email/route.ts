@@ -111,6 +111,25 @@ export async function POST(request: Request) {
               </div>
             </div>
 
+            <!-- 注意事項 -->
+            <div style="background-color: #fffbeb; border: 1px solid #fed7aa; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+              <h3 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #d97706;">ご注意</h3>
+              <div style="display: grid; gap: 8px;">
+                <div style="display: flex; align-items: flex-start;">
+                  <span style="width: 6px; height: 6px; background-color: #d97706; border-radius: 50%; margin-right: 12px; margin-top: 6px;"></span>
+                  <span style="font-size: 14px; color: #374151; line-height: 1.5;">このメールはAOIROSERVER内での列車情報であり、JR東日本などの鉄道会社とは一切関係がありません。</span>
+                </div>
+                <div style="display: flex; align-items: flex-start;">
+                  <span style="width: 6px; height: 6px; background-color: #d97706; border-radius: 50%; margin-right: 12px; margin-top: 6px;"></span>
+                  <span style="font-size: 14px; color: #374151; line-height: 1.5;">この情報は実際のダイヤの状況と差異がある場合があります。</span>
+                </div>
+                <div style="display: flex; align-items: flex-start;">
+                  <span style="width: 6px; height: 6px; background-color: #d97706; border-radius: 50%; margin-right: 12px; margin-top: 6px;"></span>
+                  <span style="font-size: 14px; color: #374151; line-height: 1.5;">最新の運行情報は各鉄道会社の公式サイトでご確認ください。</span>
+                </div>
+              </div>
+            </div>
+
             <!-- フッター -->
             <div style="text-align: center; padding-top: 24px; border-top: 1px solid #e5e7eb;">
               <p style="margin: 0 0 8px 0; font-size: 12px; color: #6b7280;">

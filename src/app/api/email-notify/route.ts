@@ -101,8 +101,8 @@ export async function POST(request: Request) {
           <!-- ヘッダー -->
           <div style="background-color: #ffffff; padding: 32px 24px; border-bottom: 1px solid #e1e5e9;">
             <div style="display: flex; align-items: center;">
-              <div style="width: 32px; height: 32px; background-color: #dc2626; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <img src="https://i.imgur.com/LpVQ7YZ.jpeg" style="width: 32px; height: 32px; border-radius: 6px;" alt="電車アイコン" />
+              <div style="width: 48px; height: 48px; background-color: #dc2626; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                <img src="https://i.imgur.com/LpVQ7YZ.jpeg" style="width: 48px; height: 48px; border-radius: 10px;" alt="電車アイコン" />
               </div>
               <div>
                 <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #1f2937;">運行情報メールサービス</h1>
@@ -119,11 +119,26 @@ export async function POST(request: Request) {
                 <div style="width: 24px; height: 24px; background-color: ${statusStyle.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
                   <span style="color: white; font-size: 16px; font-weight: bold;">${statusStyle.icon}</span>
                 </div>
-                <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: ${statusStyle.color};">${statusStyle.title}</h2>
+                <div>
+                  <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: ${statusStyle.color};">${statusStyle.title}</h2>
+                  ${status.includes('見合わせ') || status.includes('運転見合わせ') ? `
+                  <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280; font-weight: 500;">${lineName}</p>
+                  ` : ''}
+                </div>
               </div>
               <p style="margin: 0; font-size: 14px; color: #374151; line-height: 1.5;">
                 ${lineName}の運行情報が更新されました。
               </p>
+              ${details ? `
+              <p style="margin: 8px 0 0 0; font-size: 14px; color: #374151; line-height: 1.5;">
+                <strong>理由:</strong> ${details}
+              </p>
+              ` : ''}
+              ${details && details.includes('区間') ? `
+              <p style="margin: 4px 0 0 0; font-size: 14px; color: #374151; line-height: 1.5;">
+                <strong>区間:</strong> ${details.split('区間')[1] || '詳細は各鉄道会社の公式サイトでご確認ください'}
+              </p>
+              ` : ''}
             </div>
 
             <!-- 詳細情報 -->
@@ -138,18 +153,6 @@ export async function POST(request: Request) {
                   <span style="font-size: 14px; color: #6b7280;">現在の状況</span>
                   <span style="font-size: 14px; color: #374151; font-weight: 500;">${status}</span>
                 </div>
-                ${previousStatus ? `
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 14px; color: #6b7280;">変更内容</span>
-                  <span style="font-size: 14px; color: #374151; font-weight: 500;">${previousStatus} → ${status}</span>
-                </div>
-                ` : ''}
-                ${details ? `
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                  <span style="font-size: 14px; color: #6b7280;">詳細情報</span>
-                  <span style="font-size: 14px; color: #374151; font-weight: 500; text-align: right; max-width: 60%;">${details}</span>
-                </div>
-                ` : ''}
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 14px; color: #6b7280;">更新時刻</span>
                   <span style="font-size: 14px; color: #374151; font-weight: 500;">${new Date().toLocaleString('ja-JP')}</span>
@@ -186,6 +189,10 @@ export async function POST(request: Request) {
             <div style="background-color: #fffbeb; border: 1px solid #fed7aa; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
               <h3 style="margin: 0 0 16px 0; font-size: 14px; font-weight: 600; color: #d97706;">ご注意</h3>
               <div style="display: grid; gap: 8px;">
+                <div style="display: flex; align-items: flex-start;">
+                  <span style="width: 6px; height: 6px; background-color: #d97706; border-radius: 50%; margin-right: 12px; margin-top: 6px;"></span>
+                  <span style="font-size: 14px; color: #374151; line-height: 1.5;">このメールはAOIROSERVER内での列車情報であり、JR東日本などの鉄道会社とは一切関係がありません。</span>
+                </div>
                 <div style="display: flex; align-items: flex-start;">
                   <span style="width: 6px; height: 6px; background-color: #d97706; border-radius: 50%; margin-right: 12px; margin-top: 6px;"></span>
                   <span style="font-size: 14px; color: #374151; line-height: 1.5;">この情報は実際のダイヤの状況と差異がある場合があります。</span>

@@ -117,6 +117,10 @@ export async function POST(request: Request) {
               <div style="display: grid; gap: 8px;">
                 <div style="display: flex; align-items: flex-start;">
                   <span style="width: 6px; height: 6px; background-color: #d97706; border-radius: 50%; margin-right: 12px; margin-top: 6px;"></span>
+                  <span style="font-size: 14px; color: #374151; line-height: 1.5;">このメールはAOIROSERVER内での列車情報であり、JR東日本などの鉄道会社とは一切関係がありません。</span>
+                </div>
+                <div style="display: flex; align-items: flex-start;">
+                  <span style="width: 6px; height: 6px; background-color: #d97706; border-radius: 50%; margin-right: 12px; margin-top: 6px;"></span>
                   <span style="font-size: 14px; color: #374151; line-height: 1.5;">悪天候時や運転支障時、システムに関するメールについては、選択していただいた路線・曜日・時間帯に関わらず配信させていただく場合がございます。</span>
                 </div>
                 <div style="display: flex; align-items: flex-start;">
