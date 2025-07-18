@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS email_notification_history (
   status TEXT NOT NULL,
   message TEXT NOT NULL,
   sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  mailgun_message_id TEXT
+
 );
 
 -- RLSポリシーの設定

@@ -24,7 +24,7 @@ import {
   Login,
   Logout,
   Cloud,
-  Train,
+
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -206,21 +206,14 @@ export default function MorePage() {
         設定
       </Typography>
       <Grid container spacing={2} mb={3}>
-        <Grid item xs={4}>
+        <Grid item xs={6}>
           <Button fullWidth variant="outlined" startIcon={<NotificationsNone sx={{ color: "#4A90E2" }} />} sx={{ borderRadius: 2 }}
             onClick={() => router.push('/settings/notification')}
           >
             通知設定
           </Button>
         </Grid>
-        <Grid item xs={4}>
-          <Button fullWidth variant="outlined" startIcon={<Train sx={{ color: "#FF6B6B" }} />} sx={{ borderRadius: 2 }}
-            onClick={() => router.push('/settings/train-notification')}
-          >
-            運行情報メール
-          </Button>
-        </Grid>
-        <Grid item xs={4}>
+        <Grid item xs={6}>
           <Button fullWidth variant="outlined" startIcon={<Palette sx={{ color: "#50C878" }} />} sx={{ borderRadius: 2 }}
             onClick={() => router.push('/settings/display')}
           >

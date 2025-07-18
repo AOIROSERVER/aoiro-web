@@ -42,7 +42,7 @@ async function runMigrations() {
         status TEXT NOT NULL,
         message TEXT NOT NULL,
         sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-        mailgun_message_id TEXT
+      
       );
 
       -- 匿名ユーザー用通知トークンテーブル

@@ -335,7 +335,7 @@ async function sendEmailNotification({
   notificationType?: string;
 }) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/email-notify`, {
+    const response = await fetch(`http://localhost:3000/api/email-notify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

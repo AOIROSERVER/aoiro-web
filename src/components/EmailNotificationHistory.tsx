@@ -21,7 +21,7 @@ interface EmailNotificationHistoryItem {
   status: string;
   message: string;
   sent_at: string;
-  mailgun_message_id?: string;
+
 }
 
 export const EmailNotificationHistory = () => {
@@ -138,11 +138,7 @@ export const EmailNotificationHistory = () => {
                   <Typography variant="caption" color="text.secondary">
                     送信日時: {new Date(item.sent_at).toLocaleString('ja-JP')}
                   </Typography>
-                  {item.mailgun_message_id && (
-                    <Typography variant="caption" color="text.secondary">
-                      ID: {item.mailgun_message_id}
-                    </Typography>
-                  )}
+
                 </Box>
               </ListItem>
               {index < history.length - 1 && <Divider />}

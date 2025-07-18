@@ -1,10 +1,11 @@
 "use client";
-import { Box, Typography, IconButton, Button, Paper, Select, MenuItem, TextField, Collapse, Alert } from "@mui/material";
+import { Box, Typography, IconButton, Button, Paper, Select, MenuItem, TextField, Collapse, Alert, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText } from "@mui/material";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import EditIcon from "@mui/icons-material/Edit";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
-import NotificationsIcon from "@mui/icons-material/Notifications";
+import WarningIcon from "@mui/icons-material/Warning";
+
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { SupabaseNotification } from "../../../components/SupabaseNotification";
@@ -53,6 +54,12 @@ export default function TrainStatusManagement() {
   const [editValues, setEditValues] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, lineName: string, oldStatus: string, newStatus: string }>({
+    open: false,
+    lineName: '',
+    oldStatus: '',
+    newStatus: ''
+  });
 
   // 路線を定義された順序でソートする関数
   const sortLines = (linesData: any[]) => {
@@ -103,6 +110,28 @@ export default function TrainStatusManagement() {
     setEditValues((prev: any) => ({ ...prev, [field]: value }));
   };
   const handleSave = async () => {
+    // 現在の路線情報を取得
+    const currentLine = lines.find(l => l.id === editId);
+    if (!currentLine) return;
+
+    // ステータスが変更されているかチェック
+    const statusChanged = currentLine.status !== editValues.status;
+    
+    if (statusChanged) {
+      // ステータスが変更されている場合は確認ダイアログを表示
+      setConfirmDialog({
+        open: true,
+        lineName: currentLine.name,
+        oldStatus: currentLine.status,
+        newStatus: editValues.status
+      });
+    } else {
+      // ステータスが変更されていない場合は直接保存
+      await saveTrainStatus();
+    }
+  };
+
+  const saveTrainStatus = async () => {
     try {
       setLoading(true);
       // Supabase保存用にlineIdを明示的に付与
@@ -131,34 +160,16 @@ export default function TrainStatusManagement() {
     }
   };
 
-  const sendTestNotification = async (line: any) => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/test-train-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          lineId: line.id,
-          lineName: line.name,
-          status: line.status,
-          details: line.detail || ''
-        }),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: `${line.name}のテスト通知を送信しました` });
-      } else {
-        throw new Error('テスト通知の送信に失敗しました');
-      }
-    } catch (error) {
-      console.error('テスト通知送信エラー:', error);
-      setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
-    } finally {
-      setLoading(false);
-    }
+  const handleConfirmSave = async () => {
+    setConfirmDialog({ open: false, lineName: '', oldStatus: '', newStatus: '' });
+    await saveTrainStatus();
   };
+
+  const handleCancelConfirm = () => {
+    setConfirmDialog({ open: false, lineName: '', oldStatus: '', newStatus: '' });
+  };
+
+
 
   return (
     <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
@@ -196,15 +207,6 @@ export default function TrainStatusManagement() {
                 </>
               ) : (
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button 
-                    variant="outlined" 
-                    size="small"
-                    startIcon={<NotificationsIcon />} 
-                    onClick={() => sendTestNotification(line)}
-                    disabled={loading}
-                  >
-                    テスト通知
-                  </Button>
                   <Button variant="outlined" startIcon={<EditIcon />} onClick={() => handleEdit(line)}>編集</Button>
                 </Box>
               )}
@@ -260,6 +262,45 @@ export default function TrainStatusManagement() {
         ))}
       </Box>
       <SupabaseNotification />
+
+      {/* 確認ダイアログ */}
+      <Dialog
+        open={confirmDialog.open}
+        onClose={handleCancelConfirm}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, color: '#d32f2f' }}>
+          <WarningIcon color="error" />
+          運行情報変更の確認
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            <strong>{confirmDialog.lineName}</strong>の運行情報を変更します。
+          </DialogContentText>
+          <DialogContentText sx={{ mb: 2 }}>
+            <strong>変更前:</strong> {confirmDialog.oldStatus}
+            <br />
+            <strong>変更後:</strong> {confirmDialog.newStatus}
+          </DialogContentText>
+          <DialogContentText sx={{ color: '#d32f2f', fontWeight: 'bold' }}>
+            ⚠️ この変更により、この路線の通知を登録しているユーザー全員にメール通知が送信されます。
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={handleCancelConfirm} color="inherit">
+            キャンセル
+          </Button>
+          <Button 
+            onClick={handleConfirmSave} 
+            variant="contained" 
+            color="error"
+            disabled={loading}
+          >
+            変更を保存して通知を送信
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 } 

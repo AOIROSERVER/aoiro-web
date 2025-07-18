@@ -205,37 +205,7 @@ export const AnonymousEmailNotificationSettings = () => {
     }
   };
 
-  const sendTestEmail = async () => {
-    if (!userEmail) {
-      setMessage({ type: 'error', text: 'メールアドレスを入力してください' });
-      return;
-    }
 
-    try {
-      const response = await fetch('/api/test-train-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: userEmail,
-          lineId: 'JY',
-          lineName: 'JR山手線',
-          status: '遅延',
-          details: '信号機故障のため、10分程度の遅れが出ています。'
-        }),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: '📧 テスト通知を送信しました！\n\nメールボックスをご確認ください。' });
-      } else {
-        throw new Error('テスト通知の送信に失敗しました');
-      }
-    } catch (error) {
-      console.error('テスト通知送信エラー:', error);
-      setMessage({ type: 'error', text: 'テスト通知の送信に失敗しました' });
-    }
-  };
 
   const testDatabaseConnection = async () => {
     try {
@@ -389,14 +359,7 @@ export const AnonymousEmailNotificationSettings = () => {
           {saving ? '登録中...' : '📧 遅延情報の受信を開始'}
         </Button>
         
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={sendTestEmail}
-          disabled={!userEmail}
-        >
-          📧 テスト通知を送信
-        </Button>
+
         
         <Button
           variant="outlined"

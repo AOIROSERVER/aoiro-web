@@ -74,7 +74,7 @@ export async function POST(request: Request) {
           
           if (shouldSendImmediate) {
             // 即座に通知を送信
-            const emailResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/email-notify`, {
+            const emailResponse = await fetch(`http://localhost:3000/api/email-notify`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
