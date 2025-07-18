@@ -149,7 +149,7 @@ function createSummary(history: any[], frequency: string): string {
         <div style="background-color: #ffffff; padding: 32px 24px; border-bottom: 1px solid #e1e5e9;">
           <div style="display: flex; align-items: center;">
                           <div style="width: 32px; height: 32px; background-color: #dc2626; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <img src="https://i.imgur.com/LpVQ7YZ.jpeg" style="width: 20px; height: 20px; border-radius: 4px;" alt="電車アイコン" />
+                <img src="https://i.imgur.com/LpVQ7YZ.jpeg" style="width: 32px; height: 32px; border-radius: 6px;" alt="電車アイコン" />
               </div>
             <div>
               <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #1f2937;">運行情報メールサービス</h1>
@@ -187,7 +187,7 @@ function createSummary(history: any[], frequency: string): string {
               <div style="background-color: ${statusStyle.bgColor}; border: 1px solid ${statusStyle.borderColor}; border-radius: 6px; padding: 16px;">
                 <div style="display: flex; align-items: center; margin-bottom: 8px;">
                   <div style="width: 16px; height: 16px; background-color: ${statusStyle.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
-                    <span style="color: white; font-size: 10px;">${statusStyle.icon}</span>
+                    <span style="color: white; font-size: 12px; font-weight: bold;">${statusStyle.icon}</span>
                   </div>
                   <h4 style="margin: 0; font-size: 14px; font-weight: 600; color: ${statusStyle.color};">${lineName}</h4>
                 </div>

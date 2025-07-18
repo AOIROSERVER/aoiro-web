@@ -102,7 +102,7 @@ export async function POST(request: Request) {
           <div style="background-color: #ffffff; padding: 32px 24px; border-bottom: 1px solid #e1e5e9;">
             <div style="display: flex; align-items: center;">
               <div style="width: 32px; height: 32px; background-color: #dc2626; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
-                <img src="https://i.imgur.com/LpVQ7YZ.jpeg" style="width: 20px; height: 20px; border-radius: 4px;" alt="電車アイコン" />
+                <img src="https://i.imgur.com/LpVQ7YZ.jpeg" style="width: 32px; height: 32px; border-radius: 6px;" alt="電車アイコン" />
               </div>
               <div>
                 <h1 style="margin: 0; font-size: 20px; font-weight: 600; color: #1f2937;">運行情報メールサービス</h1>
@@ -117,7 +117,7 @@ export async function POST(request: Request) {
             <div style="background-color: ${statusStyle.bgColor}; border: 1px solid ${statusStyle.borderColor}; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
               <div style="display: flex; align-items: center; margin-bottom: 12px;">
                 <div style="width: 24px; height: 24px; background-color: ${statusStyle.color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 8px;">
-                  <span style="color: white; font-size: 14px;">${statusStyle.icon}</span>
+                  <span style="color: white; font-size: 16px; font-weight: bold;">${statusStyle.icon}</span>
                 </div>
                 <h2 style="margin: 0; font-size: 16px; font-weight: 600; color: ${statusStyle.color};">${statusStyle.title}</h2>
               </div>
