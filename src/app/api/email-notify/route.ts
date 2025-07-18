@@ -54,16 +54,16 @@ export async function POST(request: Request) {
       if (status.includes('遅延') || status.includes('delay')) {
         return {
           color: '#dc2626',
-          bgColor: '#fef2f2',
-          borderColor: '#fecaca',
-          icon: '🚨',
+          bgColor: '#fefce8',
+          borderColor: '#fde047',
+          icon: '⚠️',
           title: '遅延情報'
         };
       } else if (status.includes('見合わせ') || status.includes('運転見合わせ') || status.includes('suspension')) {
         return {
           color: '#ea580c',
-          bgColor: '#fff7ed',
-          borderColor: '#fed7aa',
+          bgColor: '#fef2f2',
+          borderColor: '#fecaca',
           icon: '⛔',
           title: '運転見合わせ'
         };

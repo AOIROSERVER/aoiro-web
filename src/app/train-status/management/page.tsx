@@ -169,6 +169,21 @@ export default function TrainStatusManagement() {
     setConfirmDialog({ open: false, lineName: '', oldStatus: '', newStatus: '' });
   };
 
+  // バリデーション関数
+  const validateForm = () => {
+    // ステータスが必須
+    if (!editValues.status) return false;
+    
+    // 遅延や運転見合わせの場合は区間と詳細情報が必須
+    if (editValues.status === '遅延' || editValues.status === '運転見合わせ') {
+      if (!editValues.section || !editValues.detail) return false;
+    }
+    
+    return true;
+  };
+
+  // 保存ボタンの無効化状態を取得
+  const isSaveDisabled = !validateForm() || loading;
 
 
   return (
@@ -202,7 +217,19 @@ export default function TrainStatusManagement() {
               <Typography sx={{ flex: 1, fontWeight: 600, fontSize: 17 }}>{line.name}</Typography>
               {editId === line.id ? (
                 <>
-                  <IconButton color="primary" onClick={handleSave}><SaveIcon /></IconButton>
+                  <IconButton 
+                    color="primary" 
+                    onClick={handleSave} 
+                    disabled={isSaveDisabled}
+                    sx={{ 
+                      opacity: isSaveDisabled ? 0.5 : 1,
+                      '&:hover': {
+                        opacity: isSaveDisabled ? 0.5 : 0.8
+                      }
+                    }}
+                  >
+                    <SaveIcon />
+                  </IconButton>
                   <IconButton color="inherit" onClick={handleCancel}><CloseIcon /></IconButton>
                 </>
               ) : (
@@ -214,12 +241,18 @@ export default function TrainStatusManagement() {
             <Collapse in={editId === line.id}>
               <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box>
-                  <Typography sx={{ fontWeight: 500, mb: 0.5 }}>運行状況ステータス</Typography>
+                  <Typography sx={{ fontWeight: 500, mb: 0.5 }}>
+                    運行状況ステータス
+                    <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>
+                  </Typography>
                   <Select
                     value={editValues.status || ''}
                     onChange={e => handleChange('status', e.target.value)}
                     size="small"
-                    sx={{ minWidth: 160 }}
+                    sx={{ 
+                      minWidth: 160,
+                      backgroundColor: !editValues.status ? '#fff3e0' : 'white'
+                    }}
                   >
                     <MenuItem value="平常運転">平常運転</MenuItem>
                     <MenuItem value="遅延">遅延</MenuItem>
@@ -227,17 +260,30 @@ export default function TrainStatusManagement() {
                   </Select>
                 </Box>
                 <Box>
-                  <Typography sx={{ fontWeight: 500, mb: 0.5 }}>遅延区間・運転見合わせ区間</Typography>
+                  <Typography sx={{ fontWeight: 500, mb: 0.5 }}>
+                    遅延区間・運転見合わせ区間
+                    {(editValues.status === '遅延' || editValues.status === '運転見合わせ') && (
+                      <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>
+                    )}
+                  </Typography>
                   <TextField
                     value={editValues.section || ''}
                     onChange={e => handleChange('section', e.target.value)}
                     size="small"
                     fullWidth
                     placeholder="例: 東京〜新宿"
+                    sx={{
+                      backgroundColor: (editValues.status === '遅延' || editValues.status === '運転見合わせ') && !editValues.section ? '#fff3e0' : 'white'
+                    }}
                   />
                 </Box>
                 <Box>
-                  <Typography sx={{ fontWeight: 500, mb: 0.5 }}>詳細情報</Typography>
+                  <Typography sx={{ fontWeight: 500, mb: 0.5 }}>
+                    詳細情報
+                    {(editValues.status === '遅延' || editValues.status === '運転見合わせ') && (
+                      <span style={{ color: '#d32f2f', marginLeft: '4px' }}>*</span>
+                    )}
+                  </Typography>
                   <TextField
                     value={editValues.detail || ''}
                     onChange={e => handleChange('detail', e.target.value)}
@@ -246,6 +292,9 @@ export default function TrainStatusManagement() {
                     multiline
                     minRows={2}
                     placeholder="詳細な状況や備考を入力"
+                    sx={{
+                      backgroundColor: (editValues.status === '遅延' || editValues.status === '運転見合わせ') && !editValues.detail ? '#fff3e0' : 'white'
+                    }}
                   />
                 </Box>
               </Box>
