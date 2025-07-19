@@ -23,6 +23,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  letter-spacing: 0.5px;
 }
 
 .header-logo img {
@@ -192,6 +193,7 @@
     display: flex;
     align-items: center;
     gap: 6px;
+    letter-spacing: 0.3px;
   }
   
   .header-logo img {

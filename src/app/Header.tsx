@@ -27,7 +27,7 @@ export default function Header() {
               height={24}
               style={{ objectFit: 'contain' }}
             />
-            <span>AOIRO SERVER</span>
+            <span>AOIROSERVER</span>
           </Box>
         </div>
         <nav className="header-nav">
