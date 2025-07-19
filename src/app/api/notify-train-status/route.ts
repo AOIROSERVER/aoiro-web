@@ -75,21 +75,21 @@ export async function POST(request: Request) {
           if (shouldSendImmediate) {
             // 即座に通知を送信
             const emailResponse = await fetch(`http://localhost:3000/api/email-notify`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
                 to: setting.email,
                 subject: `${lineName}の運行情報`,
                 text: `${lineName}\n\n${status}${details ? `\n${details}` : ''}\n\nこのメールは自動送信されています。`,
-                lineId,
-                lineName,
-                status,
+              lineId,
+              lineName,
+              status,
                 details: details || '',
                 notificationType: currentNotificationType,
               }),
-            });
+          });
 
             if (!emailResponse.ok) {
               console.error('メール送信エラー:', await emailResponse.text());
@@ -98,12 +98,12 @@ export async function POST(request: Request) {
             }
           } else {
             // 日次/週次まとめの場合は通知履歴に保存
-            await supabase
+          await supabase
               .from('anonymous_email_notification_history')
-              .insert({
-                email: setting.email,
-                line_id: lineId,
-                line_name: lineName,
+            .insert({
+              email: setting.email,
+              line_id: lineId,
+              line_name: lineName,
                 status,
                 message: `${status}${details ? `: ${details}` : ''}`,
                 notification_type: currentNotificationType,
@@ -128,19 +128,19 @@ export async function POST(request: Request) {
     } else if (pushTokens && pushTokens.length > 0) {
       try {
         const pushResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/supabase-notify`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            lineId,
-            lineName,
-            status,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lineId,
+        lineName,
+        status,
             details: details || '',
             notificationType: currentNotificationType,
             isAnonymous: true,
           }),
-        });
+    });
 
         if (!pushResponse.ok) {
           console.error('プッシュ通知送信エラー:', await pushResponse.text());

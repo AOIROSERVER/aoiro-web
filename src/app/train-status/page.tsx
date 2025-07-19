@@ -271,17 +271,14 @@ export default function TrainStatusPage() {
   return (
     <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* ヘッダー */}
-      <Box sx={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        px: 2, py: 2, background: '#fff', borderBottom: '1px solid #e0e0e0', mb: 0.5
-      }}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <Train sx={{ color: '#1a237e', fontSize: 28 }} />
-          <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20 }}>運行状況</Typography>
+      <Box className="page-header">
+        <Box className="page-title">
+          <Train className="page-title-icon" />
+          <Typography className="page-title-text">運行状況</Typography>
         </Box>
         {!loading && isAdmin && (
-          <IconButton onClick={() => router.push('/train-status/management')}>
-            <Settings sx={{ color: '#1a237e' }} />
+          <IconButton onClick={() => router.push('/train-status/management')} className="page-header-action">
+            <Settings />
           </IconButton>
         )}
       </Box>

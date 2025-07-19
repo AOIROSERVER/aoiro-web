@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Box, Typography } from "@mui/material";
+import { SwapHoriz } from "@mui/icons-material";
 
 interface Route {
   id: string;
@@ -268,243 +270,250 @@ export default function TransferPage() {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '32px', color: '#222' }}>
-        乗換案内
-      </h1>
+    <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
+      {/* ヘッダー */}
+      <Box className="page-header">
+        <Box className="page-title">
+          <SwapHoriz className="page-title-icon" />
+          <Typography className="page-title-text">乗換案内</Typography>
+        </Box>
+      </Box>
 
-      {/* 検索フォーム */}
-      <div style={{ 
-        background: '#f8f9fa', 
-        padding: '24px', 
-        borderRadius: '12px', 
-        marginBottom: '32px',
-        border: '1px solid #e9ecef'
-      }}>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#495057' }}>
-              出発駅
-            </label>
-            <select
-              value={departureStation}
-              onChange={(e) => setDepartureStation(e.target.value)}
+      {/* コンテンツ */}
+      <Box sx={{ p: 2, maxWidth: '800px', margin: '0 auto' }}>
+        {/* 検索フォーム */}
+        <div style={{ 
+          background: '#f8f9fa', 
+          padding: '24px', 
+          borderRadius: '12px', 
+          marginBottom: '32px',
+          border: '1px solid #e9ecef'
+        }}>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginBottom: '20px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#495057' }}>
+                出発駅
+              </label>
+              <select
+                value={departureStation}
+                onChange={(e) => setDepartureStation(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  background: '#fff'
+                }}
+              >
+                <option value="">駅を選択</option>
+                {stations.map(station => (
+                  <option key={station} value={station}>{station}</option>
+                ))}
+              </select>
+            </div>
+
+            <button
+              onClick={swapStations}
               style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ced4da',
-                borderRadius: '8px',
-                fontSize: '16px',
-                background: '#fff'
+                padding: '8px 12px',
+                background: '#6c757d',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px'
               }}
             >
-              <option value="">駅を選択</option>
-              {stations.map(station => (
-                <option key={station} value={station}>{station}</option>
-              ))}
-            </select>
+              ⇄
+            </button>
+
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#495057' }}>
+                到着駅
+              </label>
+              <select
+                value={arrivalStation}
+                onChange={(e) => setArrivalStation(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '8px',
+                  fontSize: '16px',
+                  background: '#fff'
+                }}
+              >
+                <option value="">駅を選択</option>
+                {stations.map(station => (
+                  <option key={station} value={station}>{station}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <button
-            onClick={swapStations}
+            onClick={handleSearch}
+            disabled={isSearching || !departureStation || !arrivalStation}
             style={{
-              padding: '8px 12px',
-              background: '#6c757d',
+              width: '100%',
+              padding: '16px',
+              background: isSearching || !departureStation || !arrivalStation ? '#adb5bd' : '#007bff',
               color: '#fff',
               border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px'
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: isSearching || !departureStation || !arrivalStation ? 'not-allowed' : 'pointer',
+              transition: 'background 0.2s'
             }}
           >
-            ⇄
+            {isSearching ? '検索中...' : '経路検索'}
           </button>
-
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#495057' }}>
-              到着駅
-            </label>
-            <select
-              value={arrivalStation}
-              onChange={(e) => setArrivalStation(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #ced4da',
-                borderRadius: '8px',
-                fontSize: '16px',
-                background: '#fff'
-              }}
-            >
-              <option value="">駅を選択</option>
-              {stations.map(station => (
-                <option key={station} value={station}>{station}</option>
-              ))}
-            </select>
-          </div>
         </div>
 
-        <button
-          onClick={handleSearch}
-          disabled={isSearching || !departureStation || !arrivalStation}
-          style={{
-            width: '100%',
-            padding: '16px',
-            background: isSearching || !departureStation || !arrivalStation ? '#adb5bd' : '#007bff',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            cursor: isSearching || !departureStation || !arrivalStation ? 'not-allowed' : 'pointer',
-            transition: 'background 0.2s'
-          }}
-        >
-          {isSearching ? '検索中...' : '経路検索'}
-        </button>
-      </div>
-
-      {/* 検索結果 */}
-      {searchResults.length > 0 && (
-        <div>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#222' }}>
-            検索結果
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {searchResults.map((route, index) => (
-              <div
-                key={route.id}
-                style={{
-                  background: '#fff',
-                  border: '1px solid #e9ecef',
-                  borderRadius: '12px',
-                  padding: '20px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{
-                      background: index === 0 ? '#28a745' : '#6c757d',
-                      color: '#fff',
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 'bold'
-                    }}>
-                      {index === 0 ? '推奨' : `${index + 1}番目`}
-                    </span>
-                    <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#222' }}>
-                      {route.duration}
-                    </span>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#dc3545' }}>
-                      ¥{route.fare}
-                    </div>
-                    <div style={{ fontSize: '14px', color: '#6c757d' }}>
-                      乗換{route.transfers}回
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '14px', color: '#6c757d', marginBottom: '4px' }}>
-                    経路
-                  </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {route.lines.map((line, lineIndex) => (
-                      <span
-                        key={lineIndex}
-                        style={{
-                          background: '#e9ecef',
-                          color: '#495057',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {line}
+        {/* 検索結果 */}
+        {searchResults.length > 0 && (
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#222' }}>
+              検索結果
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {searchResults.map((route, index) => (
+                <div
+                  key={route.id}
+                  style={{
+                    background: '#fff',
+                    border: '1px solid #e9ecef',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        background: index === 0 ? '#28a745' : '#6c757d',
+                        color: '#fff',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                      }}>
+                        {index === 0 ? '推奨' : `${index + 1}番目`}
                       </span>
-                    ))}
+                      <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#222' }}>
+                        {route.duration}
+                      </span>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#dc3545' }}>
+                        ¥{route.fare}
+                      </div>
+                      <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                        乗換{route.transfers}回
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <div style={{ fontSize: '14px', color: '#6c757d', marginBottom: '4px' }}>
+                      経路
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {route.lines.map((line, lineIndex) => (
+                        <span
+                          key={lineIndex}
+                          style={{
+                            background: '#e9ecef',
+                            color: '#495057',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 'bold'
+                          }}
+                        >
+                          {line}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      style={{
+                        flex: 1,
+                        padding: '8px 16px',
+                        background: '#007bff',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      詳細を見る
+                    </button>
+                    <button
+                      style={{
+                        flex: 1,
+                        padding: '8px 16px',
+                        background: '#28a745',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      地図で見る
+                    </button>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    style={{
-                      flex: 1,
-                      padding: '8px 16px',
-                      background: '#007bff',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    詳細を見る
-                  </button>
-                  <button
-                    style={{
-                      flex: 1,
-                      padding: '8px 16px',
-                      background: '#28a745',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      fontSize: '14px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    地図で見る
-                  </button>
-                </div>
+        {/* 履歴・お気に入り */}
+        <div style={{ marginTop: '32px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#222' }}>
+            よく使う経路
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{
+              background: '#fff',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              padding: '16px',
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#222', marginBottom: '4px' }}>
+                東京 → 新宿
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 履歴・お気に入り */}
-      <div style={{ marginTop: '32px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '16px', color: '#222' }}>
-          よく使う経路
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{
-            background: '#fff',
-            border: '1px solid #e9ecef',
-            borderRadius: '8px',
-            padding: '16px',
-            cursor: 'pointer',
-            transition: 'background 0.2s'
-          }}>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#222', marginBottom: '4px' }}>
-              東京 → 新宿
+              <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                JR山手線 約15分
+              </div>
             </div>
-            <div style={{ fontSize: '14px', color: '#6c757d' }}>
-              JR山手線 約15分
-            </div>
-          </div>
-          <div style={{
-            background: '#fff',
-            border: '1px solid #e9ecef',
-            borderRadius: '8px',
-            padding: '16px',
-            cursor: 'pointer',
-            transition: 'background 0.2s'
-          }}>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#222', marginBottom: '4px' }}>
-              渋谷 → 池袋
-            </div>
-            <div style={{ fontSize: '14px', color: '#6c757d' }}>
-              東京メトロ副都心線 約20分
+            <div style={{
+              background: '#fff',
+              border: '1px solid #e9ecef',
+              borderRadius: '8px',
+              padding: '16px',
+              cursor: 'pointer',
+              transition: 'background 0.2s'
+            }}>
+              <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#222', marginBottom: '4px' }}>
+                渋谷 → 池袋
+              </div>
+              <div style={{ fontSize: '14px', color: '#6c757d' }}>
+                東京メトロ副都心線 約20分
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 } 

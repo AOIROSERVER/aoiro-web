@@ -195,7 +195,7 @@ export default function NotificationSettingsPage() {
           登録は無料です。
         </Typography>
       </Paper>
-
+      
       {/* メールアドレス登録 */}
       <Paper sx={{ p: 4, mb: 4, bgcolor: '#fff' }}>
         <Typography variant="h6" mb={3} color="#222">
@@ -216,12 +216,12 @@ export default function NotificationSettingsPage() {
             placeholder="example@email.com"
             type="email"
             sx={{ mb: 2 }}
-          />
+        />
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
             ※メールを受信するには「noreply@aoiroserver.site」からのメールを受信出来るよう、指定受信の設定をお願いいたします。
           </Typography>
-        </Box>
-
+      </Box>
+      
         <Button
           variant="contained"
           color="primary"
@@ -274,8 +274,8 @@ export default function NotificationSettingsPage() {
           <Typography variant="body2" color="#2e7d32" mb={3}>
             メール送信機能をテストするために、テストメールを送信できます。
           </Typography>
-          <Button
-            variant="outlined"
+        <Button
+          variant="outlined"
             color="success"
             onClick={async () => {
               try {
@@ -296,9 +296,9 @@ export default function NotificationSettingsPage() {
                 setMessage({ type: 'error', text: 'テストメールの送信に失敗しました' });
               }
             }}
-          >
+        >
             テストメール送信
-          </Button>
+        </Button>
         </Paper>
       )}
 
@@ -318,10 +318,10 @@ export default function NotificationSettingsPage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
           <Button variant="text" size="small" color="primary">
             運行情報メールサービス会員規約
-          </Button>
+        </Button>
           <Button variant="text" size="small" color="primary">
             プライバシーポリシー
-          </Button>
+        </Button>
         </Box>
       </Box>
     </Box>

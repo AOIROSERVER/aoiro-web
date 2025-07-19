@@ -2,6 +2,756 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ヘッダーのレスポンシブデザイン */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 32px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-logo {
+  font-weight: bold;
+  font-size: 20px;
+  color: #050045;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-logo img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.header-logo .MuiSvgIcon-root {
+  font-size: 24px;
+  color: #050045;
+}
+
+.header-nav {
+  display: flex;
+  gap: 24px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #222;
+  font-weight: normal;
+  font-size: 16px;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-bottom: none;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background: #f5f5f5;
+  color: #1976d2;
+}
+
+.nav-link.active {
+  color: #1976d2;
+  font-weight: bold;
+  border-bottom: 2px solid #1976d2;
+  background: #f0f6ff;
+}
+
+.nav-icon {
+  font-size: 16px;
+}
+
+.nav-label {
+  display: inline;
+}
+
+/* PCでは下部ナビゲーションを非表示 */
+.mobile-nav {
+  display: none;
+}
+
+/* フッターのレスポンシブ対応 */
+.footer {
+  background: #f0f0f0;
+  color: #00001C;
+  padding: 16px 0;
+}
+
+/* ホームページのレスポンシブデザイン */
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-title {
+  font-weight: bold;
+  font-size: 24px;
+  color: #050045;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.home-card {
+  border-radius: 12px;
+  padding: 16px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.home-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* 運行情報ページのレスポンシブデザイン */
+.train-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.train-status-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 統一されたページタイトルデザイン */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title-icon {
+  font-size: 28px;
+  color: #1a237e;
+}
+
+.page-title-text {
+  font-weight: bold;
+  font-size: 20px;
+  color: #1a237e;
+}
+
+.page-header-action {
+  color: #1a237e;
+}
+
+/* スマホ用デザイン (768px以下) */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+    height: 56px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .header-logo {
+    font-size: 18px;
+    order: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .header-logo img {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+  }
+
+  .header-logo .MuiSvgIcon-root {
+    font-size: 20px;
+    color: #050045;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  /* スマホ用の下部ナビゲーション */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+    padding: 8px 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .mobile-nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #666;
+    text-decoration: none;
+    padding: 8px 4px;
+    min-width: 60px;
+    text-align: center;
+    font-size: 10px;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-nav-link.active {
+    color: #1976d2;
+  }
+
+  .mobile-nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  .mobile-nav-label {
+    font-size: 10px;
+    line-height: 1;
+  }
+
+  /* メインコンテンツの下部マージンを追加 */
+  main {
+    padding-bottom: 80px;
+  }
+
+  /* フッターのスマホ対応 */
+  .footer {
+    margin-bottom: 80px;
+    padding: 8px 0;
+  }
+
+  /* フッター内の要素のスマホ対応 */
+  .footer .MuiBox-root {
+    flex-direction: column !important;
+    gap: 12px !important;
+    text-align: center !important;
+  }
+
+  .footer .MuiBox-root > div {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .footer .MuiBox-root > div > div {
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* サーバー状況表示のスマホ対応 - より具体的なセレクター */
+  .footer .MuiBox-root > div:last-child {
+    flex-direction: row !important;
+    gap: 8px !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div {
+    flex-direction: row !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+    align-items: center !important;
+  }
+
+  /* サーバー状況の各要素を小さく */
+  .footer .MuiBox-root > div:last-child > div > div {
+    font-size: 10px !important;
+    gap: 3px !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > span {
+    font-size: 10px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 3px !important;
+  }
+
+  /* 稼働状況の表示を強制的に横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div:first-child {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div:first-child > div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  /* 稼働状況の文字が縦に分かれないように */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  /* 稼働中テキストの強制横並び */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    word-break: keep-all !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 稼働状況のコンテナを強制的に横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-right: 4px !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+  }
+
+  /* 文字間隔を調整して重なりを防ぐ */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 要素間のギャップを増やす */
+  .footer .MuiBox-root > div:last-child > div > div {
+    gap: 8px !important;
+  }
+
+  /* スマホ版で稼働状況をより小さく横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    font-size: 8px !important;
+    gap: 2px !important;
+    margin-right: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    font-size: 8px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    font-size: 8px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    width: 6px !important;
+    height: 6px !important;
+    margin-right: 2px !important;
+  }
+
+  /* アイコンも小さく */
+  .footer .MuiBox-root > div:last-child > div > div > div svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  /* 強制的に横並びにする */
+  .footer .MuiBox-root > div:last-child {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-right: 8px !important;
+  }
+
+  /* 稼働状況の文字が縦に分かれないように */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  /* 稼働中テキストの強制横並び */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    word-break: keep-all !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 稼働状況のコンテナを強制的に横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-right: 4px !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+  }
+
+  /* 文字間隔を調整して重なりを防ぐ */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 要素間のギャップを増やす */
+  .footer .MuiBox-root > div:last-child > div > div {
+    gap: 8px !important;
+  }
+
+  .home-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .home-title {
+    font-size: 20px;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .home-card {
+    height: 120px;
+    padding: 12px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .home-card .MuiAvatar-root {
+    width: 50px !important;
+    height: 50px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .home-card .MuiAvatar-root .MuiSvgIcon-root {
+    font-size: 24px !important;
+  }
+
+  .home-card .MuiTypography-root {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+  }
+
+  .train-status-header {
+    padding: 12px;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .train-status-title {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .page-header {
+    padding: 12px;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .page-title {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .page-title-icon {
+    font-size: 24px;
+  }
+
+  .page-title-text {
+    font-size: 18px;
+  }
+
+  /* スマホ版稼働状況表示 */
+  .mobile-server-status {
+    background: #f8f9fa !important;
+    border-top: 1px solid #e9ecef !important;
+    border-bottom: 1px solid #e9ecef !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 13px !important;
+  }
+
+  .mobile-server-status .MuiBox-root {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .mobile-server-status .MuiTypography-root {
+    white-space: nowrap !important;
+    font-size: 13px !important;
+    line-height: 1 !important;
+  }
+
+
+}
+
+/* タブレット用デザイン (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header {
+    padding: 0 24px;
+  }
+
+  .header-nav {
+    gap: 16px;
+  }
+
+  .nav-link {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .nav-icon {
+    font-size: 14px;
+  }
+
+  .home-title {
+    font-size: 22px;
+  }
+
+  .card-grid {
+    gap: 20px;
+  }
+
+  .home-card {
+    height: 140px;
+  }
+}
+
+/* デスクトップ用デザイン (1025px以上) */
+@media (min-width: 1025px) {
+  .header {
+    padding: 0 48px;
+    height: 64px;
+  }
+
+  .header-logo {
+    font-size: 22px;
+  }
+
+  .header-nav {
+    gap: 32px;
+  }
+
+  .nav-link {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+
+  .nav-icon {
+    font-size: 18px;
+  }
+
+  .home-title {
+    font-size: 28px;
+  }
+
+  .card-grid {
+    gap: 24px;
+  }
+
+  .home-card {
+    height: 180px;
+    padding: 20px;
+  }
+
+  .train-status-header {
+    padding: 20px 24px;
+  }
+
+  .train-status-title {
+    gap: 12px;
+  }
+
+  .page-header {
+    padding: 20px 24px;
+  }
+
+  .page-title {
+    gap: 16px;
+  }
+
+  .page-title-icon {
+    font-size: 32px;
+  }
+
+  .page-title-text {
+    font-size: 24px;
+  }
+}
+
+/* 超大画面用デザイン (1440px以上) */
+@media (min-width: 1440px) {
+  .header {
+    padding: 0 64px;
+    height: 72px;
+  }
+
+  .header-logo {
+    font-size: 24px;
+  }
+
+  .header-nav {
+    gap: 40px;
+  }
+
+  .nav-link {
+    padding: 14px 20px;
+    font-size: 18px;
+  }
+
+  .nav-icon {
+    font-size: 20px;
+  }
+
+  .home-title {
+    font-size: 32px;
+  }
+
+  .card-grid {
+    gap: 32px;
+  }
+
+  .home-card {
+    height: 200px;
+    padding: 24px;
+  }
+
+  .train-status-header {
+    padding: 24px 32px;
+  }
+
+  .train-status-title {
+    gap: 16px;
+  }
+
+  .page-header {
+    padding: 24px 32px;
+  }
+
+  .page-title {
+    gap: 20px;
+  }
+
+  .page-title-icon {
+    font-size: 36px;
+  }
+
+  .page-title-text {
+    font-size: 28px;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -14,10 +764,82 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* 表示設定の機能実装 */
+
+/* ダークテーマ */
+[data-theme="dark"] {
+  --background: #121212;
+  --foreground: #ffffff;
+  --card-background: #1e1e1e;
+  --border-color: #333333;
+}
+
+[data-theme="dark"] body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+[data-theme="dark"] .home-card,
+[data-theme="dark"] .page-header,
+[data-theme="dark"] .mobile-nav {
+  background: var(--card-background);
+  border-color: var(--border-color);
+}
+
+/* フォントサイズ設定 */
+[data-font-size="small"] {
+  font-size: 14px;
+}
+
+[data-font-size="medium"] {
+  font-size: 16px;
+}
+
+[data-font-size="large"] {
+  font-size: 18px;
+}
+
+/* 高コントラストモード */
+[data-high-contrast="true"] {
+  --text-color: #000000;
+  --background-color: #ffffff;
+  --border-color: #000000;
+}
+
+[data-high-contrast="true"] body {
+  color: var(--text-color);
+  background: var(--background-color);
+}
+
+[data-high-contrast="true"] .home-card,
+[data-high-contrast="true"] .page-header,
+[data-high-contrast="true"] .mobile-nav {
+  border: 2px solid var(--border-color);
+}
+
+/* アニメーション軽減 */
+[data-reduced-motion="true"] * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+[data-reduced-motion="true"] .home-card:hover {
+  transform: none !important;
+}
+
+/* システムテーマ検出 */
 @media (prefers-color-scheme: dark) {
-  :root {
+  [data-auto-theme="true"] {
+    --background: #121212;
+    --foreground: #ffffff;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  [data-auto-theme="true"] {
     --background: #ffffff;
-    --foreground: #ededed;
+    --foreground: #000000;
   }
 }
 

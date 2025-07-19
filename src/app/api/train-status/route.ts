@@ -226,16 +226,16 @@ async function sendEmailNotifications(changedLines: any[]) {
           console.log(`📧 ログインユーザー通知判定: ${setting.email} (${changedLine.name}) - ${notificationType}: ${shouldNotify}`);
 
           if (shouldNotify) {
-            await sendEmailNotification({
-              email: setting.email,
-              lineId: changedLine.line_id,
-              lineName: changedLine.name,
-              status: changedLine.status,
-              details: changedLine.detail,
-              previousStatus: changedLine.previousStatus,
+          await sendEmailNotification({
+            email: setting.email,
+            lineId: changedLine.line_id,
+            lineName: changedLine.name,
+            status: changedLine.status,
+            details: changedLine.detail,
+            previousStatus: changedLine.previousStatus,
               isAnonymous: false,
               notificationType
-            });
+          });
           }
         }
       }
@@ -279,13 +279,13 @@ async function sendEmailNotifications(changedLines: any[]) {
             console.log(`📧 通知頻度チェック: ${setting.email} - ${setting.notification_frequency} -> ${shouldSendImmediate ? '即座送信' : 'まとめ保存'}`);
             
             if (shouldSendImmediate) {
-              await sendEmailNotification({
-                email: setting.email,
-                lineId: changedLine.line_id,
-                lineName: changedLine.name,
-                status: changedLine.status,
-                details: changedLine.detail,
-                previousStatus: changedLine.previousStatus,
+          await sendEmailNotification({
+            email: setting.email,
+            lineId: changedLine.line_id,
+            lineName: changedLine.name,
+            status: changedLine.status,
+            details: changedLine.detail,
+            previousStatus: changedLine.previousStatus,
                 isAnonymous: true,
                 notificationType
               });

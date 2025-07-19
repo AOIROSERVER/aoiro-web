@@ -177,17 +177,14 @@ const RoadStatusPage = () => {
   return (
     <Box sx={{ p: 0, background: '#f0f2f5', minHeight: '100vh' }}>
       {/* ヘッダー */}
-      <Box sx={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        px: 2, py: 1.5, background: '#fff', borderBottom: '1px solid #e0e0e0'
-      }}>
-        <Box display="flex" alignItems="center" gap={1}>
-          <DirectionsCar sx={{ color: '#1a237e', fontSize: 28 }} />
-          <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20 }}>道路状況</Typography>
+      <Box className="page-header">
+        <Box className="page-title">
+          <DirectionsCar className="page-title-icon" />
+          <Typography className="page-title-text">道路状況</Typography>
         </Box>
         {!loading && isAdmin && (
-          <IconButton onClick={() => router.push('/road-status/management')}>
-            <Settings sx={{ color: '#1a237e' }} />
+          <IconButton onClick={() => router.push('/road-status/management')} className="page-header-action">
+            <Settings />
           </IconButton>
         )}
       </Box>
