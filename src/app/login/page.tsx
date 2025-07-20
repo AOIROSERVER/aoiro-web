@@ -13,7 +13,7 @@ import {
   Fade,
   Slide,
 } from "@mui/material";
-import { Email, Lock, Login as LoginIcon, Visibility, VisibilityOff } from "@mui/icons-material";
+import { Email, Lock, LockOpen, Login as LoginIcon, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -55,6 +55,15 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // パスワードの強度をチェック
+  const isPasswordStrong = password.length >= 6;
+  
+  // メールアドレスの形式をチェック
+  const isValidEmail = email.includes('@');
+  
+  // フォームが有効かどうかをチェック
+  const isFormValid = isValidEmail && isPasswordStrong;
+
   // 認証状態の確認
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -93,15 +102,6 @@ function LoginContent() {
         case 'pkce_error':
           setError('認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。');
           break;
-        case 'invalid_grant':
-          setError('Googleの認証コードが無効です。ブラウザのキャッシュをクリアして再度お試しください。');
-          break;
-        case 'unauthorized_client':
-          setError('Googleのクライアント認証に失敗しました。設定を確認してください。');
-          break;
-        case 'access_denied':
-          setError('Googleログインがキャンセルされました。再度お試しください。');
-          break;
         default:
           setError('ログインに失敗しました。再度お試しください。');
       }
@@ -135,7 +135,6 @@ function LoginContent() {
       console.log(`🔄 Starting ${provider} OAuth login...`);
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
-      console.log('User Agent:', navigator.userAgent);
       
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('Redirect URL:', redirectUrl);
@@ -143,12 +142,6 @@ function LoginContent() {
       // セッションをクリアしてから新しい認証を開始
       console.log('🧹 Clearing existing session...');
       await supabase.auth.signOut();
-      
-      // ローカルストレージもクリア
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('aoiro-auth-token');
-        console.log('🧹 Local storage cleared');
-      }
       
       // プロバイダーごとに適切な設定を分ける
       const oauthOptions: any = {
@@ -178,18 +171,6 @@ function LoginContent() {
           name: error.name,
           stack: error.stack
         });
-        
-        // より詳細なエラー情報を表示
-        const detailedError = `OAuth Error Details:
-Message: ${error.message}
-Status: ${error.status}
-Name: ${error.name}
-Provider: ${provider}
-Redirect URL: ${redirectUrl}
-Current Origin: ${window.location.origin}
-User Agent: ${navigator.userAgent}`;
-        
-        console.error('Detailed error info:', detailedError);
         throw error;
       }
       
@@ -202,18 +183,15 @@ User Agent: ${navigator.userAgent}`;
       console.log('🔄 Waiting for browser redirect...');
       
     } catch (err: any) {
-      console.error(`❌ ${provider} OAuth failed:`, err);
+      console.error(`❌ ${provider} login error:`, err);
+      console.error('Full error object:', err);
+      console.error('Error type:', typeof err);
+      console.error('Error keys:', Object.keys(err || {}));
       
-      let errorMessage = 'ログインに失敗しました。再度お試しください。';
+      let errorMessage = err.error_description || err.message || '認証に失敗しました';
       
+      // プロバイダー別のエラーメッセージ
       if (provider === 'discord') {
-        console.error('Discord OAuth詳細エラー:', {
-          message: err.message,
-          status: err.status,
-          name: err.name,
-          stack: err.stack
-        });
-        
         if (err.message?.includes('redirect_uri')) {
           errorMessage = 'DiscordのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
         } else if (err.message?.includes('client_id')) {
@@ -366,10 +344,6 @@ User Agent: ${navigator.userAgent}`;
                     {error.includes('Google') && (
                       <Typography variant="caption" component="div" sx={{ mt: 1 }}>
                         詳細なエラー情報を確認するには、ブラウザの開発者ツール（F12）のコンソールを確認してください。
-                        <br />
-                        また、<a href="/test-google-oauth" style={{ color: '#1976d2', textDecoration: 'underline' }}>
-                          テストページ
-                        </a>でGoogleログイン機能を診断できます。
                       </Typography>
                     )}
                   </Alert>
@@ -446,7 +420,16 @@ User Agent: ${navigator.userAgent}`;
                       },
                     }}
                     InputProps={{
-                      startAdornment: <Lock sx={{ color: "#667eea", mr: 1 }} />,
+                      startAdornment: (
+                        <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
+                          <Fade in={!isPasswordStrong} timeout={300}>
+                            <LockOpen sx={{ color: "#667eea" }} />
+                          </Fade>
+                          <Fade in={isPasswordStrong} timeout={300}>
+                            <Lock sx={{ color: "#667eea", position: 'absolute' }} />
+                          </Fade>
+                        </Box>
+                      ),
                       endAdornment: (
                         <Button
                           onClick={() => setShowPassword(!showPassword)}
@@ -467,23 +450,31 @@ User Agent: ${navigator.userAgent}`;
                   fullWidth
                   variant="contained"
                   onClick={handleLogin}
-                  disabled={loading}
+                  disabled={loading || !isFormValid}
                   startIcon={<LoginIcon />}
                   sx={{ 
                     mt: 2, 
                     mb: 3, 
                     py: 2, 
                     borderRadius: 3,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                    background: isFormValid 
+                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                      : 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
+                    boxShadow: isFormValid 
+                      ? '0 8px 25px rgba(102, 126, 234, 0.3)'
+                      : 'none',
                     fontSize: '1.1rem',
                     fontWeight: 600,
                     letterSpacing: '0.5px',
                     textTransform: 'none',
                     '&:hover': {
-                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                      boxShadow: '0 12px 35px rgba(102, 126, 234, 0.5)',
-                      transform: 'translateY(-3px)',
+                      background: isFormValid 
+                        ? 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
+                        : 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
+                      boxShadow: isFormValid 
+                        ? '0 12px 35px rgba(102, 126, 234, 0.5)'
+                        : 'none',
+                      transform: isFormValid ? 'translateY(-3px)' : 'none',
                     },
                     '&:disabled': {
                       background: 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
@@ -493,105 +484,13 @@ User Agent: ${navigator.userAgent}`;
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
-                  {loading ? 'ログイン中...' : 'AOIRO IDにログイン'}
+                  {loading ? 'ログイン中...' : 'ログイン'}
                 </Button>
               </Fade>
 
-              {/* ソーシャルログイン */}
+              {/* 管理者ログインボタン */}
               <Fade in={true} timeout={1600}>
                 <Box sx={{ width: '100%' }}>
-                  <Divider sx={{ width: "100%", my: 3, '&::before, &::after': { borderColor: 'rgba(0,0,0,0.1)' } }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ px: 2, bgcolor: 'background.paper' }}>
-                      または
-                    </Typography>
-                  </Divider>
-                  
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={() => handleSocialLogin('google')}
-                    disabled={loading}
-                    startIcon={<GoogleIcon />}
-                    sx={{ 
-                      mb: 2,
-                      py: 1.5,
-                      borderRadius: 3,
-                      borderColor: '#db4437',
-                      color: '#db4437',
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                      letterSpacing: '0.3px',
-                      textTransform: 'none',
-                      borderWidth: 2,
-                      '&:hover': {
-                        borderColor: '#c23321',
-                        backgroundColor: 'rgba(219, 68, 55, 0.08)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(219, 68, 55, 0.2)',
-                      },
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    }}
-                  >
-                    Googleでログイン
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={() => handleSocialLogin('azure')}
-                    disabled={loading}
-                    startIcon={<MicrosoftIcon />}
-                    sx={{ 
-                      mb: 2,
-                      py: 1.5,
-                      borderRadius: 3,
-                      borderColor: '#00a1f1',
-                      color: '#00a1f1',
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                      letterSpacing: '0.3px',
-                      textTransform: 'none',
-                      borderWidth: 2,
-                      '&:hover': {
-                        borderColor: '#0078d4',
-                        backgroundColor: 'rgba(0, 161, 241, 0.08)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(0, 161, 241, 0.2)',
-                      },
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    }}
-                  >
-                    Microsoftでログイン
-                  </Button>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    onClick={() => handleSocialLogin('discord')}
-                    disabled={loading}
-                    startIcon={<DiscordIcon />}
-                    sx={{ 
-                      mb: 2,
-                      py: 1.5,
-                      borderRadius: 3,
-                      borderColor: '#5865f2',
-                      color: '#5865f2',
-                      fontSize: '1rem',
-                      fontWeight: 500,
-                      letterSpacing: '0.3px',
-                      textTransform: 'none',
-                      borderWidth: 2,
-                      '&:hover': {
-                        borderColor: '#4752c4',
-                        backgroundColor: 'rgba(88, 101, 242, 0.08)',
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(88, 101, 242, 0.2)',
-                      },
-                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    }}
-                  >
-                    Discordでログイン
-                  </Button>
-                  
-                  {/* 管理者ログインボタン */}
                   <Button
                     fullWidth
                     variant="outlined"
