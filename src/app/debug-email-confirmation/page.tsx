@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import {
   Box,
   Container,
@@ -31,7 +31,7 @@ import {
 } from "@mui/icons-material";
 import { useSearchParams } from "next/navigation";
 
-export default function DebugEmailConfirmationPage() {
+function DebugEmailConfirmationContent() {
   const [loading, setLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -295,5 +295,23 @@ export default function DebugEmailConfirmationPage() {
         </Card>
       </Container>
     </Box>
+  );
+}
+
+export default function DebugEmailConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <Box sx={{ 
+        minHeight: "100vh", 
+        display: "flex", 
+        alignItems: "center", 
+        justifyContent: "center",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+      }}>
+        <CircularProgress />
+      </Box>
+    }>
+      <DebugEmailConfirmationContent />
+    </Suspense>
   );
 } 

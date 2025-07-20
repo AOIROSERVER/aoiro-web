@@ -3,7 +3,9 @@ import { supabase } from '../../../lib/supabase';
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
+    // request.urlの代わりにheadersからURLを取得
+    const url = new URL(request.url);
+    const searchParams = url.searchParams;
     const email = searchParams.get('email');
     const lineId = searchParams.get('lineId');
 

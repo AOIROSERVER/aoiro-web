@@ -3,6 +3,15 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // 静的生成の設定
+  output: 'export',
+  trailingSlash: true,
+  // 動的ルートを無効化
+  dynamicParams: false,
+  // 特定のページを静的生成から除外
+  generateStaticParams: async () => {
+    return [];
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -30,6 +39,24 @@ const nextConfig = {
   // 実験的な機能を有効化
   experimental: {
     esmExternals: 'loose',
+  },
+  // 静的生成時の設定
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+        ],
+      },
+    ];
   },
 };
 
