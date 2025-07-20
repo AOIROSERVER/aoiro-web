@@ -618,9 +618,9 @@ export default function TrainPositionPage() {
     return null; // またはローディング表示
   }
   return (
-    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }} className="train-position-page">
+    <Box sx={{ p: 0, maxWidth: '100%', mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }} className="train-position-page">
       {/* ヘッダー */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'center' }} className="train-position-header">
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, mt: 3, justifyContent: 'center', px: 3 }} className="train-position-header">
         <Box
           className="line-icon"
           sx={{
@@ -661,10 +661,10 @@ export default function TrainPositionPage() {
       </Box>
 
       {/* 路線図 */}
-      <Box sx={{ p: 4, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+      <Box sx={{ p: 0, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
         {/* 上り・下り表記（山手線以外） */}
         {(lineCode !== 'JY1' && lineCode !== 'JY2') && (
-          <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 4 }}>
+          <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 4, px: 3 }}>
             {/* 中央線の上部に配置 */}
             <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 4, zIndex: 200, top: -10 }} className="direction-buttons">
               <Typography
@@ -731,18 +731,18 @@ export default function TrainPositionPage() {
                     <Box
                       className="station-name-box"
                       sx={{
-                        width: 140,
-                        minWidth: 100,
+                        width: { xs: 120, sm: 140 },
+                        minWidth: { xs: 80, sm: 100 },
                         backgroundColor: 'white',
                         border: `2px solid ${lineColor}`,
                         borderRadius: 2,
-                        px: 2,
+                        px: { xs: 1, sm: 2 },
                         py: 1,
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         textAlign: 'left',
                         overflow: 'visible',
                         zIndex: 100,
-                        marginLeft: 0,
+                        marginLeft: '4px',
                         display: 'flex',
                         alignItems: 'flex-start',
                         mr: 2,
@@ -760,9 +760,9 @@ export default function TrainPositionPage() {
                       {/* 路線記号バッジ */}
                       <Box
                         sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: '8px',
+                          width: { xs: 24, sm: 32 },
+                          height: { xs: 24, sm: 32 },
+                          borderRadius: { xs: '6px', sm: '8px' },
                           backgroundColor: 'white',
                           border: `2px solid ${lineColor}`,
                           display: 'flex',
@@ -771,7 +771,7 @@ export default function TrainPositionPage() {
                           justifyContent: 'center',
                           color: '#0d2a70',
                           marginRight: 1,
-                          mr: 1,
+                          mr: { xs: 0.5, sm: 1 },
                           p: 0,
                           lineHeight: 1,
                           overflow: 'hidden',
@@ -780,12 +780,32 @@ export default function TrainPositionPage() {
                           alignSelf: 'flex-start',
                         }}
                       >
-                        <span style={{ fontSize: '11px', fontWeight: 700, lineHeight: 1 }}>{lineAlpha}</span>
-                        {lineNum && <span style={{ fontSize: '15px', fontWeight: 700, lineHeight: 1 }}>{lineNum}</span>}
+                        <span style={{ 
+                          fontSize: window.innerWidth < 600 ? '8px' : '11px', 
+                          fontWeight: 700, 
+                          lineHeight: 1 
+                        }}>
+                          {lineAlpha}
+                        </span>
+                        {lineNum && (
+                          <span style={{ 
+                            fontSize: window.innerWidth < 600 ? '10px' : '15px', 
+                            fontWeight: 700, 
+                            lineHeight: 1 
+                          }}>
+                            {lineNum}
+                          </span>
+                        )}
                       </Box>
                       <Typography 
                         variant="h6" 
-                        sx={{ fontWeight: 600, color: '#222', fontSize: isLongName ? '0.85rem' : '1rem', textAlign: 'left', ml: 1 }}
+                        sx={{ 
+                          fontWeight: 600, 
+                          color: '#222', 
+                          fontSize: window.innerWidth < 600 ? '0.75rem' : (isLongName ? '0.85rem' : '1rem'), 
+                          textAlign: 'left', 
+                          ml: { xs: 0.5, sm: 1 } 
+                        }}
                       >
                         {station.name}
                       </Typography>

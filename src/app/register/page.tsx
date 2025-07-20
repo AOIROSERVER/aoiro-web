@@ -33,18 +33,6 @@ function RegisterContent() {
 
   // パスワードの強度をチェック
   const isPasswordStrong = password.length >= 6;
-  
-  // メールアドレスの形式をチェック
-  const isValidEmail = email.includes('@');
-  
-  // ゲームタグの有効性をチェック
-  const isValidGameTag = gameTag.length >= 3 && /^[a-zA-Z0-9_-]+$/.test(gameTag);
-  
-  // パスワード確認の一致をチェック
-  const doPasswordsMatch = password === confirmPassword && password.length > 0;
-  
-  // フォームが有効かどうかをチェック
-  const isFormValid = username.length > 0 && isValidGameTag && isValidEmail && isPasswordStrong && doPasswordsMatch;
 
   // URLパラメータからエラーを取得
   useEffect(() => {
@@ -117,9 +105,7 @@ function RegisterContent() {
     }
 
     try {
-      console.log('🔍 アカウント登録開始:', { email, username, gameTag });
-      
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -131,43 +117,11 @@ function RegisterContent() {
         }
       });
       
-      console.log('🔍 登録結果:', { 
-        success: !error, 
-        error: error?.message,
-        user: data?.user?.email,
-        session: !!data?.session,
-        emailConfirmed: data?.user?.email_confirmed_at
-      });
-      
-      if (error) {
-        console.error('❌ 登録エラー:', error);
-        throw error;
-      }
-      
-      // 登録成功後の詳細情報
-      if (data?.user) {
-        console.log('✅ ユーザー登録成功:', {
-          id: data.user.id,
-          email: data.user.email,
-          emailConfirmed: data.user.email_confirmed_at,
-          createdAt: data.user.created_at,
-          metadata: data.user.user_metadata
-        });
-        
-        // メール確認の状態をチェック
-        if (!data.user.email_confirmed_at) {
-          console.log('📧 メール確認待ち状態');
-          console.log('📧 確認メールが送信されているはずです');
-          console.log('📧 スパムフォルダも確認してください');
-        } else {
-          console.log('✅ メール確認済み');
-        }
-      }
+      if (error) throw error;
       
       // 登録成功後、確認メール送信の案内
       router.push("/login?message=registration_success");
     } catch (err: any) {
-      console.error('❌ 登録処理エラー:', err);
       setError(err.error_description || err.message);
     } finally {
       setLoading(false);
@@ -471,31 +425,23 @@ function RegisterContent() {
                   fullWidth
                   variant="contained"
                   onClick={handleRegister}
-                  disabled={loading || !isFormValid}
+                  disabled={loading}
                   startIcon={<RegisterIcon />}
                   sx={{ 
                     mt: 3, 
                     mb: 3, 
                     py: 2, 
                     borderRadius: 3,
-                    background: isFormValid 
-                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                      : 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
-                    boxShadow: isFormValid 
-                      ? '0 8px 25px rgba(102, 126, 234, 0.3)'
-                      : 'none',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
                     fontSize: '1.1rem',
                     fontWeight: 600,
                     letterSpacing: '0.5px',
                     textTransform: 'none',
                     '&:hover': {
-                      background: isFormValid 
-                        ? 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
-                        : 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
-                      boxShadow: isFormValid 
-                        ? '0 12px 35px rgba(102, 126, 234, 0.5)'
-                        : 'none',
-                      transform: isFormValid ? 'translateY(-3px)' : 'none',
+                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                      boxShadow: '0 12px 35px rgba(102, 126, 234, 0.5)',
+                      transform: 'translateY(-3px)',
                     },
                     '&:disabled': {
                       background: 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',

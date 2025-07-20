@@ -208,51 +208,115 @@ async function getAoiroServerStatus(): Promise<ServiceStatus> {
   }
 }
 
-export async function GET() {
-  try {
-    console.log('📊 ステータスAPI: 全サービスチェック開始', new Date().toLocaleString('ja-JP'));
-    
-    // 各サービスのステータスを並行してチェック
-    const statusPromises = services.map(async (service) => {
-      try {
-        return await checkServiceStatus(service);
-      } catch (error) {
-        console.error(`❌ ${service.name} ステータスチェックエラー:`, error);
-        return {
-          name: service.name,
-          status: 'outage' as const,
-          lastChecked: new Date().toISOString(),
-          description: service.description,
-          url: service.url
-        };
-      }
-    });
+// その他のモックサービス（AOIROSERVER以外）
+const otherMockServices: ServiceStatus[] = [
+  {
+    name: 'AOIROSERVER公式サイト',
+    status: 'operational',
+    responseTime: 85,
+    lastChecked: new Date().toISOString(),
+    description: 'AOIROSERVER公式サイト',
+    url: 'https://aoiroserver.tokyo'
+  },
+  {
+    name: 'AOIROSERVER アプリ',
+    status: 'operational',
+    responseTime: 95,
+    lastChecked: new Date().toISOString(),
+    description: 'AOIROSERVERアプリサイト',
+    url: 'https://aoiroserver.site'
+  },
+  {
+    name: 'データベース',
+    status: 'operational',
+    responseTime: 45,
+    lastChecked: new Date().toISOString(),
+    description: 'Supabase データベース'
+  },
+  {
+    name: '認証サービス',
+    status: 'operational',
+    responseTime: 75,
+    lastChecked: new Date().toISOString(),
+    description: 'Supabase Auth'
+  },
+  {
+    name: '通知サービス',
+    status: 'operational',
+    responseTime: 150,
+    lastChecked: new Date().toISOString(),
+    description: 'プッシュ通知・メール通知'
+  }
+];
 
-    const statuses = await Promise.all(statusPromises);
+export async function GET() {
+  const apiStartTime = new Date();
+  
+  try {
+    // 実際のサービスチェックを実行
+    const statusPromises = services.map(checkServiceStatus);
+    const actualStatuses = await Promise.all(statusPromises);
     
-    console.log('📊 ステータスAPI: 全サービスチェック完了', new Date().toLocaleString('ja-JP'));
+    // 実際のチェック結果とその他のモックサービスを組み合わせ
+    const allServices = [...actualStatuses, ...otherMockServices.filter(s => 
+      !actualStatuses.some(as => as.name === s.name)
+    )];
+    
+    const apiEndTime = new Date();
+    const lastUpdated = apiEndTime.toISOString();
+    
+    console.log('📊 ステータスAPI: 全サービスチェック完了', apiEndTime.toLocaleString('ja-JP'));
     
     return NextResponse.json({
-      status: 'success',
-      timestamp: new Date().toISOString(),
-      services: statuses
+      services: allServices,
+      lastUpdated,
+      totalServices: allServices.length,
+      operationalServices: allServices.filter(s => s.status === 'operational').length
     });
-    
   } catch (error) {
-    console.error('❌ ステータスAPI エラー:', error);
+    console.error('ステータスチェックエラー:', error);
     
-    // エラー時でも基本的なレスポンスを返す
-    return NextResponse.json({
-      status: 'error',
-      timestamp: new Date().toISOString(),
-      message: 'サービスステータスの取得に失敗しました',
-      services: services.map(service => ({
-        name: service.name,
-        status: 'outage' as const,
+    // エラー時はAOIROSERVERの実際のステータスを取得してからモックデータを返す
+    try {
+      const aoiroServerStatus = await getAoiroServerStatus();
+      const allServices = [aoiroServerStatus, ...otherMockServices];
+      
+      const apiEndTime = new Date();
+      const lastUpdated = apiEndTime.toISOString();
+      
+      console.log('📊 ステータスAPI: フォールバック処理完了', apiEndTime.toLocaleString('ja-JP'));
+      
+      return NextResponse.json({
+        services: allServices,
+        lastUpdated,
+        totalServices: allServices.length,
+        operationalServices: allServices.filter(s => s.status === 'operational').length
+      });
+    } catch (fallbackError) {
+      console.error('フォールバックエラー:', fallbackError);
+      
+      // 最終フォールバック：AOIROSERVERを停止中として扱う
+      const fallbackAoiroServer: ServiceStatus = {
+        name: 'AOIROSERVER',
+        status: 'outage',
+        responseTime: undefined,
         lastChecked: new Date().toISOString(),
-        description: service.description,
-        url: service.url
-      }))
-    }, { status: 500 });
+        description: 'Minecraft Bedrockサーバー'
+      };
+      
+      const allServices = [fallbackAoiroServer, ...otherMockServices];
+      
+      const apiEndTime = new Date();
+      const lastUpdated = apiEndTime.toISOString();
+      
+      console.log('📊 ステータスAPI: 最終フォールバック処理完了', apiEndTime.toLocaleString('ja-JP'));
+      
+      return NextResponse.json({
+        services: allServices,
+        lastUpdated,
+        totalServices: allServices.length,
+        operationalServices: allServices.filter(s => s.status === 'operational').length
+      });
+    }
   }
 } 

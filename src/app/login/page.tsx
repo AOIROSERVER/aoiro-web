@@ -57,12 +57,6 @@ function LoginContent() {
 
   // パスワードの強度をチェック
   const isPasswordStrong = password.length >= 6;
-  
-  // メールアドレスの形式をチェック
-  const isValidEmail = email.includes('@');
-  
-  // フォームが有効かどうかをチェック
-  const isFormValid = isValidEmail && isPasswordStrong;
 
   // 認証状態の確認
   useEffect(() => {
@@ -450,31 +444,23 @@ function LoginContent() {
                   fullWidth
                   variant="contained"
                   onClick={handleLogin}
-                  disabled={loading || !isFormValid}
+                  disabled={loading}
                   startIcon={<LoginIcon />}
                   sx={{ 
                     mt: 2, 
                     mb: 3, 
                     py: 2, 
                     borderRadius: 3,
-                    background: isFormValid 
-                      ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                      : 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
-                    boxShadow: isFormValid 
-                      ? '0 8px 25px rgba(102, 126, 234, 0.3)'
-                      : 'none',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
                     fontSize: '1.1rem',
                     fontWeight: 600,
                     letterSpacing: '0.5px',
                     textTransform: 'none',
                     '&:hover': {
-                      background: isFormValid 
-                        ? 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)'
-                        : 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
-                      boxShadow: isFormValid 
-                        ? '0 12px 35px rgba(102, 126, 234, 0.5)'
-                        : 'none',
-                      transform: isFormValid ? 'translateY(-3px)' : 'none',
+                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                      boxShadow: '0 12px 35px rgba(102, 126, 234, 0.5)',
+                      transform: 'translateY(-3px)',
                     },
                     '&:disabled': {
                       background: 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
@@ -484,7 +470,7 @@ function LoginContent() {
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
-                  {loading ? 'ログイン中...' : 'ログイン'}
+                  {loading ? 'ログイン中...' : 'AOIRO IDにログイン'}
                 </Button>
               </Fade>
 

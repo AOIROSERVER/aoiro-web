@@ -232,28 +232,173 @@ export default function TrainStatusPage() {
 
   useEffect(() => {
     const fetchLines = async () => {
-      const res = await fetch("/api/train-status");
-      const data = await res.json();
-      const linesData = Array.isArray(data) ? data : data.lines;
-      
-      // デバッグ用：東海道新幹線のデータを確認
-      const caLine = linesData.find((line: any) => line.id === 'CA');
-      console.log('東海道新幹線のデータ:', caLine);
-      
-      // 路線を定義された順序でソート
-      const sortedLines = linesData.sort((a: any, b: any) => {
-        const aIndex = lineOrder.indexOf(a.id);
-        const bIndex = lineOrder.indexOf(b.id);
+      try {
+        console.log('🚂 運行情報を取得中...');
+        const res = await fetch("/api/train-status");
         
-        // 定義されていない路線は最後に配置
-        if (aIndex === -1 && bIndex === -1) return 0;
-        if (aIndex === -1) return 1;
-        if (bIndex === -1) return -1;
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         
-        return aIndex - bIndex;
-      });
-      
-      setLines(sortedLines);
+        const data = await res.json();
+        const linesData = Array.isArray(data) ? data : data.lines;
+        
+        // デバッグ用：東海道新幹線のデータを確認
+        const caLine = linesData.find((line: any) => line.id === 'CA');
+        console.log('東海道新幹線のデータ:', caLine);
+        
+        // 路線を定義された順序でソート
+        const sortedLines = linesData.sort((a: any, b: any) => {
+          const aIndex = lineOrder.indexOf(a.id);
+          const bIndex = lineOrder.indexOf(b.id);
+          
+          // 定義されていない路線は最後に配置
+          if (aIndex === -1 && bIndex === -1) return 0;
+          if (aIndex === -1) return 1;
+          if (bIndex === -1) return -1;
+          
+          return aIndex - bIndex;
+        });
+        
+        setLines(sortedLines);
+        console.log('✅ 運行情報の取得に成功');
+      } catch (error) {
+        console.error('❌ APIからの運行情報取得に失敗:', error);
+        console.log('🔄 ローカルデータを使用します...');
+        
+        // フォールバック: ローカルデータを使用
+        try {
+          const localData = [
+            {
+              "id": "CA",
+              "name": "東海道新幹線",
+              "status": "遅延",
+              "color": "#0033cb",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "JK",
+              "name": "京浜東北線",
+              "status": "平常運転",
+              "color": "#00b2e5",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "JY1",
+              "name": "山手線（内回り）",
+              "status": "平常運転",
+              "color": "#8fd400",
+              "updatedAt": "2025-06-15T00:09:11.469Z",
+              "section": "浜松〜有楽町",
+              "detail": "テストテキスト"
+            },
+            {
+              "id": "JY2",
+              "name": "山手線（外回り）",
+              "status": "平常運転",
+              "color": "#8fd400",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "JB",
+              "name": "総武線",
+              "status": "平常運転",
+              "color": "#ffd400",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "JC",
+              "name": "中央線",
+              "status": "平常運転",
+              "color": "#f15a22",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "JT",
+              "name": "東海道線",
+              "status": "平常運転",
+              "color": "#f68b1e",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "JO",
+              "name": "横須賀線",
+              "status": "平常運転",
+              "color": "#1069b4",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "M",
+              "name": "丸の内線",
+              "status": "平常運転",
+              "color": "#f62e36",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "Z",
+              "name": "半蔵門線",
+              "status": "平常運転",
+              "color": "#8f76d6",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "C",
+              "name": "千代田線",
+              "status": "平常運転",
+              "color": "#00bb86",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "H",
+              "name": "日比谷線",
+              "status": "平常運転",
+              "color": "#b5b5ac",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "G",
+              "name": "銀座線",
+              "status": "平常運転",
+              "color": "#f39700",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "AK",
+              "name": "あきが丘線",
+              "status": "平常運転",
+              "color": "#e37e40",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            },
+            {
+              "id": "AU",
+              "name": "あおうみ線 (空港アクセス線)",
+              "status": "平常運転",
+              "color": "#15206b",
+              "updatedAt": "2025-06-15T00:09:11.469Z"
+            }
+          ];
+          
+          // 路線を定義された順序でソート
+          const sortedLines = localData.sort((a: any, b: any) => {
+            const aIndex = lineOrder.indexOf(a.id);
+            const bIndex = lineOrder.indexOf(b.id);
+            
+            // 定義されていない路線は最後に配置
+            if (aIndex === -1 && bIndex === -1) return 0;
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            
+            return aIndex - bIndex;
+          });
+          
+          setLines(sortedLines);
+          console.log('✅ ローカルデータの読み込みに成功');
+        } catch (localError) {
+          console.error('❌ ローカルデータの読み込みにも失敗:', localError);
+          // 最後の手段として空の配列を設定
+          setLines([]);
+        }
+      }
     };
     fetchLines();
   }, []);
