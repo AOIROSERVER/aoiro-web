@@ -204,7 +204,7 @@ function RegisterContent() {
           }}
         >
           <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
-            AOIROidアカウント作成
+            AOIRO IDアカウント作成
           </Typography>
           <Typography variant="body2" color="text.secondary" mb={3}>
             新しいアカウントを作成します

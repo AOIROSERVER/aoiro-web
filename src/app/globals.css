@@ -540,26 +540,31 @@
 
   .train-status-header {
     padding: 12px;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
-    text-align: center;
+    align-items: center;
+    justify-content: center;
   }
 
   .train-status-title {
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
   }
 
   .page-header {
     padding: 12px;
-    flex-direction: column;
+    flex-direction: row;
     gap: 8px;
-    text-align: center;
+    align-items: center;
+    justify-content: center;
   }
 
   .page-title {
-    flex-direction: column;
-    gap: 4px;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
   }
 
   .page-title-icon {
@@ -593,6 +598,144 @@
     white-space: nowrap !important;
     font-size: 13px !important;
     line-height: 1 !important;
+  }
+
+  /* スマホ版で路線図の下のステータス表示を非表示 */
+  @media (max-width: 768px) {
+    .MuiBox-root[style*="display: flex"][style*="justifyContent: center"][style*="alignItems: center"][style*="gap: 3"] {
+      display: none !important;
+    }
+  }
+
+  /* スマホ版で列車位置情報ページの駅名を小さく */
+  @media (max-width: 768px) {
+    /* 駅名ボックスのサイズ調整 */
+    .train-position-page .station-name-box {
+      width: 60px !important;
+      min-width: 50px !important;
+      height: 40px !important;
+      padding: 8px 4px !important;
+      margin-right: 8px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    /* 駅名テキストのサイズ調整 */
+    .train-position-page .station-name-box .MuiTypography-root {
+      font-size: 9px !important;
+      line-height: 1.1 !important;
+      white-space: normal !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      text-align: center !important;
+      word-break: break-all !important;
+      hyphens: auto !important;
+    }
+
+    /* 路線記号バッジを非表示 */
+    .train-position-page .station-name-box .MuiBox-root[style*="width: 32px"][style*="height: 32px"] {
+      display: none !important;
+    }
+
+    /* より具体的なセレクターで路線記号を非表示 */
+    .train-position-page .station-name-box .MuiBox-root[style*="borderRadius: 8px"] {
+      display: none !important;
+    }
+
+    /* 路線記号のspan要素も非表示 */
+    .train-position-page .station-name-box span {
+      display: none !important;
+    }
+
+    /* 路線記号のボックス全体を非表示 */
+    .train-position-page .station-name-box .MuiBox-root[style*="display: flex"][style*="flexDirection: column"] {
+      display: none !important;
+    }
+
+    /* 駅名ボックス内の最初の子要素（路線記号ボックス）を非表示 */
+    .train-position-page .station-name-box > .MuiBox-root:first-child {
+      display: none !important;
+    }
+
+    /* 駅名テキストのマージン調整（路線記号が消えたので左寄せ） */
+    .train-position-page .station-name-box .MuiTypography-root {
+      margin-left: 0 !important;
+    }
+  }
+
+  /* スマホ版で列車位置情報ページのタイトルを調整 */
+  @media (max-width: 768px) {
+    /* タイトルテキストの調整 */
+    .train-position-page .train-position-title {
+      font-size: 14px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      line-height: 1.2 !important;
+    }
+
+    /* 路線アイコンの横幅維持 */
+    .train-position-page .line-icon {
+      width: 36px !important;
+      height: 36px !important;
+      min-width: 36px !important;
+      flex-shrink: 0 !important;
+      margin-right: 6px !important;
+      font-size: 16px !important;
+    }
+
+    /* タイトルコンテナの調整 */
+    .train-position-page .train-position-header {
+      gap: 8px !important;
+      padding: 0 8px !important;
+    }
+  }
+
+  /* スマホ版で列車位置情報ページの上り・下りボックスを調整 */
+  @media (max-width: 768px) {
+    /* 上り・下りボックスの調整 */
+    .train-position-page .MuiBox-root[style*="position: absolute"][style*="left: 50%"][style*="transform: translateX(-50%)"] {
+      position: relative !important;
+      left: auto !important;
+      transform: none !important;
+      display: flex !important;
+      justify-content: center !important;
+      margin-bottom: 16px !important;
+      gap: 8px !important;
+    }
+
+    /* より具体的なセレクターで上り・下りボックスを調整 */
+    .train-position-page .MuiBox-root[style*="position: absolute"][style*="zIndex: 200"] {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      transform: none !important;
+      display: flex !important;
+      justify-content: center !important;
+      margin-bottom: 16px !important;
+      gap: 8px !important;
+      z-index: auto !important;
+    }
+
+    /* クラスを使った上り・下りボックスの調整 */
+    .train-position-page .direction-buttons {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      transform: none !important;
+      display: flex !important;
+      justify-content: center !important;
+      margin-bottom: 16px !important;
+      gap: 8px !important;
+      z-index: auto !important;
+    }
+
+    /* 上り・下りテキストの調整 */
+    .train-position-page .MuiTypography-root[style*="fontSize: 16"][style*="letterSpacing: 1"] {
+      font-size: 14px !important;
+      padding: 4px 8px !important;
+    }
   }
 
 

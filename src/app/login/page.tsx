@@ -93,6 +93,15 @@ function LoginContent() {
         case 'pkce_error':
           setError('認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。');
           break;
+        case 'invalid_grant':
+          setError('Googleの認証コードが無効です。ブラウザのキャッシュをクリアして再度お試しください。');
+          break;
+        case 'unauthorized_client':
+          setError('Googleのクライアント認証に失敗しました。設定を確認してください。');
+          break;
+        case 'access_denied':
+          setError('Googleログインがキャンセルされました。再度お試しください。');
+          break;
         default:
           setError('ログインに失敗しました。再度お試しください。');
       }
@@ -126,6 +135,7 @@ function LoginContent() {
       console.log(`🔄 Starting ${provider} OAuth login...`);
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
+      console.log('User Agent:', navigator.userAgent);
       
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('Redirect URL:', redirectUrl);
@@ -133,6 +143,12 @@ function LoginContent() {
       // セッションをクリアしてから新しい認証を開始
       console.log('🧹 Clearing existing session...');
       await supabase.auth.signOut();
+      
+      // ローカルストレージもクリア
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('aoiro-auth-token');
+        console.log('🧹 Local storage cleared');
+      }
       
       // プロバイダーごとに適切な設定を分ける
       const oauthOptions: any = {
@@ -162,6 +178,18 @@ function LoginContent() {
           name: error.name,
           stack: error.stack
         });
+        
+        // より詳細なエラー情報を表示
+        const detailedError = `OAuth Error Details:
+Message: ${error.message}
+Status: ${error.status}
+Name: ${error.name}
+Provider: ${provider}
+Redirect URL: ${redirectUrl}
+Current Origin: ${window.location.origin}
+User Agent: ${navigator.userAgent}`;
+        
+        console.error('Detailed error info:', detailedError);
         throw error;
       }
       
@@ -174,15 +202,18 @@ function LoginContent() {
       console.log('🔄 Waiting for browser redirect...');
       
     } catch (err: any) {
-      console.error(`❌ ${provider} login error:`, err);
-      console.error('Full error object:', err);
-      console.error('Error type:', typeof err);
-      console.error('Error keys:', Object.keys(err || {}));
+      console.error(`❌ ${provider} OAuth failed:`, err);
       
-      let errorMessage = err.error_description || err.message || '認証に失敗しました';
+      let errorMessage = 'ログインに失敗しました。再度お試しください。';
       
-      // プロバイダー別のエラーメッセージ
       if (provider === 'discord') {
+        console.error('Discord OAuth詳細エラー:', {
+          message: err.message,
+          status: err.status,
+          name: err.name,
+          stack: err.stack
+        });
+        
         if (err.message?.includes('redirect_uri')) {
           errorMessage = 'DiscordのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
         } else if (err.message?.includes('client_id')) {
@@ -300,7 +331,7 @@ function LoginContent() {
                       fontSize: { xs: '1.75rem', sm: '2.125rem' }
                     }}
                   >
-                    AOIROidにログイン
+                    AOIRO IDにログイン
                   </Typography>
                   <Typography 
                     variant="body1" 
@@ -335,6 +366,10 @@ function LoginContent() {
                     {error.includes('Google') && (
                       <Typography variant="caption" component="div" sx={{ mt: 1 }}>
                         詳細なエラー情報を確認するには、ブラウザの開発者ツール（F12）のコンソールを確認してください。
+                        <br />
+                        また、<a href="/test-google-oauth" style={{ color: '#1976d2', textDecoration: 'underline' }}>
+                          テストページ
+                        </a>でGoogleログイン機能を診断できます。
                       </Typography>
                     )}
                   </Alert>
@@ -437,22 +472,28 @@ function LoginContent() {
                   sx={{ 
                     mt: 2, 
                     mb: 3, 
-                    py: 1.5, 
-                    borderRadius: 2,
+                    py: 2, 
+                    borderRadius: 3,
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                    boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                    fontSize: '1.1rem',
+                    fontWeight: 600,
+                    letterSpacing: '0.5px',
+                    textTransform: 'none',
                     '&:hover': {
                       background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                      boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
-                      transform: 'translateY(-2px)',
+                      boxShadow: '0 12px 35px rgba(102, 126, 234, 0.5)',
+                      transform: 'translateY(-3px)',
                     },
                     '&:disabled': {
                       background: 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
+                      boxShadow: 'none',
+                      transform: 'none',
                     },
-                    transition: 'all 0.3s ease',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
-                  {loading ? 'ログイン中...' : 'ログイン'}
+                  {loading ? 'ログイン中...' : 'AOIRO IDにログイン'}
                 </Button>
               </Fade>
 
@@ -473,15 +514,22 @@ function LoginContent() {
                     startIcon={<GoogleIcon />}
                     sx={{ 
                       mb: 2,
-                      borderRadius: 2,
+                      py: 1.5,
+                      borderRadius: 3,
                       borderColor: '#db4437',
                       color: '#db4437',
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                      letterSpacing: '0.3px',
+                      textTransform: 'none',
+                      borderWidth: 2,
                       '&:hover': {
                         borderColor: '#c23321',
-                        backgroundColor: 'rgba(219, 68, 55, 0.04)',
-                        transform: 'translateY(-1px)',
+                        backgroundColor: 'rgba(219, 68, 55, 0.08)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(219, 68, 55, 0.2)',
                       },
-                      transition: 'all 0.3s ease',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                   >
                     Googleでログイン
@@ -494,15 +542,22 @@ function LoginContent() {
                     startIcon={<MicrosoftIcon />}
                     sx={{ 
                       mb: 2,
-                      borderRadius: 2,
+                      py: 1.5,
+                      borderRadius: 3,
                       borderColor: '#00a1f1',
                       color: '#00a1f1',
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                      letterSpacing: '0.3px',
+                      textTransform: 'none',
+                      borderWidth: 2,
                       '&:hover': {
                         borderColor: '#0078d4',
-                        backgroundColor: 'rgba(0, 161, 241, 0.04)',
-                        transform: 'translateY(-1px)',
+                        backgroundColor: 'rgba(0, 161, 241, 0.08)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(0, 161, 241, 0.2)',
                       },
-                      transition: 'all 0.3s ease',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                   >
                     Microsoftでログイン
@@ -515,15 +570,22 @@ function LoginContent() {
                     startIcon={<DiscordIcon />}
                     sx={{ 
                       mb: 2,
-                      borderRadius: 2,
+                      py: 1.5,
+                      borderRadius: 3,
                       borderColor: '#5865f2',
                       color: '#5865f2',
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                      letterSpacing: '0.3px',
+                      textTransform: 'none',
+                      borderWidth: 2,
                       '&:hover': {
                         borderColor: '#4752c4',
-                        backgroundColor: 'rgba(88, 101, 242, 0.04)',
-                        transform: 'translateY(-1px)',
+                        backgroundColor: 'rgba(88, 101, 242, 0.08)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(88, 101, 242, 0.2)',
                       },
-                      transition: 'all 0.3s ease',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                   >
                     Discordでログイン
@@ -536,11 +598,18 @@ function LoginContent() {
                     color="secondary"
                     sx={{ 
                       mb: 3,
-                      borderRadius: 2,
+                      py: 1.5,
+                      borderRadius: 3,
+                      fontSize: '1rem',
+                      fontWeight: 500,
+                      letterSpacing: '0.3px',
+                      textTransform: 'none',
+                      borderWidth: 2,
                       '&:hover': {
-                        transform: 'translateY(-1px)',
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 6px 20px rgba(156, 39, 176, 0.2)',
                       },
-                      transition: 'all 0.3s ease',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                     }}
                     onClick={() => router.push('/admin-login')}
                   >

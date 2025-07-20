@@ -118,15 +118,43 @@ export default function MorePage() {
                   </Typography>
                 </>
               ) : (
-                <Box onClick={() => router.push("/login")} sx={{ cursor: "pointer" }}>
-                  <Typography variant="h6" color="#050045">
-                    AOIROidにログイン
+                <Box 
+                  onClick={() => router.push("/login")} 
+                  sx={{ 
+                    cursor: "pointer",
+                    p: 2,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    '&:hover': {
+                      background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                    }
+                  }}
+                >
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: '1.1rem',
+                      letterSpacing: '0.3px',
+                      mb: 0.5
+                    }}
+                  >
+                    AOIRO IDにログイン
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      color: 'rgba(255, 255, 255, 0.9)',
+                      fontSize: '0.9rem',
+                      letterSpacing: '0.2px'
+                    }}
+                  >
                     アカウントを作成して、より便利に
-                  </Typography>
-                  <Typography variant="body2" color="error.main">
-                    ※ログインしてください
                   </Typography>
                 </Box>
               )}

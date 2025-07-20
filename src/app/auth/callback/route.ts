@@ -38,6 +38,16 @@ export async function GET(request: Request) {
       origin: requestUrl.origin,
       allParams: Object.fromEntries(requestUrl.searchParams.entries())
     })
+    
+    // Google特有のエラーハンドリング
+    if (error === 'access_denied') {
+      return NextResponse.redirect(requestUrl.origin + '/login?error=access_denied')
+    } else if (error === 'invalid_grant') {
+      return NextResponse.redirect(requestUrl.origin + '/login?error=invalid_grant')
+    } else if (error === 'unauthorized_client') {
+      return NextResponse.redirect(requestUrl.origin + '/login?error=unauthorized_client')
+    }
+    
     return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
   }
 
@@ -55,92 +65,131 @@ export async function GET(request: Request) {
       // Supabaseが生成したセッションコードかどうかをチェック
       const isSupabaseSessionCode = code?.includes('-') && code?.length === 36;
       
+      console.log('🔍 Code analysis:', {
+        code: code?.substring(0, 20) + '...',
+        length: code?.length,
+        hasHyphen: code?.includes('-'),
+        isSupabaseSessionCode,
+        provider: requestUrl.searchParams.get('provider')
+      });
+      
       if (isSupabaseSessionCode) {
-        console.log('🔍 Detected Supabase session code, using setSession...')
+        console.log('🔍 Detected Supabase session code, using setSession...');
         
         // Supabaseセッションコードの場合は、セッションを設定
-        const { data, error: sessionError } = await supabase.auth.setSession({
-          access_token: code,
-          refresh_token: code,
-        })
-        
-        if (sessionError) {
-          console.error('❌ Session setting error:', sessionError)
-          console.error('Session error details:', {
-            message: sessionError.message,
-            status: sessionError.status,
-            name: sessionError.name,
-            stack: sessionError.stack
+        try {
+          const { data, error: sessionError } = await supabase.auth.setSession({
+            access_token: code,
+            refresh_token: code,
+          })
+          
+          if (sessionError) {
+            console.error('❌ Session setting error:', sessionError)
+            console.error('Session error details:', {
+              message: sessionError.message,
+              status: sessionError.status,
+              name: sessionError.name,
+              stack: sessionError.stack
+            })
+            
+            // Google特有のセッションエラーハンドリング
+            if (sessionError.message?.includes('invalid_grant')) {
+              return NextResponse.redirect(requestUrl.origin + '/login?error=invalid_grant')
+            } else if (sessionError.message?.includes('unauthorized_client')) {
+              return NextResponse.redirect(requestUrl.origin + '/login?error=unauthorized_client')
+            } else if (sessionError.message?.includes('bad_code_verifier')) {
+              return NextResponse.redirect(requestUrl.origin + '/login?error=pkce_error')
+            }
+            
+            return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
+          }
+          
+          if (!data.session) {
+            console.error('❌ No session created')
+            console.error('Session data:', data)
+            return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
+          }
+          
+          console.log('✅ Session set successfully with Supabase code')
+          console.log('User:', data.session.user?.email)
+          console.log('Session details:', {
+            accessToken: data.session.access_token ? 'present' : 'missing',
+            refreshToken: data.session.refresh_token ? 'present' : 'missing',
+            expiresAt: data.session.expires_at,
+            user: data.session.user?.email
+          })
+          
+          // ユーザープロフィールの作成または更新
+          if (data.session.user) {
+            console.log('👤 Creating/updating user profile...')
+            const { username, game_tag } = data.session.user.user_metadata || {}
+            
+            // プロバイダー別のユーザー情報処理
+            let displayName = username
+            let gameTag = game_tag
+            
+            if (data.session.user.app_metadata?.provider === 'discord') {
+              console.log('🎮 Discord user detected')
+              displayName = data.session.user.user_metadata?.full_name || 
+                           data.session.user.user_metadata?.name || 
+                           data.session.user.email?.split('@')[0] ||
+                           `discord_${data.session.user.id.slice(0, 8)}`
+              
+              gameTag = data.session.user.user_metadata?.discord_username || 
+                        data.session.user.user_metadata?.username || 
+                        `discord_${data.session.user.id.slice(0, 8)}`
+              
+              console.log('Discord display name:', displayName)
+              console.log('Discord game tag:', gameTag)
+            } else if (data.session.user.app_metadata?.provider === 'google') {
+              console.log('🔍 Google user detected')
+              displayName = data.session.user.user_metadata?.full_name || 
+                           data.session.user.user_metadata?.name || 
+                           data.session.user.email?.split('@')[0] ||
+                           `google_${data.session.user.id.slice(0, 8)}`
+              
+              gameTag = data.session.user.user_metadata?.email?.split('@')[0] || 
+                        `google_${data.session.user.id.slice(0, 8)}`
+              
+              console.log('Google display name:', displayName)
+              console.log('Google game tag:', gameTag)
+            }
+            
+            const { error: profileError } = await supabase
+              .from('user_profiles')
+              .upsert({
+                id: data.session.user.id,
+                username: displayName,
+                game_tag: gameTag,
+              })
+            
+            if (profileError) {
+              console.error('❌ Profile creation error:', profileError)
+            } else {
+              console.log('✅ Profile created/updated successfully')
+            }
+          }
+          
+          // 認証成功後のリダイレクト
+          console.log('✅ Authentication successful, redirecting to:', next)
+          return NextResponse.redirect(requestUrl.origin + next)
+        } catch (sessionException) {
+          console.error('❌ Session setting exception:', sessionException)
+          console.error('Exception details:', {
+            message: sessionException instanceof Error ? sessionException.message : 'Unknown error',
+            stack: sessionException instanceof Error ? sessionException.stack : undefined
           })
           return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
         }
-        
-        if (!data.session) {
-          console.error('❌ No session created')
-          console.error('Session data:', data)
-          return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
-        }
-        
-        console.log('✅ Session set successfully with Supabase code')
-        console.log('User:', data.session.user?.email)
-        
-        // ユーザープロフィールの作成または更新
-        if (data.session.user) {
-          console.log('👤 Creating/updating user profile...')
-          const { username, game_tag } = data.session.user.user_metadata || {}
-          
-          // プロバイダー別のユーザー情報処理
-          let displayName = username
-          let gameTag = game_tag
-          
-          if (data.session.user.app_metadata?.provider === 'discord') {
-            console.log('🎮 Discord user detected')
-            displayName = data.session.user.user_metadata?.full_name || 
-                         data.session.user.user_metadata?.name || 
-                         data.session.user.email?.split('@')[0] ||
-                         `discord_${data.session.user.id.slice(0, 8)}`
-            
-            gameTag = data.session.user.user_metadata?.discord_username || 
-                      data.session.user.user_metadata?.username || 
-                      `discord_${data.session.user.id.slice(0, 8)}`
-            
-            console.log('Discord display name:', displayName)
-            console.log('Discord game tag:', gameTag)
-          } else if (data.session.user.app_metadata?.provider === 'google') {
-            console.log('🔍 Google user detected')
-            displayName = data.session.user.user_metadata?.full_name || 
-                         data.session.user.user_metadata?.name || 
-                         data.session.user.email?.split('@')[0] ||
-                         `google_${data.session.user.id.slice(0, 8)}`
-            
-            gameTag = data.session.user.user_metadata?.email?.split('@')[0] || 
-                      `google_${data.session.user.id.slice(0, 8)}`
-            
-            console.log('Google display name:', displayName)
-            console.log('Google game tag:', gameTag)
-          }
-          
-          const { error: profileError } = await supabase
-            .from('user_profiles')
-            .upsert({
-              id: data.session.user.id,
-              username: displayName,
-              game_tag: gameTag,
-            })
-          
-          if (profileError) {
-            console.error('❌ Profile creation error:', profileError)
-          } else {
-            console.log('✅ Profile created/updated successfully')
-          }
-        }
-        
-        // 認証成功後のリダイレクト
-        console.log('✅ Authentication successful, redirecting to:', next)
-        return NextResponse.redirect(requestUrl.origin + next)
       } else {
         // 通常のOAuthコードの処理
         console.log('🔄 Processing OAuth code...')
+        console.log('Code format:', {
+          code: code?.substring(0, 20) + '...',
+          length: code?.length,
+          provider: requestUrl.searchParams.get('provider')
+        });
+        
         const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
         
         if (exchangeError) {
@@ -222,36 +271,32 @@ export async function GET(request: Request) {
               
               gameTag = data.user.user_metadata?.email?.split('@')[0] || 
                         `google_${data.user.id.slice(0, 8)}`
+              
+              console.log('Google display name:', displayName)
+              console.log('Google game tag:', gameTag)
             }
             
-            try {
-              const { error: profileError } = await supabase
-                .from('user_profiles')
-                .upsert({
-                  id: data.user.id,
-                  username: displayName,
-                  game_tag: gameTag,
-                })
-              
-              if (profileError) {
-                console.error('❌ Profile creation error:', profileError)
-              } else {
-                console.log('✅ Profile created successfully without session')
-              }
-            } catch (profileError) {
-              console.error('❌ Profile creation exception:', profileError)
+            const { error: profileError } = await supabase
+              .from('user_profiles')
+              .upsert({
+                id: data.user.id,
+                username: displayName,
+                game_tag: gameTag,
+              })
+            
+            if (profileError) {
+              console.error('❌ Profile creation error:', profileError)
+            } else {
+              console.log('✅ Profile created/updated successfully')
             }
+            
+            // セッションなしでも認証成功として扱う
+            console.log('✅ Authentication successful without session, redirecting to:', next)
+            return NextResponse.redirect(requestUrl.origin + next)
           } else {
             console.error('❌ No user data available')
             return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
           }
-        }
-        
-        // 新規登録かどうかをチェック
-        if (data.user && !data.user.email_confirmed_at) {
-          // 新規登録でメール確認が必要な場合
-          console.log('📧 Email confirmation required')
-          return NextResponse.redirect(requestUrl.origin + '/login?message=registration_success')
         }
         
         // ユーザープロフィールの作成または更新
@@ -331,6 +376,16 @@ export async function GET(request: Request) {
           name: sessionError.name,
           stack: sessionError.stack
         })
+        
+        // Google特有のセッションエラーハンドリング
+        if (sessionError.message?.includes('invalid_grant')) {
+          return NextResponse.redirect(requestUrl.origin + '/login?error=invalid_grant')
+        } else if (sessionError.message?.includes('unauthorized_client')) {
+          return NextResponse.redirect(requestUrl.origin + '/login?error=unauthorized_client')
+        } else if (sessionError.message?.includes('bad_code_verifier')) {
+          return NextResponse.redirect(requestUrl.origin + '/login?error=pkce_error')
+        }
+        
         return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
       }
       

@@ -1,12 +1,16 @@
 "use client";
-import { Box, Card, Typography, IconButton, CircularProgress } from "@mui/material";
-import { Train, Settings, Computer, SignalCellular4Bar, SignalCellular0Bar } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
-import dynamic from 'next/dynamic';
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { subscribeUserToPush } from '../../lib/pushNotification';
-import { FaUsers, FaServer } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Box, Typography, IconButton, CircularProgress } from '@mui/material';
+import { Train, Settings } from '@mui/icons-material';
+import { useAuth } from '../../contexts/AuthContext';
+import { useServerStatus } from '../../contexts/ServerStatusContext';
+
+// スマホ版かどうかを判定する関数
+const isMobile = () => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth <= 768;
+};
 
 // 路線の表示順序を定義
 const lineOrder = [
@@ -311,20 +315,22 @@ export default function TrainStatusPage() {
               }}
             />
           </Box>
-          <Box display="flex" justifyContent="center" alignItems="center" gap={3}>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <StatusIcon status="平常運転" />
-              <Typography sx={{ color: '#43a047', fontWeight: 600, fontSize: 15 }}>平常運転</Typography>
+          {!isMobile() && (
+            <Box display="flex" justifyContent="center" alignItems="center" gap={3}>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <StatusIcon status="平常運転" />
+                <Typography sx={{ color: '#43a047', fontWeight: 600, fontSize: 15 }}>平常運転</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <StatusIcon status="遅延" />
+                <Typography sx={{ color: '#ffa000', fontWeight: 600, fontSize: 15 }}>遅延</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <StatusIcon status="運転見合わせ" />
+                <Typography sx={{ color: '#e53935', fontWeight: 600, fontSize: 15 }}>運転見合わせ</Typography>
+              </Box>
             </Box>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <StatusIcon status="遅延" />
-              <Typography sx={{ color: '#ffa000', fontWeight: 600, fontSize: 15 }}>遅延</Typography>
-            </Box>
-            <Box display="flex" alignItems="center" gap={0.5}>
-              <StatusIcon status="運転見合わせ" />
-              <Typography sx={{ color: '#e53935', fontWeight: 600, fontSize: 15 }}>運転見合わせ</Typography>
-            </Box>
-          </Box>
+          )}
         </Box>
       </Box>
       {/* 路線リスト */}

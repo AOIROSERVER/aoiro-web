@@ -618,10 +618,11 @@ export default function TrainPositionPage() {
     return null; // またはローディング表示
   }
   return (
-    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }}>
+    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }} className="train-position-page">
       {/* ヘッダー */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, justifyContent: 'center' }} className="train-position-header">
         <Box
+          className="line-icon"
           sx={{
             width: 48,
             height: 48,
@@ -652,8 +653,8 @@ export default function TrainPositionPage() {
            lineCode === 'C' ? 'C' :
            lineCode === 'Z' ? 'Z' : 'JY'}
         </Box>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', textAlign: 'center', color: 'black' }}>
+        <Box className="title-container">
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', textAlign: 'center', color: 'black' }} className="train-position-title">
             {lineName} 列車位置情報
           </Typography>
         </Box>
@@ -665,7 +666,7 @@ export default function TrainPositionPage() {
         {(lineCode !== 'JY1' && lineCode !== 'JY2') && (
           <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 4 }}>
             {/* 中央線の上部に配置 */}
-            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 4, zIndex: 200, top: -10 }}>
+            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 4, zIndex: 200, top: -10 }} className="direction-buttons">
               <Typography
                 sx={{
                   fontWeight: direction === '上り' ? 'bold' : 400,
@@ -728,6 +729,7 @@ export default function TrainPositionPage() {
                   <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', minHeight: `${ROW_HEIGHT}px`, background: '#f3f3f3' }}>
                     {/* 駅名ボックス */}
                     <Box
+                      className="station-name-box"
                       sx={{
                         width: 140,
                         minWidth: 100,

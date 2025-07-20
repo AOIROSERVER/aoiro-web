@@ -165,13 +165,13 @@ export default function DisplaySettingsPage() {
             <Typography variant="body2" color="text.secondary" mb={2}>
               テーマ
             </Typography>
-            <ToggleButtonGroup
-              value={theme}
-              exclusive
+      <ToggleButtonGroup
+        value={theme}
+        exclusive
               onChange={(_, val) => val && handleThemeChange(val)}
               disabled={autoTheme}
-              sx={{ mb: 2 }}
-            >
+        sx={{ mb: 2 }}
+      >
               <ToggleButton value="light" sx={{ px: 3 }}>
                 <Brightness7 sx={{ mr: 1 }} />
                 ライト
@@ -180,7 +180,7 @@ export default function DisplaySettingsPage() {
                 <Brightness4 sx={{ mr: 1 }} />
                 ダーク
               </ToggleButton>
-            </ToggleButtonGroup>
+      </ToggleButtonGroup>
           </CardContent>
         </Card>
 
@@ -197,16 +197,16 @@ export default function DisplaySettingsPage() {
             <Typography variant="body2" color="text.secondary" mb={2}>
               フォントサイズ
             </Typography>
-            <ToggleButtonGroup
-              value={fontSize}
-              exclusive
+      <ToggleButtonGroup
+        value={fontSize}
+        exclusive
               onChange={(_, val) => val && handleFontSizeChange(val)}
-              sx={{ mb: 2 }}
-            >
+        sx={{ mb: 2 }}
+      >
               <ToggleButton value="small" sx={{ px: 3 }}>小</ToggleButton>
               <ToggleButton value="medium" sx={{ px: 3 }}>標準</ToggleButton>
               <ToggleButton value="large" sx={{ px: 3 }}>大</ToggleButton>
-            </ToggleButtonGroup>
+      </ToggleButtonGroup>
           </CardContent>
         </Card>
 
@@ -253,7 +253,7 @@ export default function DisplaySettingsPage() {
           sx={{ mt: 2 }}
         >
           設定を保存
-        </Button>
+      </Button>
       </Box>
     </Box>
   );
