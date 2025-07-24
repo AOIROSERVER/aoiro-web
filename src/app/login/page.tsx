@@ -82,8 +82,8 @@ function LoginContent() {
 
   // URLパラメータからエラーとメッセージを取得
   useEffect(() => {
-    const errorParam = searchParams.get('error');
-    const messageParam = searchParams.get('message');
+    const errorParam = searchParams ? searchParams.get('error') : null;
+    const messageParam = searchParams ? searchParams.get('message') : null;
     
     if (errorParam) {
       switch (errorParam) {
