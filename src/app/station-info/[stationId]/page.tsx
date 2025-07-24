@@ -94,6 +94,7 @@ const stationSignImages: Record<string, string> = {
 
 export default function StationDetailPage() {
   const params = useParams();
+  if (!params) return <Box sx={{ p: 3 }}><Typography>駅情報が見つかりません</Typography></Box>;
   const rawStationId = params.stationId;
   const stationId = Array.isArray(rawStationId) ? rawStationId[0] : rawStationId;
   const decodedId = decodeURIComponent(stationId);
