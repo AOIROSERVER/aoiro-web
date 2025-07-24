@@ -50,7 +50,7 @@ export default function Header() {
           <Link
             key={item.path}
             href={item.path}
-            className={`mobile-nav-link ${pathname.startsWith(item.path) ? 'active' : ''}`}
+            className={`mobile-nav-link ${(pathname && pathname.startsWith(item.path)) ? 'active' : ''}`}
           >
             <i className={`fas ${item.icon} mobile-nav-icon`}></i>
             <span className="mobile-nav-label">{item.label}</span>
