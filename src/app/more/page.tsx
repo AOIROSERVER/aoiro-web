@@ -24,6 +24,7 @@ import {
   Login,
   Logout,
   Cloud,
+  Person,
 
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
@@ -98,7 +99,7 @@ export default function MorePage() {
             <Avatar sx={{ bgcolor: "#4A90E2", color: "#fff", fontWeight: "bold" }}
               src={avatarUrl || undefined}
             >
-              {!avatarUrl && (user ? (user.email?.charAt(0).toUpperCase() || 'A') : isLocalAdmin ? '最' : <Login />)}
+              {!avatarUrl && <Person sx={{ fontSize: 32 }} />}
             </Avatar>
             <Box flex={1}>
               {loading ? (

@@ -14,6 +14,7 @@ import {
 import { Person, Tag, Edit, Save, Cancel } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 
 interface UserProfile {
   id: string;
@@ -21,6 +22,7 @@ interface UserProfile {
   game_tag: string;
   created_at: string;
   updated_at: string;
+  avatar_url?: string;
 }
 
 function ProfileContent() {
@@ -31,6 +33,8 @@ function ProfileContent() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { user, signOut } = useAuth();
   const router = useRouter();
 
@@ -42,6 +46,12 @@ function ProfileContent() {
 
     fetchProfile();
   }, [user, router]);
+
+  useEffect(() => {
+    if (profile?.avatar_url) {
+      setAvatarUrl(profile.avatar_url);
+    }
+  }, [profile]);
 
   const fetchProfile = async () => {
     try {
@@ -127,6 +137,38 @@ function ProfileContent() {
     }
   };
 
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user) return;
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    setUploading(true);
+    setError(null);
+    // ファイル名をユーザーIDで一意に
+    const filePath = `${user.id}/${file.name}`;
+    const { error } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
+    if (error) {
+      setError('画像のアップロードに失敗しました: ' + error.message);
+      setUploading(false);
+      return;
+    }
+    // 公開URLを取得
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    const publicUrl = data.publicUrl;
+    // プロフィールにURLを保存
+    const { error: updateError } = await supabase
+      .from('user_profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', user.id);
+    if (updateError) {
+      setError('プロフィール画像の保存に失敗しました');
+    } else {
+      setAvatarUrl(publicUrl);
+      setSuccessMessage('プロフィール画像を更新しました');
+      fetchProfile();
+    }
+    setUploading(false);
+  };
+
   const handleSignOut = async () => {
     await signOut();
     router.push('/login');
@@ -146,9 +188,27 @@ function ProfileContent() {
             alignItems: "center",
           }}
         >
-          <Avatar sx={{ width: 80, height: 80, mb: 2, bgcolor: "#4A90E2" }}>
+          {/* アイコン画像アップロードUI */}
+          <Avatar
+            src={avatarUrl || undefined}
+            sx={{ width: 80, height: 80, mb: 2, bgcolor: "#4A90E2" }}
+          >
             <Person sx={{ fontSize: 40 }} />
           </Avatar>
+          <Button
+            variant="outlined"
+            component="label"
+            disabled={uploading}
+            sx={{ mb: 2 }}
+          >
+            {uploading ? "アップロード中..." : "画像を変更"}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleAvatarChange}
+            />
+          </Button>
 
           <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
             プロフィール

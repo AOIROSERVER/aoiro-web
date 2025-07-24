@@ -109,6 +109,16 @@ function LoginContent() {
     setLoading(true);
     setError(null);
     try {
+      // 管理者ログイン判定（環境変数から取得）
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+      const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+      if (email === adminEmail && password === adminPassword) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('admin', 'true');
+        }
+        router.push("/more");
+        return;
+      }
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -356,6 +366,11 @@ function LoginContent() {
                     }}
                   >
                     {successMessage}
+                    <Box mt={1}>
+                      <Typography variant="body2" color="text.secondary">
+                        ※ログイン後、右上の「その他」→「プロフィール」からアイコン画像を設定できます。
+                      </Typography>
+                    </Box>
                   </Alert>
                 </Fade>
               )}
