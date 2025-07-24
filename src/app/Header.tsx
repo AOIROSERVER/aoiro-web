@@ -35,7 +35,7 @@ export default function Header() {
             <Link
               key={item.path}
               href={item.path}
-              className={`nav-link ${pathname.startsWith(item.path) ? 'active' : ''}`}
+              className={`nav-link ${(pathname && pathname.startsWith(item.path)) ? 'active' : ''}`}
             >
               <i className={`fas ${item.icon} nav-icon`}></i>
               <span className="nav-label">{item.label}</span>
