@@ -110,8 +110,8 @@ function LoginContent() {
     setError(null);
     try {
       // 管理者ログイン判定（環境変数から取得）
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+      const adminEmail = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
+      const adminPassword = process.env.NEXT_PUBLIC_SUPERADMIN_PASSWORD;
       if (email === adminEmail && password === adminPassword) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('admin', 'true');
