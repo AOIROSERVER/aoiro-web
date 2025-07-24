@@ -318,6 +318,7 @@ const lineColors = {
 export default function TrainLineDetail() {
   const params = useParams();
   const router = useRouter();
+  if (!params) return <Box sx={{ p: 3 }}><Typography>路線情報が見つかりません</Typography></Box>;
   const lineId = params.lineId as keyof typeof lineData;
   const [statusInfo, setStatusInfo] = useState<{ status?: string; detail?: string; section?: string }>({});
 
