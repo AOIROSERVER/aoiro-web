@@ -36,7 +36,7 @@ function RegisterContent() {
 
   // URLパラメータからエラーを取得
   useEffect(() => {
-    const errorParam = searchParams.get('error');
+    const errorParam = searchParams ? searchParams.get('error') : null;
     if (errorParam) {
       switch (errorParam) {
         case 'session_error':
