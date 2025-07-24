@@ -1,11 +1,10 @@
-import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 
-export async function POST() {
-  const supabase = createRouteHandlerClient({ cookies });
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const supabase = createPagesServerClient({ req, res });
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+  if (!user) return res.status(401).json({ error: '認証が必要です' });
 
   const today = new Date().toISOString().slice(0, 10);
 
@@ -18,7 +17,7 @@ export async function POST() {
     .single();
 
   if (bonus) {
-    return NextResponse.json({ received: true });
+    return res.status(200).json({ received: true });
   }
 
   // ボーナス付与
@@ -33,6 +32,5 @@ export async function POST() {
   const currentPoints = (profile && typeof profile.points === 'number') ? profile.points : 0;
   await supabase.from('user_profiles').update({ points: currentPoints + 1 }).eq('id', user.id);
 
-  // ここでポイント加算やアイテム付与も可能
-  return NextResponse.json({ received: false, message: 'ログインボーナスを付与しました！' });
+  return res.status(200).json({ received: false, message: 'ログインボーナスを付与しました！' });
 } 
