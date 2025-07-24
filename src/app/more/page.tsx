@@ -10,6 +10,7 @@ import {
   CircularProgress,
   Divider,
   IconButton,
+  Snackbar,
 } from "@mui/material";
 import {
   Settings,
@@ -25,7 +26,7 @@ import {
   Logout,
   Cloud,
   Person,
-
+  MonetizationOn,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -44,11 +45,39 @@ export default function MorePage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { user, signOut, loading: authLoading } = useAuth();
+  const [bonusLoading, setBonusLoading] = useState(false);
+  const [bonusMessage, setBonusMessage] = useState<string | null>(null);
+  const [bonusReceivedToday, setBonusReceivedToday] = useState(false);
+  const [userPoints, setUserPoints] = useState<number | null>(null);
 
   const avatarUrl = user?.user_metadata?.picture || user?.user_metadata?.avatar_url || null;
 
   // localStorageのadminフラグ取得
   const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
+
+  // ボーナス受け取り状況を初回取得
+  useEffect(() => {
+    const checkBonus = async () => {
+      if (!user) return;
+      const res = await fetch("/api/login-bonus", { method: "POST" });
+      const data = await res.json();
+      if (data.received) setBonusReceivedToday(true);
+    };
+    checkBonus();
+  }, [user]);
+
+  // ユーザープロフィール取得
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      const res = await fetch("/api/user-profile");
+      const data = await res.json();
+      if (data.profile && typeof data.profile.points === 'number') {
+        setUserPoints(data.profile.points);
+      }
+    };
+    fetchProfile();
+  }, [user, bonusReceivedToday]);
 
   useEffect(() => {
     fetch(
@@ -167,6 +196,67 @@ export default function MorePage() {
             )}
           </Box>
         </Card>
+
+        {/* ログインボーナスボタン */}
+        {user && !authLoading && (
+          <Card sx={{ mb: 3, borderRadius: 3, p: 2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<MonetizationOn sx={{ color: '#FFD700', fontSize: 28 }} />}
+              disabled={bonusReceivedToday || bonusLoading}
+              onClick={async () => {
+                setBonusLoading(true);
+                const res = await fetch("/api/login-bonus", { method: "POST", credentials: "include" });
+                const data = await res.json();
+                if (!data.received && data.message) {
+                  setBonusMessage(data.message);
+                  setBonusReceivedToday(true);
+                } else if (data.received) {
+                  setBonusMessage("本日のログインボーナスはすでに受け取り済みです");
+                } else {
+                  setBonusMessage("ログインボーナスの取得に失敗しました");
+                }
+                setBonusLoading(false);
+              }}
+              sx={{
+                fontWeight: 700,
+                fontSize: '1.2rem',
+                py: 2,
+                px: 4,
+                borderRadius: 4,
+                boxShadow: '0 4px 24px rgba(255, 215, 0, 0.15)',
+                background: 'linear-gradient(90deg, #FFD700 0%, #FFB300 100%)',
+                color: '#333',
+                letterSpacing: '0.05em',
+                transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+                '&:hover': {
+                  background: 'linear-gradient(90deg, #FFB300 0%, #FFD700 100%)',
+                  boxShadow: '0 8px 32px rgba(255, 215, 0, 0.25)',
+                  transform: 'translateY(-2px) scale(1.04)',
+                },
+                '&:active': {
+                  transform: 'scale(0.98)',
+                },
+                minWidth: 220,
+              }}
+            >
+              {bonusReceivedToday ? "本日分は受け取り済み" : bonusLoading ? "取得中..." : "ログインボーナスをゲット"}
+            </Button>
+            <Typography variant="h6" sx={{ ml: 2, minWidth: 60, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <MonetizationOn sx={{ color: '#FFD700', fontSize: 28, verticalAlign: 'middle' }} />
+              {userPoints !== null ? userPoints : "-"}
+            </Typography>
+          </Card>
+        )}
+
+        <Snackbar
+          open={!!bonusMessage}
+          autoHideDuration={6000}
+          onClose={() => setBonusMessage(null)}
+          message={bonusMessage}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        />
 
         {/* 最新情報 */}
         <Typography variant="subtitle1" fontWeight="bold" mb={1} sx={{ color: '#212529' }}>

@@ -28,6 +28,11 @@ export async function POST() {
     received: true
   });
 
+  // 現在のポイントを取得して+1
+  const { data: profile } = await supabase.from('user_profiles').select('points').eq('id', user.id).single();
+  const currentPoints = (profile && typeof profile.points === 'number') ? profile.points : 0;
+  await supabase.from('user_profiles').update({ points: currentPoints + 1 }).eq('id', user.id);
+
   // ここでポイント加算やアイテム付与も可能
   return NextResponse.json({ received: false, message: 'ログインボーナスを付与しました！' });
 } 
