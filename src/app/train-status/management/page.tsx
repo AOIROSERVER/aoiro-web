@@ -9,6 +9,7 @@ import WarningIcon from "@mui/icons-material/Warning";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { SupabaseNotification } from "../../../components/SupabaseNotification";
+import { useAuth } from "@/contexts/AuthContext";
 
 // 路線の表示順序を定義
 const lineOrder = [
@@ -49,10 +50,10 @@ const initialLines = [
 
 export default function TrainStatusManagement() {
   const router = useRouter();
+  const { loading, isAdmin } = useAuth();
   const [lines, setLines] = useState(initialLines);
   const [editId, setEditId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<any>({});
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, lineName: string, oldStatus: string, newStatus: string }>({
     open: false,
@@ -78,7 +79,6 @@ export default function TrainStatusManagement() {
 
   // APIからデータ取得
   const fetchLines = async () => {
-    setLoading(true);
     try {
       const res = await fetch("/api/train-status");
       if (res.ok) {
@@ -91,8 +91,13 @@ export default function TrainStatusManagement() {
     } catch (e) {
       console.error('Error fetching train status:', e);
     }
-    setLoading(false);
   };
+
+  useEffect(() => {
+    if (!loading && !isAdmin) {
+      router.replace("/login");
+    }
+  }, [isAdmin, loading, router]);
 
   useEffect(() => {
     fetchLines();
@@ -133,7 +138,6 @@ export default function TrainStatusManagement() {
 
   const saveTrainStatus = async () => {
     try {
-      setLoading(true);
       // Supabase保存用にlineIdを明示的に付与
       const saveData = { ...editValues, lineId: editValues.id };
       const response = await fetch("/api/save-train-status", {
@@ -156,7 +160,7 @@ export default function TrainStatusManagement() {
       console.error('Error saving train status:', e);
       setMessage({ type: 'error', text: '運行情報の保存に失敗しました' });
     } finally {
-      setLoading(false);
+      // setLoading(false); // この行は削除
     }
   };
 

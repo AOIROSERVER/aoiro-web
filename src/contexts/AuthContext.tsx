@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { SupabaseClient, Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
+import { Snackbar } from "@mui/material";
 
 type AuthContextType = {
   supabase: SupabaseClient;
@@ -20,6 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loginBonusMessage, setLoginBonusMessage] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -124,6 +126,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
           
+          // ログインボーナスAPI呼び出し
+          try {
+            const res = await fetch("/api/login-bonus", { method: "POST" });
+            const data = await res.json();
+            if (!data.received && data.message) {
+              setLoginBonusMessage(data.message);
+            }
+          } catch (e) {
+            // エラー時は何もしない
+          }
+
           // 認証成功後のリダイレクト
           if (window.location.pathname === '/') {
             console.log('🔄 Redirecting to train-status from home page');
@@ -210,7 +223,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+      <Snackbar
+        open={!!loginBonusMessage}
+        autoHideDuration={6000}
+        onClose={() => setLoginBonusMessage(null)}
+        message={loginBonusMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => {
