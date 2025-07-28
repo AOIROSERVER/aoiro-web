@@ -50,6 +50,18 @@ export default function MorePage() {
   const [bonusReceivedToday, setBonusReceivedToday] = useState(false);
   const [userPoints, setUserPoints] = useState<number | null>(null);
 
+  // ローカルストレージからボーナス状態を復元
+  useEffect(() => {
+    if (typeof window !== 'undefined' && user) {
+      const today = new Date().toISOString().slice(0, 10);
+      const storedBonusDate = localStorage.getItem(`bonus_${user.id}_${today}`);
+      if (storedBonusDate) {
+        setBonusReceivedToday(true);
+        console.log('✅ Bonus state restored from localStorage');
+      }
+    }
+  }, [user]);
+
   const avatarUrl = user?.user_metadata?.picture || user?.user_metadata?.avatar_url || null;
 
   // localStorageのadminフラグ取得
@@ -60,8 +72,7 @@ export default function MorePage() {
     const checkBonus = async () => {
       if (!user) {
         console.log('❌ No user available for bonus check');
-        // ユーザーが存在しない場合はボーナス状態をリセット
-        setBonusReceivedToday(false);
+        // ユーザーが存在しない場合はポイントのみリセット（ボーナス状態は保持）
         setBonusMessage(null);
         setUserPoints(null);
         setBonusLoading(false);
@@ -88,6 +99,12 @@ export default function MorePage() {
         if (data.received) {
           setBonusReceivedToday(true);
           console.log('✅ Bonus already received today');
+          // ローカルストレージにボーナス状態を保存
+          if (user) {
+            const today = new Date().toISOString().slice(0, 10);
+            localStorage.setItem(`bonus_${user.id}_${today}`, today);
+            console.log('💾 Bonus state saved to localStorage');
+          }
         } else {
           setBonusReceivedToday(false);
           console.log('✅ Bonus available for today');
@@ -97,6 +114,11 @@ export default function MorePage() {
         if (data.message) {
           setBonusMessage(data.message);
         }
+        
+        console.log('📋 Final bonus state:', {
+          receivedToday: data.received,
+          message: data.message
+        });
       } catch (error) {
         console.error('❌ Initial bonus check fetch error:', error);
       }
@@ -362,6 +384,12 @@ export default function MorePage() {
                   if (data.received) {
                     setBonusMessage(data.message || "本日のログインボーナスはすでに受け取り済みです (+100P)");
                     setBonusReceivedToday(true);
+                    // ローカルストレージにボーナス状態を保存
+                    if (user) {
+                      const today = new Date().toISOString().slice(0, 10);
+                      localStorage.setItem(`bonus_${user.id}_${today}`, today);
+                      console.log('💾 Bonus state saved to localStorage');
+                    }
                     // プロフィールを再取得してポイントを更新
                     const profileRes = await fetch("/api/user-profile");
                     const profileData = await profileRes.json();
@@ -371,11 +399,22 @@ export default function MorePage() {
                   } else if (data.message) {
                     setBonusMessage(data.message);
                     setBonusReceivedToday(true);
+                    // ローカルストレージにボーナス状態を保存
+                    if (user) {
+                      const today = new Date().toISOString().slice(0, 10);
+                      localStorage.setItem(`bonus_${user.id}_${today}`, today);
+                      console.log('💾 Bonus state saved to localStorage');
+                    }
                     // プロフィールを再取得してポイントを更新
+                    console.log('🔄 Refreshing user profile after bonus...');
                     const profileRes = await fetch("/api/user-profile");
                     const profileData = await profileRes.json();
+                    console.log('📋 Profile refresh result:', profileData);
                     if (profileData.profile && typeof profileData.profile.points === 'number') {
                       setUserPoints(profileData.profile.points);
+                      console.log('✅ Points updated after bonus:', profileData.profile.points);
+                    } else {
+                      console.log('⚠️ No points found in refreshed profile');
                     }
                   } else {
                     setBonusMessage("ログインボーナスの取得に失敗しました");

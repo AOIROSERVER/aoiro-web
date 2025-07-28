@@ -151,7 +151,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null);
           setUser(null);
           setIsAdmin(false);
-          setLoginBonusMessage(null); // ログインボーナスメッセージをクリア
+          // ログインボーナスメッセージはクリアするが、ボーナス状態は保持
+          setLoginBonusMessage(null);
+          
+          // ローカルストレージのボーナス状態は保持（データベースと同期）
+          console.log('ℹ️ Bonus state kept in localStorage for database sync');
           
           // ローカルストレージからセッションを削除
           if (typeof window !== 'undefined') {
@@ -217,7 +221,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     setLoading(true);
-    setLoginBonusMessage(null); // ログインボーナスメッセージをクリア
+    // ログインボーナスメッセージはクリアするが、ボーナス状態は保持
+    setLoginBonusMessage(null);
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);

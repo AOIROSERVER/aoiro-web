@@ -166,6 +166,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('date', today)
       .single();
 
+    console.log('📋 Bonus check result:', {
+      hasBonus: !!bonus,
+      bonusError: bonusError ? {
+        message: bonusError.message,
+        code: bonusError.code
+      } : null,
+      bonus: bonus ? {
+        id: bonus.id,
+        user_id: bonus.user_id,
+        date: bonus.date,
+        received: bonus.received
+      } : null
+    });
+
     if (bonusError && bonusError.code !== 'PGRST116') { // PGRST116はレコードが見つからないエラー
       console.error('❌ Error checking existing bonus:', bonusError);
       return res.status(500).json({ error: 'ボーナス確認中にエラーが発生しました', details: bonusError.message });
@@ -222,25 +236,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .eq('id', user.id)
           .single();
 
-        if (profileError && profileError.code !== 'PGRST116') {
+        if (profileError) {
           console.error('❌ Error fetching user profile:', profileError);
+          
           // プロフィールが存在しない場合は作成を試行
-          console.log('🔄 Creating user profile...');
-          const { error: createProfileError } = await supabase
-            .from('user_profiles')
-            .insert({
-              id: user.id,
-              username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
-              game_tag: user.user_metadata?.game_tag || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
-              points: 100
-            });
+          if (profileError.code === 'PGRST116') {
+            console.log('🔄 Creating user profile...');
+            const { error: createProfileError } = await supabase
+              .from('user_profiles')
+              .insert({
+                id: user.id,
+                username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+                game_tag: user.user_metadata?.game_tag || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+                points: 100
+              });
 
-          if (createProfileError) {
-            console.error('❌ Error creating user profile:', createProfileError);
-            return res.status(500).json({ error: 'ユーザープロフィール作成中にエラーが発生しました', details: createProfileError.message });
+            if (createProfileError) {
+              console.error('❌ Error creating user profile:', createProfileError);
+              return res.status(500).json({ error: 'ユーザープロフィール作成中にエラーが発生しました', details: createProfileError.message });
+            }
+            console.log('✅ User profile created with 100 points');
+          } else {
+            return res.status(500).json({ error: 'ユーザープロフィール取得中にエラーが発生しました', details: profileError.message });
           }
-          console.log('✅ User profile created with 100 points');
         } else {
+          // プロフィールが存在する場合、ポイントを更新
           const currentPoints = (profile && typeof profile.points === 'number') ? profile.points : 0;
           console.log('📊 Current points:', currentPoints);
           
@@ -274,7 +294,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
     console.log('🎉 Login bonus process completed successfully');
-    return res.status(200).json({ received: false, message: 'ログインボーナスを付与しました！(+100ポイント)' });
+    
+    // 最終的なポイント確認
+    const { data: finalProfile, error: finalError } = await supabase
+      .from('user_profiles')
+      .select('points')
+      .eq('id', user.id)
+      .single();
+    
+    if (finalError) {
+      console.error('❌ Error checking final points:', finalError);
+    } else {
+      console.log('📊 Final points after bonus:', finalProfile?.points);
+    }
+    
+    return res.status(200).json({ 
+      received: false, 
+      message: 'ログインボーナスを付与しました！(+100ポイント)',
+      finalPoints: finalProfile?.points
+    });
     
   } catch (error) {
     console.error('❌ Unexpected error in login bonus API:', error);
