@@ -126,11 +126,16 @@ export default function MorePage() {
           return;
         }
         
-        if (data.profile && typeof data.profile.points === 'number') {
-          setUserPoints(data.profile.points);
-          console.log('✅ Points updated:', data.profile.points);
+        if (data.profile) {
+          if (typeof data.profile.points === 'number') {
+            setUserPoints(data.profile.points);
+            console.log('✅ Points updated:', data.profile.points);
+          } else {
+            console.log('⚠️ No points column in profile, setting to 0');
+            setUserPoints(0);
+          }
         } else {
-          console.log('⚠️ No points found in profile');
+          console.log('⚠️ No profile found');
           setUserPoints(null);
         }
       } catch (error) {

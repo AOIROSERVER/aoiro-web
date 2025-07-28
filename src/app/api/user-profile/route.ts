@@ -35,6 +35,7 @@ export async function GET(request: Request) {
         username: profile.username,
         game_tag: profile.game_tag,
         points: profile.points,
+        hasPointsColumn: 'points' in profile,
         created_at: profile.created_at,
         updated_at: profile.updated_at
       } : null
@@ -42,6 +43,31 @@ export async function GET(request: Request) {
 
     if (profileError) {
       console.error('❌ Profile error:', profileError);
+      
+      // プロフィールが存在しない場合は作成を試行
+      if (profileError.code === 'PGRST116') {
+        console.log('🔄 Creating user profile...');
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: user.id,
+            username: user.user_metadata?.username || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+            game_tag: user.user_metadata?.game_tag || user.email?.split('@')[0] || `user_${user.id.slice(0, 8)}`,
+            points: 0
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('❌ Profile creation error:', createError);
+          return NextResponse.json({ error: 'プロフィールの作成に失敗しました' }, { status: 500 })
+        }
+        
+        console.log('✅ User profile created:', newProfile);
+        return NextResponse.json({ profile: newProfile })
+      }
+      
       return NextResponse.json({ error: 'プロフィールの取得に失敗しました' }, { status: 500 })
     }
 
