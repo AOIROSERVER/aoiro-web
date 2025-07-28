@@ -16,6 +16,7 @@ import {
 import { Email, Lock, LockOpen, Login as LoginIcon, Visibility, VisibilityOff } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
+import { setAuthCookie } from "@/lib/supabase";
 
 // 仮のソーシャルアイコン
 const GoogleIcon = () => (
@@ -119,13 +120,43 @@ function LoginContent() {
         router.push("/more");
         return;
       }
-      const { error } = await supabase.auth.signInWithPassword({
+      
+      console.log('🔄 Attempting login with email:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw error;
+      
+      if (error) {
+        console.error('❌ Login error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Login successful:', data.user?.email);
+      console.log('📋 Session details:', {
+        hasSession: !!data.session,
+        hasUser: !!data.user,
+        accessToken: data.session?.access_token ? 'present' : 'missing',
+        refreshToken: data.session?.refresh_token ? 'present' : 'missing'
+      });
+      
+      // クッキーを手動で設定
+      if (data.session?.access_token) {
+        console.log('🍪 Setting auth cookies manually...');
+        setAuthCookie('sb-access-token', data.session.access_token, 7);
+        if (data.session.refresh_token) {
+          setAuthCookie('sb-refresh-token', data.session.refresh_token, 7);
+        }
+        console.log('✅ Auth cookies set successfully');
+      }
+      
+      // セッションが確実に設定されるまで少し待つ
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       router.push("/more"); // ログイン成功後、その他ページへ
     } catch (err: any) {
+      console.error('❌ Login failed:', err);
       setError(err.error_description || err.message);
     } finally {
       setLoading(false);

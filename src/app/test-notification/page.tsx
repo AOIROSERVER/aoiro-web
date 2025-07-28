@@ -72,7 +72,7 @@ export default function TestNotificationPage() {
         'KB': '京浜急行線',
         'KK': '京王線',
         'HA': '東急東横線',
-        'HS': '東急田園都市線'
+      
       };
 
       const response = await fetch('/api/test-email-notification', {
@@ -146,7 +146,7 @@ export default function TestNotificationPage() {
               <option value="KB">KB - 京浜急行線</option>
               <option value="KK">KK - 京王線</option>
               <option value="HA">HA - 東急東横線</option>
-              <option value="HS">HS - 東急田園都市線</option>
+      
             </TextField>
             
             <TextField

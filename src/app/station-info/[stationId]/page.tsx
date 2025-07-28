@@ -70,6 +70,12 @@ const stations = [
       { number: 2, info: "山手線（外回り）" }
     ]
   },
+  { id: "S11", name: "大出碧大前", line: "あきが丘線", address: "静岡県浜松市北区大出町1-1", tel: "053-000-0001", facilities: ["Elevator", "Wc"], map: "https://maps.google.com/?q=大出碧大前駅",
+    platforms: [
+      { number: 1, info: "あきが丘線（上り）" },
+      { number: 2, info: "あきが丘線（下り）" }
+    ]
+  },
 ];
 
 const facilityIcons: Record<string, JSX.Element> = {
@@ -90,6 +96,7 @@ const stationSignImages: Record<string, string> = {
   "大崎": "https://i.imgur.com/NJ5nkyd.png",
   "浜松": "https://i.imgur.com/0wKSID6.png",
   "有楽町": "https://i.imgur.com/Svyjl7f.png",
+  "大出碧大前": "https://i.imgur.com/UE0Pyr6.jpeg",
 };
 
 export default function StationDetailPage() {

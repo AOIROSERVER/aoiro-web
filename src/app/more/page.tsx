@@ -58,10 +58,48 @@ export default function MorePage() {
   // ボーナス受け取り状況を初回取得
   useEffect(() => {
     const checkBonus = async () => {
-      if (!user) return;
-      const res = await fetch("/api/login-bonus", { method: "POST" });
-      const data = await res.json();
-      if (data.received) setBonusReceivedToday(true);
+      if (!user) {
+        console.log('❌ No user available for bonus check');
+        // ユーザーが存在しない場合はボーナス状態をリセット
+        setBonusReceivedToday(false);
+        setBonusMessage(null);
+        setUserPoints(null);
+        setBonusLoading(false);
+        return;
+      }
+      
+      console.log('🔍 Checking bonus for user:', user.email);
+      
+      try {
+        const res = await fetch("/api/login-bonus", { 
+          method: "POST",
+          credentials: "include",
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          console.error('❌ Initial bonus check error:', data);
+          return;
+        }
+        
+        if (data.received) {
+          setBonusReceivedToday(true);
+          console.log('✅ Bonus already received today');
+        } else {
+          setBonusReceivedToday(false);
+          console.log('✅ Bonus available for today');
+        }
+        
+        // ボーナスメッセージも設定
+        if (data.message) {
+          setBonusMessage(data.message);
+        }
+      } catch (error) {
+        console.error('❌ Initial bonus check fetch error:', error);
+      }
     };
     checkBonus();
   }, [user]);
@@ -81,32 +119,98 @@ export default function MorePage() {
 
   useEffect(() => {
     fetch(
-      "https://aoiroserver.tokyo/wp-json/wp/v2/posts?_embed&per_page=3&orderby=date&order=desc"
+      `https://aoiroserver.tokyo/wp-json/wp/v2/posts?_embed&per_page=3&orderby=date&order=desc&_=${Date.now()}`,
+      {
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      }
     )
-      .then((res) => res.json())
-      .then((data) => {
-        const items = data.map((post: any) => {
-          let imageUrl = "";
-          if (post._embedded && post._embedded["wp:featuredmedia"]) {
-            const media = post._embedded["wp:featuredmedia"][0];
-            imageUrl =
-              media.media_details?.sizes?.medium_large?.source_url ||
-              media.media_details?.sizes?.medium?.source_url ||
-              media.media_details?.sizes?.full?.source_url ||
-              media.source_url ||
-              "";
-          }
-          return {
-            id: post.id.toString(),
-            title: post.title.rendered,
-            date: new Date(post.date).toLocaleDateString("ja-JP"),
-            imageUrl,
-            url: post.link,
-          };
-        });
-        setNews(items);
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
       })
-      .catch(() => setNews([]))
+      .then((data) => {
+        console.log('WordPress API response:', data);
+        if (Array.isArray(data) && data.length > 0) {
+          const items = data.map((post: any) => {
+            let imageUrl = "";
+            if (post._embedded && post._embedded["wp:featuredmedia"]) {
+              const media = post._embedded["wp:featuredmedia"][0];
+              imageUrl =
+                media.media_details?.sizes?.medium_large?.source_url ||
+                media.media_details?.sizes?.medium?.source_url ||
+                media.media_details?.sizes?.full?.source_url ||
+                media.source_url ||
+                "";
+            }
+            return {
+              id: post.id.toString(),
+              title: post.title.rendered,
+              date: new Date(post.date).toLocaleDateString("ja-JP"),
+              imageUrl,
+              url: post.link,
+            };
+          });
+          setNews(items);
+        } else {
+          // WordPress APIからデータが取得できない場合のダミーデータ
+          console.log('WordPress APIからデータが取得できません。ダミーデータを表示します。');
+          setNews([
+            {
+              id: '1',
+              title: 'AOIROSERVER システムメンテナンスのお知らせ',
+              date: new Date().toLocaleDateString("ja-JP"),
+              imageUrl: '',
+              url: '#',
+            },
+            {
+              id: '2',
+              title: '新機能「ログインボーナス」が追加されました',
+              date: new Date(Date.now() - 86400000).toLocaleDateString("ja-JP"),
+              imageUrl: '',
+              url: '#',
+            },
+            {
+              id: '3',
+              title: '運行情報システムの改善について',
+              date: new Date(Date.now() - 172800000).toLocaleDateString("ja-JP"),
+              imageUrl: '',
+              url: '#',
+            }
+          ]);
+        }
+      })
+      .catch((error) => {
+        console.error('最新情報の取得に失敗:', error);
+        // エラー時もダミーデータを表示
+        setNews([
+          {
+            id: '1',
+            title: 'AOIROSERVER システムメンテナンスのお知らせ',
+            date: new Date().toLocaleDateString("ja-JP"),
+            imageUrl: '',
+            url: '#',
+          },
+          {
+            id: '2',
+            title: '新機能「ログインボーナス」が追加されました',
+            date: new Date(Date.now() - 86400000).toLocaleDateString("ja-JP"),
+            imageUrl: '',
+            url: '#',
+          },
+          {
+            id: '3',
+            title: '運行情報システムの改善について',
+            date: new Date(Date.now() - 172800000).toLocaleDateString("ja-JP"),
+            imageUrl: '',
+            url: '#',
+          }
+        ]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -207,17 +311,52 @@ export default function MorePage() {
               disabled={bonusReceivedToday || bonusLoading}
               onClick={async () => {
                 setBonusLoading(true);
-                const res = await fetch("/api/login-bonus", { method: "POST", credentials: "include" });
-                const data = await res.json();
-                if (!data.received && data.message) {
-                  setBonusMessage(data.message);
-                  setBonusReceivedToday(true);
-                } else if (data.received) {
-                  setBonusMessage("本日のログインボーナスはすでに受け取り済みです");
-                } else {
-                  setBonusMessage("ログインボーナスの取得に失敗しました");
+                try {
+                  const res = await fetch("/api/login-bonus", { 
+                    method: "POST", 
+                    credentials: "include",
+                    headers: {
+                      'Content-Type': 'application/json',
+                    }
+                  });
+                  const data = await res.json();
+                  
+                  if (!res.ok) {
+                    console.error('❌ Login bonus API error:', data);
+                    const errorMessage = data.error || 'ログインボーナスの取得に失敗しました';
+                    const details = data.details ? ` (${data.details})` : '';
+                    const suggestion = data.suggestion ? `\n\n対処法: ${data.suggestion}` : '';
+                    setBonusMessage(`エラー: ${errorMessage}${details}${suggestion}`);
+                    return;
+                  }
+                  
+                  if (data.received) {
+                    setBonusMessage(data.message || "本日のログインボーナスはすでに受け取り済みです (+100P)");
+                    setBonusReceivedToday(true);
+                    // プロフィールを再取得してポイントを更新
+                    const profileRes = await fetch("/api/user-profile");
+                    const profileData = await profileRes.json();
+                    if (profileData.profile && typeof profileData.profile.points === 'number') {
+                      setUserPoints(profileData.profile.points);
+                    }
+                  } else if (data.message) {
+                    setBonusMessage(data.message);
+                    setBonusReceivedToday(true);
+                    // プロフィールを再取得してポイントを更新
+                    const profileRes = await fetch("/api/user-profile");
+                    const profileData = await profileRes.json();
+                    if (profileData.profile && typeof profileData.profile.points === 'number') {
+                      setUserPoints(profileData.profile.points);
+                    }
+                  } else {
+                    setBonusMessage("ログインボーナスの取得に失敗しました");
+                  }
+                } catch (error) {
+                  console.error('❌ Login bonus fetch error:', error);
+                  setBonusMessage("ログインボーナスの取得中にエラーが発生しました");
+                } finally {
+                  setBonusLoading(false);
                 }
-                setBonusLoading(false);
               }}
               sx={{
                 fontWeight: 700,
@@ -241,7 +380,7 @@ export default function MorePage() {
                 minWidth: 220,
               }}
             >
-              {bonusReceivedToday ? "本日分は受け取り済み" : bonusLoading ? "取得中..." : "ログインボーナスをゲット"}
+              {bonusReceivedToday ? "本日分は受け取り済み" : bonusLoading ? "取得中..." : "ログインボーナスをゲット (+100P)"}
             </Button>
             <Typography variant="h6" sx={{ ml: 2, minWidth: 60, display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <MonetizationOn sx={{ color: '#FFD700', fontSize: 28, verticalAlign: 'middle' }} />

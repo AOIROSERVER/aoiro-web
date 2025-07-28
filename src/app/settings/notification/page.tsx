@@ -87,7 +87,7 @@ export default function NotificationSettingsPage() {
       } else {
         // 新しい設定を作成（全路線に対して）
         console.log('🔧 新規設定の作成開始');
-        const lineIds = ['HA', 'HS', 'JB', 'JC', 'JK', 'JT', 'JY1', 'JY2', 'KB', 'KK', 'CA', 'JO', 'M', 'Z', 'C', 'H', 'G', 'AK', 'AU'];
+        const lineIds = ['HA', 'JB', 'JC', 'JK', 'JT', 'JY1', 'JY2', 'KB', 'KK', 'CA', 'JO', 'M', 'Z', 'C', 'H', 'G', 'AK', 'AU'];
         
         console.log('🔧 作成する路線:', lineIds);
         

@@ -103,12 +103,6 @@ export default function TransferPage() {
         color: '#FF6B00',
         stations: ['大崎', '大井町', '東京']
       },
-      'HS': { 
-        name: '夢洲線', 
-        nameEn: 'Yumeshima Line',
-        color: '#FF9500',
-        stations: ['夢洲', '清田川', '浮ヶ谷', '渋谷']
-      },
       'HA': { 
         name: 'あきが丘線', 
         nameEn: 'Akigaoka Line',

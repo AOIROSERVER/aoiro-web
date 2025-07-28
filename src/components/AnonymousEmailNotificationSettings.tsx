@@ -46,7 +46,6 @@ const lineData: LineInfo[] = [
   { id: 'KB', name: '京浜急行線' },
   { id: 'KK', name: '京王線' },
   { id: 'HA', name: '東急東横線' },
-  { id: 'HS', name: '東急田園都市線' },
 ];
 
 export const AnonymousEmailNotificationSettings = () => {

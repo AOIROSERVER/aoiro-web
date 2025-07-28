@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { SupabaseClient, Session, User } from "@supabase/supabase-js";
-import { supabase } from "../lib/supabase";
+import { supabase, setAuthCookie, removeAuthCookie } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 import { Snackbar } from "@mui/material";
 
@@ -54,6 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session && typeof window !== 'undefined') {
           console.log('💾 Saving session to localStorage...');
           localStorage.setItem('aoiro-auth-token', JSON.stringify(session));
+          
+          // セッションクッキーはSupabaseが自動管理するため、手動設定は削除
         }
         
         setSession(session);
@@ -121,21 +123,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               localStorage.setItem('aoiro-auth-token', JSON.stringify(session));
               console.log('💾 Session saved to localStorage');
+              
+              // クッキーを手動で設定
+              if (session.access_token) {
+                console.log('🍪 Setting auth cookies manually...');
+                setAuthCookie('sb-access-token', session.access_token, 7);
+                if (session.refresh_token) {
+                  setAuthCookie('sb-refresh-token', session.refresh_token, 7);
+                }
+                console.log('✅ Auth cookies set successfully');
+              }
             } catch (error) {
               console.error('❌ Error saving session to localStorage:', error);
             }
           }
           
-          // ログインボーナスAPI呼び出し
-          try {
-            const res = await fetch("/api/login-bonus", { method: "POST" });
-            const data = await res.json();
-            if (!data.received && data.message) {
-              setLoginBonusMessage(data.message);
-            }
-          } catch (e) {
-            // エラー時は何もしない
-          }
+          // ログインボーナスは手動で取得するため、自動取得は無効化
+          console.log('ℹ️ Login bonus will be available manually on the more page');
 
           // 認証成功後のリダイレクト
           if (window.location.pathname === '/') {
@@ -147,12 +151,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession(null);
           setUser(null);
           setIsAdmin(false);
+          setLoginBonusMessage(null); // ログインボーナスメッセージをクリア
           
           // ローカルストレージからセッションを削除
           if (typeof window !== 'undefined') {
             try {
               localStorage.removeItem('aoiro-auth-token');
               console.log('🧹 Session removed from localStorage');
+              
+              // クッキーを手動で削除
+              console.log('🍪 Removing auth cookies...');
+              removeAuthCookie('sb-access-token');
+              removeAuthCookie('sb-refresh-token');
+              console.log('✅ Auth cookies removed successfully');
             } catch (error) {
               console.error('❌ Error removing session from localStorage:', error);
             }
@@ -206,6 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     setLoading(true);
+    setLoginBonusMessage(null); // ログインボーナスメッセージをクリア
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
