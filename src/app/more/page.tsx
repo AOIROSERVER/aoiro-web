@@ -108,10 +108,34 @@ export default function MorePage() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
-      const res = await fetch("/api/user-profile");
-      const data = await res.json();
-      if (data.profile && typeof data.profile.points === 'number') {
-        setUserPoints(data.profile.points);
+      
+      console.log('🔍 Fetching user profile for:', user.email);
+      
+      try {
+        const res = await fetch("/api/user-profile");
+        const data = await res.json();
+        
+        console.log('📋 Profile response:', {
+          hasProfile: !!data.profile,
+          points: data.profile?.points,
+          error: data.error
+        });
+        
+        if (!res.ok) {
+          console.error('❌ Profile fetch error:', data);
+          return;
+        }
+        
+        if (data.profile && typeof data.profile.points === 'number') {
+          setUserPoints(data.profile.points);
+          console.log('✅ Points updated:', data.profile.points);
+        } else {
+          console.log('⚠️ No points found in profile');
+          setUserPoints(null);
+        }
+      } catch (error) {
+        console.error('❌ Profile fetch error:', error);
+        setUserPoints(null);
       }
     };
     fetchProfile();

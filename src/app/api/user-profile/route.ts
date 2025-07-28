@@ -6,11 +6,16 @@ export async function GET(request: Request) {
   const supabase = createRouteHandlerClient({ cookies })
   
   try {
+    console.log('🔍 User profile API called');
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     
     if (authError || !user) {
+      console.error('❌ Auth error:', authError);
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 })
     }
+
+    console.log('✅ User authenticated:', user.id, user.email);
 
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
@@ -18,12 +23,31 @@ export async function GET(request: Request) {
       .eq('id', user.id)
       .single()
 
+    console.log('📋 Profile query result:', {
+      hasProfile: !!profile,
+      profileError: profileError ? {
+        message: profileError.message,
+        code: profileError.code,
+        details: profileError.details
+      } : null,
+      profile: profile ? {
+        id: profile.id,
+        username: profile.username,
+        game_tag: profile.game_tag,
+        points: profile.points,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at
+      } : null
+    });
+
     if (profileError) {
+      console.error('❌ Profile error:', profileError);
       return NextResponse.json({ error: 'プロフィールの取得に失敗しました' }, { status: 500 })
     }
 
     return NextResponse.json({ profile })
   } catch (error) {
+    console.error('❌ Server error:', error);
     return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 })
   }
 }
