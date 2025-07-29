@@ -46,6 +46,15 @@ export async function GET(request: Request) {
       origin: requestUrl.origin,
       allParams: Object.fromEntries(requestUrl.searchParams.entries())
     })
+    
+    // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+    if (from === 'register') {
+      const baseUrl = 'https://aoiroserver.site'
+      const redirectUrl = baseUrl + '/register?error=auth_error'
+      console.log('🔄 Redirecting to register page with auth error:', redirectUrl)
+      return NextResponse.redirect(redirectUrl)
+    }
+    
     return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
   }
 
@@ -80,12 +89,30 @@ export async function GET(request: Request) {
             name: sessionError.name,
             stack: sessionError.stack
           })
+          
+          // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+          if (from === 'register') {
+            const baseUrl = 'https://aoiroserver.site'
+            const redirectUrl = baseUrl + '/register?error=session_error'
+            console.log('🔄 Redirecting to register page with session error:', redirectUrl)
+            return NextResponse.redirect(redirectUrl)
+          }
+          
           return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
         }
         
         if (!data.session) {
           console.error('❌ No session created')
           console.error('Session data:', data)
+          
+          // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+          if (from === 'register') {
+            const baseUrl = 'https://aoiroserver.site'
+            const redirectUrl = baseUrl + '/register?error=session_error'
+            console.log('🔄 Redirecting to register page with no session error:', redirectUrl)
+            return NextResponse.redirect(redirectUrl)
+          }
+          
           return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
         }
         
@@ -320,6 +347,15 @@ export async function GET(request: Request) {
         stack: error instanceof Error ? error.stack : undefined,
         error: error
       })
+      
+      // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+      if (from === 'register') {
+        const baseUrl = 'https://aoiroserver.site'
+        const redirectUrl = baseUrl + '/register?error=auth_error'
+        console.log('🔄 Redirecting to register page with code exchange error:', redirectUrl)
+        return NextResponse.redirect(redirectUrl)
+      }
+      
       return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
     }
   } else if (accessToken && refreshToken) {
@@ -339,12 +375,30 @@ export async function GET(request: Request) {
           name: sessionError.name,
           stack: sessionError.stack
         })
+        
+        // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+        if (from === 'register') {
+          const baseUrl = 'https://aoiroserver.site'
+          const redirectUrl = baseUrl + '/register?error=session_error'
+          console.log('🔄 Redirecting to register page with token session error:', redirectUrl)
+          return NextResponse.redirect(redirectUrl)
+        }
+        
         return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
       }
       
       if (!data.session) {
         console.error('❌ No session created with tokens')
         console.error('Token session data:', data)
+        
+        // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+        if (from === 'register') {
+          const baseUrl = 'https://aoiroserver.site'
+          const redirectUrl = baseUrl + '/register?error=session_error'
+          console.log('🔄 Redirecting to register page with no token session error:', redirectUrl)
+          return NextResponse.redirect(redirectUrl)
+        }
+        
         return NextResponse.redirect(requestUrl.origin + '/login?error=session_error')
       }
       
@@ -363,6 +417,15 @@ export async function GET(request: Request) {
         stack: error instanceof Error ? error.stack : undefined,
         error: error
       })
+      
+      // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+      if (from === 'register') {
+        const baseUrl = 'https://aoiroserver.site'
+        const redirectUrl = baseUrl + '/register?error=auth_error'
+        console.log('🔄 Redirecting to register page with token session exception:', redirectUrl)
+        return NextResponse.redirect(redirectUrl)
+      }
+      
       return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
     }
   } else {
@@ -374,6 +437,15 @@ export async function GET(request: Request) {
       error,
       errorDescription
     })
+    
+    // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+    if (from === 'register') {
+      const baseUrl = 'https://aoiroserver.site'
+      const redirectUrl = baseUrl + '/register?error=auth_error'
+      console.log('🔄 Redirecting to register page with no code/tokens error:', redirectUrl)
+      return NextResponse.redirect(redirectUrl)
+    }
+    
     return NextResponse.redirect(requestUrl.origin + '/login?error=auth_error')
   }
 
