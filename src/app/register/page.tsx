@@ -38,6 +38,7 @@ function RegisterContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [discordLinked, setDiscordLinked] = useState(false);
   const [discordUsername, setDiscordUsername] = useState("");
+  const [discordId, setDiscordId] = useState("");
   const [discordSuccessMessage, setDiscordSuccessMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -87,8 +88,14 @@ function RegisterContent() {
                                session.user.user_metadata?.name || 
                                session.user.user_metadata?.username ||
                                'Discord User';
+            const discordUserId = session.user.user_metadata?.sub || 
+                                 session.user.user_metadata?.discord_id ||
+                                 session.user.id ||
+                                 'Unknown';
             console.log('Discord username:', discordName);
+            console.log('Discord ID:', discordUserId);
             setDiscordUsername(discordName);
+            setDiscordId(discordUserId);
             
             // 成功メッセージを表示
             console.log('✅ Discord連携が正常に完了しました');
@@ -96,6 +103,7 @@ function RegisterContent() {
           } else {
             console.log('No session user found');
             setDiscordUsername('Discord User');
+            setDiscordId('Unknown');
           }
         } catch (error) {
           console.error('Discord user info fetch error:', error);
@@ -122,6 +130,7 @@ function RegisterContent() {
     setLoading(true);
     setError(null);
     setDiscordSuccessMessage('');
+    setDiscordId('');
     try {
       console.log('🔄 Starting Discord OAuth link...');
       console.log('Current origin:', window.location.origin);
@@ -429,6 +438,11 @@ function RegisterContent() {
                           {discordUsername && (
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                               ユーザー名: {discordUsername}
+                            </Typography>
+                          )}
+                          {discordId && discordId !== 'Unknown' && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                              Discord ID: {discordId}
                             </Typography>
                           )}
                           {discordSuccessMessage && (
