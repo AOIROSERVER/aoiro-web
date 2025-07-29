@@ -223,6 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     // ログインボーナスメッセージはクリアするが、ボーナス状態は保持
     setLoginBonusMessage(null);
+    
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);

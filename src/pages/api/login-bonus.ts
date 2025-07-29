@@ -4,6 +4,7 @@ import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     console.log('🔍 Login bonus API called');
+    console.log('📋 Request method:', req.method);
     console.log('📋 Request headers:', {
       cookie: req.headers.cookie ? 'present' : 'missing',
       authorization: req.headers.authorization ? 'present' : 'missing',
@@ -158,77 +159,136 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const today = new Date().toISOString().slice(0, 10);
     console.log('📅 Checking bonus for date:', today);
 
-    // 既に今日のボーナスを受け取っているか確認
-    const { data: bonus, error: bonusError } = await supabase
-      .from('login_bonus')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('date', today)
-      .single();
-
-    console.log('📋 Bonus check result:', {
-      hasBonus: !!bonus,
-      bonusError: bonusError ? {
-        message: bonusError.message,
-        code: bonusError.code
-      } : null,
-      bonus: bonus ? {
-        id: bonus.id,
-        user_id: bonus.user_id,
-        date: bonus.date,
-        received: bonus.received
-      } : null
-    });
-
-    if (bonusError && bonusError.code !== 'PGRST116') { // PGRST116はレコードが見つからないエラー
-      console.error('❌ Error checking existing bonus:', bonusError);
-      return res.status(500).json({ error: 'ボーナス確認中にエラーが発生しました', details: bonusError.message });
-    }
-
-    if (bonus) {
-      console.log('✅ Bonus already received today');
-      return res.status(200).json({ 
-        received: true, 
-        message: '本日のログインボーナスはすでに受け取り済みです (+100P)'
-      });
-    }
-
-    console.log('🔄 Inserting new bonus record...');
-
-    // ボーナス付与
-    const { error: insertError } = await supabase.from('login_bonus').insert({
-      user_id: user.id,
-      date: today,
-      received: true
-    });
-
-    if (insertError) {
-      console.error('❌ Error inserting bonus:', insertError);
-      return res.status(500).json({ error: 'ボーナス付与中にエラーが発生しました', details: insertError.message });
-    }
-
-    console.log('✅ Bonus record inserted successfully');
-
-    // 現在のポイントを取得して+1
-    console.log('🔄 Updating user points...');
-    
-    // まずテーブル構造を確認（実際のクエリでテスト）
-    let hasPointsColumn = false;
-    
-    try {
-      // user_profilesテーブルにpointsカラムがあるかテスト
-      const { data: testPoints, error: pointsError } = await supabase
-        .from('user_profiles')
-        .select('points')
-        .limit(1);
+    // GETリクエスト: ボーナス状態の確認のみ
+    if (req.method === 'GET') {
+      console.log('📋 GET request: Checking bonus status only');
       
-      hasPointsColumn = !pointsError;
-      console.log('📋 user_profiles table has points column:', hasPointsColumn, 'error:', pointsError?.message);
-    } catch (error) {
-      console.log('📋 user_profiles points column test failed:', error);
-    }
+      // 既に今日のボーナスを受け取っているか確認
+      const { data: bonus, error: bonusError } = await supabase
+        .from('login_bonus')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .single();
 
-          if (hasPointsColumn) {
+      console.log('📋 Bonus check result:', {
+        hasBonus: !!bonus,
+        bonusError: bonusError ? {
+          message: bonusError.message,
+          code: bonusError.code
+        } : null,
+        bonus: bonus ? {
+          id: bonus.id,
+          user_id: bonus.user_id,
+          date: bonus.date,
+          received: bonus.received
+        } : null
+      });
+
+      if (bonusError && bonusError.code !== 'PGRST116') { // PGRST116はレコードが見つからないエラー
+        console.error('❌ Error checking existing bonus:', bonusError);
+        return res.status(500).json({ error: 'ボーナス確認中にエラーが発生しました', details: bonusError.message });
+      }
+
+      if (bonus) {
+        console.log('✅ Bonus already received today');
+        return res.status(200).json({ 
+          received: true, 
+          message: '本日のログインボーナスはすでに受け取り済みです (+100P)',
+          date: today,
+          userId: user.id,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        console.log('✅ Bonus available for today');
+        return res.status(200).json({ 
+          received: false, 
+          message: 'ログインボーナスが利用可能です (+100P)',
+          date: today,
+          userId: user.id,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+    
+    // POSTリクエスト: ボーナスの取得
+    if (req.method === 'POST') {
+      console.log('📋 POST request: Claiming bonus');
+      
+      // 既に今日のボーナスを受け取っているか確認
+      const { data: bonus, error: bonusError } = await supabase
+        .from('login_bonus')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .single();
+
+      console.log('📋 Bonus check result:', {
+        hasBonus: !!bonus,
+        bonusError: bonusError ? {
+          message: bonusError.message,
+          code: bonusError.code
+        } : null,
+        bonus: bonus ? {
+          id: bonus.id,
+          user_id: bonus.user_id,
+          date: bonus.date,
+          received: bonus.received
+        } : null
+      });
+
+      if (bonusError && bonusError.code !== 'PGRST116') { // PGRST116はレコードが見つからないエラー
+        console.error('❌ Error checking existing bonus:', bonusError);
+        return res.status(500).json({ error: 'ボーナス確認中にエラーが発生しました', details: bonusError.message });
+      }
+
+      if (bonus) {
+        console.log('✅ Bonus already received today');
+        return res.status(200).json({ 
+          received: true, 
+          message: '本日のログインボーナスはすでに受け取り済みです (+100P)',
+          date: today,
+          userId: user.id,
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      console.log('🔄 Inserting new bonus record...');
+
+      // ボーナス付与
+      const { error: insertError } = await supabase.from('login_bonus').insert({
+        user_id: user.id,
+        date: today,
+        received: true
+      });
+
+      if (insertError) {
+        console.error('❌ Error inserting bonus:', insertError);
+        return res.status(500).json({ error: 'ボーナス付与中にエラーが発生しました', details: insertError.message });
+      }
+
+      console.log('✅ Bonus record inserted successfully');
+
+      // 現在のポイントを取得して+100
+      console.log('🔄 Updating user points...');
+      
+      // まずテーブル構造を確認（実際のクエリでテスト）
+      let hasPointsColumn = false;
+      
+      try {
+        // user_profilesテーブルにpointsカラムがあるかテスト
+        const { data: testPoints, error: pointsError } = await supabase
+          .from('user_profiles')
+          .select('points')
+          .limit(1);
+        
+        hasPointsColumn = !pointsError;
+        console.log('📋 user_profiles table has points column:', hasPointsColumn, 'error:', pointsError?.message);
+      } catch (error) {
+        console.log('📋 user_profiles points column test failed:', error);
+      }
+
+      if (hasPointsColumn) {
         // pointsカラムが存在する場合
         const { data: profile, error: profileError } = await supabase
           .from('user_profiles')
@@ -293,26 +353,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.log('✅ User profile created successfully');
       }
 
-    console.log('🎉 Login bonus process completed successfully');
-    
-    // 最終的なポイント確認
-    const { data: finalProfile, error: finalError } = await supabase
-      .from('user_profiles')
-      .select('points')
-      .eq('id', user.id)
-      .single();
-    
-    if (finalError) {
-      console.error('❌ Error checking final points:', finalError);
-    } else {
-      console.log('📊 Final points after bonus:', finalProfile?.points);
+      console.log('🎉 Login bonus process completed successfully');
+      
+      // 最終的なポイント確認
+      const { data: finalProfile, error: finalError } = await supabase
+        .from('user_profiles')
+        .select('points')
+        .eq('id', user.id)
+        .single();
+      
+      if (finalError) {
+        console.error('❌ Error checking final points:', finalError);
+      } else {
+        console.log('📊 Final points after bonus:', finalProfile?.points);
+      }
+      
+      return res.status(200).json({ 
+        received: false, 
+        message: 'ログインボーナスを付与しました！(+100ポイント)',
+        finalPoints: finalProfile?.points,
+        date: today,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
     }
     
-    return res.status(200).json({ 
-      received: false, 
-      message: 'ログインボーナスを付与しました！(+100ポイント)',
-      finalPoints: finalProfile?.points
-    });
+    // その他のHTTPメソッドは許可しない
+    return res.status(405).json({ error: 'Method not allowed', details: 'Only GET and POST methods are allowed' });
     
   } catch (error) {
     console.error('❌ Unexpected error in login bonus API:', error);

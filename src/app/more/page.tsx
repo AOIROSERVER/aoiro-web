@@ -51,43 +51,32 @@ export default function MorePage() {
   const [bonusReceivedToday, setBonusReceivedToday] = useState(false);
   const [userPoints, setUserPoints] = useState<number | null>(null);
 
-  // ローカルストレージからボーナス状態を復元
-  useEffect(() => {
-    if (typeof window !== 'undefined' && user) {
-      const today = new Date().toISOString().slice(0, 10);
-      const storedBonusDate = localStorage.getItem(`bonus_${user.id}_${today}`);
-      if (storedBonusDate) {
-        setBonusReceivedToday(true);
-        console.log('✅ Bonus state restored from localStorage');
-      }
-    }
-  }, [user]);
-
   const avatarUrl = user?.user_metadata?.picture || user?.user_metadata?.avatar_url || null;
 
   // localStorageのadminフラグ取得
   const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
 
-  // ボーナス受け取り状況を初回取得
+  // ボーナス受け取り状況を初回取得（GETリクエストで状態確認）
   useEffect(() => {
     const checkBonus = async () => {
       if (!user) {
         console.log('❌ No user available for bonus check');
-        // ユーザーが存在しない場合はポイントのみリセット（ボーナス状態は保持）
         setBonusMessage(null);
         setUserPoints(null);
         setBonusLoading(false);
         return;
       }
       
-      console.log('🔍 Checking bonus for user:', user.email);
+      console.log('🔍 Checking bonus status for user:', user.email);
       
       try {
-        const res = await fetch("/api/login-bonus", { 
-          method: "POST",
+        const res = await fetch("/api/login-bonus-fallback", { 
+          method: "GET",
           credentials: "include",
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           }
         });
         const data = await res.json();
@@ -100,12 +89,6 @@ export default function MorePage() {
         if (data.received) {
           setBonusReceivedToday(true);
           console.log('✅ Bonus already received today');
-          // ローカルストレージにボーナス状態を保存
-          if (user) {
-            const today = new Date().toISOString().slice(0, 10);
-            localStorage.setItem(`bonus_${user.id}_${today}`, today);
-            console.log('💾 Bonus state saved to localStorage');
-          }
         } else {
           setBonusReceivedToday(false);
           console.log('✅ Bonus available for today');
@@ -127,6 +110,51 @@ export default function MorePage() {
     checkBonus();
   }, [user]);
 
+  // ページがフォーカスされた時にボーナス状態を再確認（GETリクエスト）
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user) {
+        console.log('🔄 Page focused, rechecking bonus status...');
+        const checkBonus = async () => {
+          try {
+            const res = await fetch("/api/login-bonus-fallback", { 
+              method: "GET",
+              credentials: "include",
+              headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+              }
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+              if (data.received) {
+                setBonusReceivedToday(true);
+                console.log('✅ Bonus status updated: already received');
+              } else {
+                setBonusReceivedToday(false);
+                console.log('✅ Bonus status updated: available');
+              }
+              
+              if (data.message) {
+                setBonusMessage(data.message);
+              }
+            }
+          } catch (error) {
+            console.error('❌ Error rechecking bonus status:', error);
+          }
+        };
+        checkBonus();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user]);
+
   // ユーザープロフィール取得
   useEffect(() => {
     const fetchProfile = async () => {
@@ -135,7 +163,7 @@ export default function MorePage() {
       console.log('🔍 Fetching user profile for:', user.email);
       
       try {
-        const res = await fetch("/api/user-profile");
+        const res = await fetch("/api/user-profile-secure");
         const data = await res.json();
         
         console.log('📋 Profile response:', {
@@ -386,11 +414,13 @@ export default function MorePage() {
                   onClick={async () => {
                     setBonusLoading(true);
                     try {
-                      const res = await fetch("/api/login-bonus", { 
+                      const res = await fetch("/api/login-bonus-fallback", { 
                         method: "POST", 
                         credentials: "include",
                         headers: {
                           'Content-Type': 'application/json',
+                          'Cache-Control': 'no-cache',
+                          'Pragma': 'no-cache'
                         }
                       });
                       const data = await res.json();
@@ -407,14 +437,8 @@ export default function MorePage() {
                       if (data.received) {
                         setBonusMessage(data.message || "本日のログインボーナスはすでに受け取り済みです (+100P)");
                         setBonusReceivedToday(true);
-                        // ローカルストレージにボーナス状態を保存
-                        if (user) {
-                          const today = new Date().toISOString().slice(0, 10);
-                          localStorage.setItem(`bonus_${user.id}_${today}`, today);
-                          console.log('💾 Bonus state saved to localStorage');
-                        }
-                        // プロフィールを再取得してポイントを更新
-                        const profileRes = await fetch("/api/user-profile");
+                                // プロフィールを再取得してポイントを更新
+        const profileRes = await fetch("/api/user-profile-secure");
                         const profileData = await profileRes.json();
                         if (profileData.profile && typeof profileData.profile.points === 'number') {
                           setUserPoints(profileData.profile.points);
@@ -422,15 +446,9 @@ export default function MorePage() {
                       } else if (data.message) {
                         setBonusMessage(data.message);
                         setBonusReceivedToday(true);
-                        // ローカルストレージにボーナス状態を保存
-                        if (user) {
-                          const today = new Date().toISOString().slice(0, 10);
-                          localStorage.setItem(`bonus_${user.id}_${today}`, today);
-                          console.log('💾 Bonus state saved to localStorage');
-                        }
                         // プロフィールを再取得してポイントを更新
                         console.log('🔄 Refreshing user profile after bonus...');
-                        const profileRes = await fetch("/api/user-profile");
+                        const profileRes = await fetch("/api/user-profile-secure");
                         const profileData = await profileRes.json();
                         console.log('📋 Profile refresh result:', profileData);
                         if (profileData.profile && typeof profileData.profile.points === 'number') {
