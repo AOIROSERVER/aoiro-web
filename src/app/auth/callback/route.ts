@@ -31,6 +31,8 @@ export async function GET(request: Request) {
   console.log('All query params:', Object.fromEntries(requestUrl.searchParams.entries()))
   console.log('From parameter:', from)
   console.log('Next parameter:', next)
+  console.log('From === register:', from === 'register')
+  console.log('Next === /register:', next === '/register')
   console.log('User Agent:', request.headers.get('user-agent'))
   console.log('Referer:', request.headers.get('referer'))
 
@@ -300,6 +302,13 @@ export async function GET(request: Request) {
   console.log('From parameter value:', from)
   console.log('Next parameter value:', next)
   console.log('All URL parameters:', Object.fromEntries(requestUrl.searchParams.entries()))
+  console.log('Request URL:', request.url)
+  console.log('Request origin:', requestUrl.origin)
+  console.log('Decision logic:', {
+    fromIsRegister: from === 'register',
+    nextIsRegister: next === '/register',
+    shouldRedirectToRegister: from === 'register' || next === '/register'
+  })
   
   // 新規作成画面からの認証の場合は、Discord連携完了を示すパラメータを追加
   if (from === 'register') {
@@ -309,6 +318,23 @@ export async function GET(request: Request) {
     console.log('🔄 Redirecting to register page with discord_linked=true:', redirectUrl)
     console.log('Base URL used:', baseUrl)
     console.log('Next path:', next)
+    console.log('Final redirect URL:', redirectUrl)
+    return NextResponse.redirect(redirectUrl)
+  }
+  
+  // fromパラメータがregisterでない場合でも、nextが/registerの場合は新規作成画面にリダイレクト
+  if (next === '/register') {
+    const baseUrl = 'https://aoiroserver.site'
+    const redirectUrl = baseUrl + next + '?discord_linked=true'
+    console.log('🔄 Redirecting to register page based on next parameter:', redirectUrl)
+    return NextResponse.redirect(redirectUrl)
+  }
+  
+  // Discord OAuthからの認証で、fromパラメータが不明な場合は新規作成画面にリダイレクト
+  if (!from && requestUrl.searchParams.get('provider') === 'discord') {
+    const baseUrl = 'https://aoiroserver.site'
+    const redirectUrl = baseUrl + '/register?discord_linked=true'
+    console.log('🔄 Redirecting to register page for Discord OAuth without from parameter:', redirectUrl)
     return NextResponse.redirect(redirectUrl)
   }
   
@@ -316,5 +342,11 @@ export async function GET(request: Request) {
   const baseUrl = 'https://aoiroserver.site'
   const defaultRedirectUrl = baseUrl + next
   console.log('🔄 Redirecting to default page:', defaultRedirectUrl)
+  console.log('Default redirect reason:', {
+    from: from,
+    next: next,
+    fromNotRegister: from !== 'register',
+    nextNotRegister: next !== '/register'
+  })
   return NextResponse.redirect(defaultRedirectUrl)
 } 

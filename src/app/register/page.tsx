@@ -147,9 +147,19 @@ function RegisterContent() {
       console.log('🔍 Checking existing session...');
       const { data: { session } } = await supabase.auth.getSession();
       console.log('Current session:', session);
+      console.log('Session user:', session?.user);
+      console.log('Session access token:', session?.access_token ? 'present' : 'missing');
       
-      const redirectUrlWithParams = supabaseCallbackUrl + '?from=register';
+      // Supabaseの直接URLにfromパラメータを追加
+      const redirectUrlWithParams = supabaseCallbackUrl + '?from=register&next=/register';
       console.log('Final redirect URL with params:', redirectUrlWithParams);
+      console.log('URL parameters:', {
+        from: 'register',
+        next: '/register',
+        fullUrl: redirectUrlWithParams
+      });
+      console.log('Expected callback URL:', redirectUrlWithParams);
+      console.log('URL encoding test:', encodeURIComponent('from=register&next=/register'));
       
       const oauthOptions = {
         redirectTo: redirectUrlWithParams,
@@ -157,6 +167,10 @@ function RegisterContent() {
         queryParams: {
           response_type: 'code',
         },
+        // 追加のデバッグ情報
+        options: {
+          redirectTo: redirectUrlWithParams,
+        }
       };
       
       console.log('📡 Initiating Discord OAuth with options:', oauthOptions);
