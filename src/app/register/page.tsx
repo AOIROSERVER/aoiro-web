@@ -136,11 +136,11 @@ function RegisterContent() {
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
       
-      // 確実にhttps://aoiroserver.siteを使用
-      const baseUrl = 'https://aoiroserver.site';
-      const redirectUrl = `${baseUrl}/auth/callback`;
-      console.log('Base URL used:', baseUrl);
-      console.log('Redirect URL:', redirectUrl);
+      // Supabaseの直接URLを使用（Discord Developer Portalの設定と一致）
+      const supabaseCallbackUrl = 'https://cqxadmvnsusscsusdrmqd.supabase.co/auth/v1/callback';
+      const customCallbackUrl = 'https://aoiroserver.site/auth/callback';
+      console.log('Supabase callback URL:', supabaseCallbackUrl);
+      console.log('Custom callback URL:', customCallbackUrl);
       console.log('From register page:', true);
       
       // 既存のセッションを確認（クリアは行わない）
@@ -148,7 +148,7 @@ function RegisterContent() {
       const { data: { session } } = await supabase.auth.getSession();
       console.log('Current session:', session);
       
-      const redirectUrlWithParams = redirectUrl + '?from=register';
+      const redirectUrlWithParams = supabaseCallbackUrl + '?from=register';
       console.log('Final redirect URL with params:', redirectUrlWithParams);
       
       const oauthOptions = {
@@ -186,6 +186,7 @@ function RegisterContent() {
       // ブラウザリダイレクトが自動的に行われる
       console.log('🔄 Waiting for browser redirect...');
       console.log('Expected callback URL:', redirectUrlWithParams);
+      console.log('Supabase will handle the callback and redirect to:', customCallbackUrl);
       
     } catch (err: any) {
       console.error('❌ Discord link error:', err);

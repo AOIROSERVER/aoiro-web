@@ -71,29 +71,51 @@ export async function GET(request: Request) {
       
       // Discord OAuthの場合は、通常のOAuth flowとして処理
       console.log('🔍 Processing Discord OAuth code...')
+      console.log('Code details:', {
+        codeLength: code?.length,
+        codePrefix: code?.substring(0, 20),
+        codeSuffix: code?.substring(code.length - 10),
+        isCodeValid: !!code && code.length > 10
+      })
       
       // OAuthコードをセッションに交換
+      console.log('🔄 Calling exchangeCodeForSession...')
       const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code!)
+      console.log('Exchange result:', {
+        hasData: !!data,
+        hasSession: !!data?.session,
+        hasUser: !!data?.user,
+        hasError: !!sessionError,
+        errorMessage: sessionError?.message
+      })
         
-      if (sessionError) {
-        console.error('❌ Session setting error:', sessionError)
-        console.error('Session error details:', {
-          message: sessionError.message,
-          status: sessionError.status,
-          name: sessionError.name,
-          stack: sessionError.stack
-        })
-        
-        // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
-        if (from === 'register') {
-          const baseUrl = 'https://aoiroserver.site'
-          const redirectUrl = baseUrl + '/register?error=session_error'
-          console.log('🔄 Redirecting to register page with session error:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+              if (sessionError) {
+          console.error('❌ Session setting error:', sessionError)
+          console.error('Session error details:', {
+            message: sessionError.message,
+            status: sessionError.status,
+            name: sessionError.name,
+            stack: sessionError.stack
+          })
+          console.error('Discord OAuth context:', {
+            codeLength: code?.length,
+            codePrefix: code?.substring(0, 20),
+            provider: 'discord',
+            from: from,
+            url: request.url,
+            origin: requestUrl.origin
+          })
+          
+          // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+          if (from === 'register') {
+            const baseUrl = 'https://aoiroserver.site'
+            const redirectUrl = baseUrl + '/register?error=session_error'
+            console.log('🔄 Redirecting to register page with session error:', redirectUrl)
+            return NextResponse.redirect(redirectUrl)
+          }
+          
+          return NextResponse.redirect('https://aoiroserver.site/login?error=session_error')
         }
-        
-        return NextResponse.redirect('https://aoiroserver.site/login?error=session_error')
-      }
       
       if (!data.session) {
         console.error('❌ No session created')
