@@ -5,15 +5,11 @@ import {
   Container,
   Card,
   Typography,
-  TextField,
   Button,
-  Divider,
-  Link,
   Alert,
   Fade,
-  Slide,
 } from "@mui/material";
-import { Email, Lock, LockOpen, Person, Login as RegisterIcon, Tag, Visibility, VisibilityOff, CheckCircle, Cancel } from "@mui/icons-material";
+import { CheckCircle, Cancel } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -29,13 +25,6 @@ const DiscordIcon = () => (
 );
 
 function RegisterContent() {
-  const [username, setUsername] = useState("");
-  const [gameTag, setGameTag] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [discordLinked, setDiscordLinked] = useState(false);
   const [discordUsername, setDiscordUsername] = useState("");
   const [discordId, setDiscordId] = useState("");
@@ -46,8 +35,7 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // パスワードの強度をチェック
-  const isPasswordStrong = password.length >= 6;
+  // Discord連携のみの画面
 
   // URLパラメータからエラーとDiscord連携状態を取得
   useEffect(() => {
@@ -230,90 +218,7 @@ function RegisterContent() {
     }
   };
 
-  const handleRegister = async () => {
-    setLoading(true);
-    setError(null);
 
-    // バリデーション
-    if (!username || !gameTag || !email || !password || !confirmPassword) {
-      setError('すべての項目を入力してください');
-      setLoading(false);
-      return;
-    }
-
-    // Discord連携の確認
-    if (!discordLinked) {
-      setError('Discordアカウントとの連携が必要です');
-      setLoading(false);
-      return;
-    }
-
-    // ゲームタグのバリデーション
-    if (gameTag.length < 3) {
-      setError('ゲームタグは3文字以上で入力してください');
-      setLoading(false);
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_-]+$/.test(gameTag)) {
-      setError('ゲームタグは英数字、ハイフン、アンダースコアのみ使用できます');
-      setLoading(false);
-      return;
-    }
-
-    // ゲームタグの重複チェック
-    try {
-      const { data: existingGameTag, error: checkError } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .eq('game_tag', gameTag)
-        .single();
-
-      if (existingGameTag) {
-        setError('このゲームタグは既に使用されています');
-        setLoading(false);
-        return;
-      }
-    } catch (error) {
-      // エラーが発生した場合（レコードが見つからない場合）は重複していない
-    }
-
-    if (password !== confirmPassword) {
-      setError('パスワードが一致しません');
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('パスワードは6文字以上で入力してください');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            username: username,
-            game_tag: gameTag,
-            discord_username: discordUsername,
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-      
-      if (error) throw error;
-      
-      // 登録成功後、確認メール送信の案内
-      router.push("/login?message=registration_success");
-    } catch (err: any) {
-      setError(err.error_description || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <Box
@@ -339,28 +244,27 @@ function RegisterContent() {
       }}
     >
       <Container component="main" maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
-        <Slide direction="up" in={true} timeout={800}>
-          <Card 
-            sx={{ 
-              p: 4, 
-              borderRadius: 4, 
-              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb)',
-              }
-            }}
-          >
+        <Card 
+          sx={{ 
+            p: 4, 
+            borderRadius: 4, 
+            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(135deg, #667eea, #764ba2, #f093fb)',
+            }
+          }}
+        >
             <Box
               sx={{
                 display: "flex",
@@ -425,7 +329,7 @@ function RegisterContent() {
                     fontWeight="bold" 
                     sx={{ color: '#7289DA', mb: 2 }}
                   >
-                    Discordアカウント連携（必須）
+                    Discordアカウント連携
                   </Typography>
                   
                   {discordLinked ? (
@@ -541,261 +445,7 @@ function RegisterContent() {
                 </Box>
               </Fade>
 
-              {/* 区切り線 */}
-              <Fade in={true} timeout={1300}>
-                <Box sx={{ width: '100%', my: 2 }}>
-                  <Divider sx={{ 
-                    '&::before, &::after': {
-                      borderColor: 'rgba(102, 126, 234, 0.3)',
-                    }
-                  }}>
-                    <Typography 
-                      variant="body2" 
-                      sx={{ 
-                        color: 'text.secondary',
-                        px: 2,
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        borderRadius: 1
-                      }}
-                    >
-                      アカウント情報
-                    </Typography>
-                  </Divider>
-                </Box>
-              </Fade>
 
-              {/* ユーザー名入力 */}
-              <Fade in={true} timeout={1400}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="username"
-                  label="ユーザー名"
-                  name="username"
-                  autoComplete="username"
-                  autoFocus
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  disabled={loading}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '&:hover fieldset': {
-                        borderColor: '#667eea',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: <Person sx={{ color: "#667eea", mr: 1 }} />,
-                  }}
-                />
-              </Fade>
-
-              {/* ゲームタグ入力 */}
-              <Fade in={true} timeout={1500}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="gameTag"
-                  label="ゲームタグ"
-                  name="gameTag"
-                  autoComplete="off"
-                  value={gameTag}
-                  onChange={(e) => setGameTag(e.target.value)}
-                  disabled={loading}
-                  helperText="英数字、ハイフン、アンダースコアのみ使用可能（3文字以上）"
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '&:hover fieldset': {
-                        borderColor: '#667eea',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: <Tag sx={{ color: "#667eea", mr: 1 }} />,
-                  }}
-                />
-              </Fade>
-
-              {/* メールアドレス入力 */}
-              <Fade in={true} timeout={1600}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  id="email"
-                  label="メールアドレス"
-                  name="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '&:hover fieldset': {
-                        borderColor: '#667eea',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: <Email sx={{ color: "#667eea", mr: 1 }} />,
-                  }}
-                />
-              </Fade>
-
-              {/* パスワード入力 */}
-              <Fade in={true} timeout={1700}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="password"
-                  label="パスワード"
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '&:hover fieldset': {
-                        borderColor: '#667eea',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                        <Fade in={!isPasswordStrong} timeout={300}>
-                          <LockOpen sx={{ color: "#667eea" }} />
-                        </Fade>
-                        <Fade in={isPasswordStrong} timeout={300}>
-                          <Lock sx={{ color: "#667eea", position: 'absolute' }} />
-                        </Fade>
-                      </Box>
-                    ),
-                    endAdornment: (
-                      <Button
-                        onClick={() => setShowPassword(!showPassword)}
-                        sx={{ minWidth: 'auto', p: 0.5 }}
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </Button>
-                    ),
-                  }}
-                />
-              </Fade>
-
-              {/* パスワード確認入力 */}
-              <Fade in={true} timeout={1800}>
-                <TextField
-                  margin="normal"
-                  required
-                  fullWidth
-                  name="confirmPassword"
-                  label="パスワード確認"
-                  type={showConfirmPassword ? "text" : "password"}
-                  id="confirmPassword"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  disabled={loading}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      '&:hover fieldset': {
-                        borderColor: '#667eea',
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: '#667eea',
-                      },
-                    },
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <Box sx={{ mr: 1, display: 'flex', alignItems: 'center' }}>
-                        <Fade in={!isPasswordStrong} timeout={300}>
-                          <LockOpen sx={{ color: "#667eea" }} />
-                        </Fade>
-                        <Fade in={isPasswordStrong} timeout={300}>
-                          <Lock sx={{ color: "#667eea", position: 'absolute' }} />
-                        </Fade>
-                      </Box>
-                    ),
-                    endAdornment: (
-                      <Button
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        sx={{ minWidth: 'auto', p: 0.5 }}
-                      >
-                        {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                      </Button>
-                    ),
-                  }}
-                />
-              </Fade>
-
-              {/* 登録ボタン */}
-              <Fade in={true} timeout={1900}>
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  onClick={handleRegister}
-                  disabled={loading || !discordLinked}
-                  startIcon={discordLinked ? <CheckCircle /> : <RegisterIcon />}
-                  sx={{ 
-                    mt: 3, 
-                    mb: 3, 
-                    py: 2, 
-                    borderRadius: 3,
-                    background: discordLinked 
-                      ? 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'
-                      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    boxShadow: discordLinked 
-                      ? '0 8px 25px rgba(76, 175, 80, 0.3)'
-                      : '0 8px 25px rgba(102, 126, 234, 0.3)',
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.5px',
-                    textTransform: 'none',
-                    '&:hover': {
-                      background: discordLinked 
-                        ? 'linear-gradient(135deg, #45a049 0%, #3d8b40 100%)'
-                        : 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                      boxShadow: discordLinked 
-                        ? '0 12px 35px rgba(76, 175, 80, 0.5)'
-                        : '0 12px 35px rgba(102, 126, 234, 0.5)',
-                      transform: 'translateY(-3px)',
-                    },
-                    '&:disabled': {
-                      background: 'linear-gradient(135deg, #b0b0b0 0%, #909090 100%)',
-                      boxShadow: 'none',
-                      transform: 'none',
-                    },
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  }}
-                >
-                  {loading ? '登録中...' : (discordLinked ? 'アカウント作成（Discord連携済み）' : 'Discord連携が必要です')}
-                </Button>
-              </Fade>
 
               {/* 注意事項 */}
               <Fade in={true} timeout={2000}>
@@ -826,24 +476,25 @@ function RegisterContent() {
                     mt: 3,
                   }}
                 >
-                  <Link 
+                  <Typography 
+                    component="a"
                     href="/login" 
                     variant="body2"
                     sx={{
                       color: '#667eea',
                       textDecoration: 'none',
+                      cursor: 'pointer',
                       '&:hover': {
                         textDecoration: 'underline',
                       },
                     }}
                   >
                     すでにアカウントをお持ちの方はこちら
-                  </Link>
+                  </Typography>
                 </Box>
               </Fade>
             </Box>
           </Card>
-        </Slide>
       </Container>
     </Box>
   );
