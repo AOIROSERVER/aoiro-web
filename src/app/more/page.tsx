@@ -27,6 +27,7 @@ import {
   Cloud,
   Person,
   MonetizationOn,
+  Star,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -354,106 +355,202 @@ export default function MorePage() {
 
         {/* ログインボーナスボタン */}
         {user && !authLoading && (
-          <Card sx={{ mb: 3, borderRadius: 3, p: 2, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
-            <Button
-              variant="contained"
-              color="success"
-              startIcon={<MonetizationOn sx={{ color: '#FFD700', fontSize: 28 }} />}
-              disabled={bonusReceivedToday || bonusLoading}
-              onClick={async () => {
-                setBonusLoading(true);
-                try {
-                  const res = await fetch("/api/login-bonus", { 
-                    method: "POST", 
-                    credentials: "include",
-                    headers: {
-                      'Content-Type': 'application/json',
+          <Card 
+            sx={{ 
+              mb: 3, 
+              borderRadius: 3, 
+              p: 3,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              boxShadow: '0 8px 32px rgba(102, 126, 234, 0.3)',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(45deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)',
+                pointerEvents: 'none',
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
+              {/* ボーナスボタン */}
+              <Box sx={{ flex: 1 }}>
+                <Button
+                  variant="contained"
+                  disabled={bonusReceivedToday || bonusLoading}
+                  onClick={async () => {
+                    setBonusLoading(true);
+                    try {
+                      const res = await fetch("/api/login-bonus", { 
+                        method: "POST", 
+                        credentials: "include",
+                        headers: {
+                          'Content-Type': 'application/json',
+                        }
+                      });
+                      const data = await res.json();
+                      
+                      if (!res.ok) {
+                        console.error('❌ Login bonus API error:', data);
+                        const errorMessage = data.error || 'ログインボーナスの取得に失敗しました';
+                        const details = data.details ? ` (${data.details})` : '';
+                        const suggestion = data.suggestion ? `\n\n対処法: ${data.suggestion}` : '';
+                        setBonusMessage(`エラー: ${errorMessage}${details}${suggestion}`);
+                        return;
+                      }
+                      
+                      if (data.received) {
+                        setBonusMessage(data.message || "本日のログインボーナスはすでに受け取り済みです (+100P)");
+                        setBonusReceivedToday(true);
+                        // ローカルストレージにボーナス状態を保存
+                        if (user) {
+                          const today = new Date().toISOString().slice(0, 10);
+                          localStorage.setItem(`bonus_${user.id}_${today}`, today);
+                          console.log('💾 Bonus state saved to localStorage');
+                        }
+                        // プロフィールを再取得してポイントを更新
+                        const profileRes = await fetch("/api/user-profile");
+                        const profileData = await profileRes.json();
+                        if (profileData.profile && typeof profileData.profile.points === 'number') {
+                          setUserPoints(profileData.profile.points);
+                        }
+                      } else if (data.message) {
+                        setBonusMessage(data.message);
+                        setBonusReceivedToday(true);
+                        // ローカルストレージにボーナス状態を保存
+                        if (user) {
+                          const today = new Date().toISOString().slice(0, 10);
+                          localStorage.setItem(`bonus_${user.id}_${today}`, today);
+                          console.log('💾 Bonus state saved to localStorage');
+                        }
+                        // プロフィールを再取得してポイントを更新
+                        console.log('🔄 Refreshing user profile after bonus...');
+                        const profileRes = await fetch("/api/user-profile");
+                        const profileData = await profileRes.json();
+                        console.log('📋 Profile refresh result:', profileData);
+                        if (profileData.profile && typeof profileData.profile.points === 'number') {
+                          setUserPoints(profileData.profile.points);
+                          console.log('✅ Points updated after bonus:', profileData.profile.points);
+                        } else {
+                          console.log('⚠️ No points found in refreshed profile');
+                        }
+                      } else {
+                        setBonusMessage("ログインボーナスの取得に失敗しました");
+                      }
+                    } catch (error) {
+                      console.error('❌ Login bonus fetch error:', error);
+                      setBonusMessage("ログインボーナスの取得中にエラーが発生しました");
+                    } finally {
+                      setBonusLoading(false);
                     }
-                  });
-                  const data = await res.json();
-                  
-                  if (!res.ok) {
-                    console.error('❌ Login bonus API error:', data);
-                    const errorMessage = data.error || 'ログインボーナスの取得に失敗しました';
-                    const details = data.details ? ` (${data.details})` : '';
-                    const suggestion = data.suggestion ? `\n\n対処法: ${data.suggestion}` : '';
-                    setBonusMessage(`エラー: ${errorMessage}${details}${suggestion}`);
-                    return;
+                  }}
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    py: 2.5,
+                    px: 4,
+                    borderRadius: 2.5,
+                    background: bonusReceivedToday 
+                      ? 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
+                      : 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+                    color: '#333',
+                    transition: 'all 0.3s ease',
+                    boxShadow: bonusReceivedToday 
+                      ? '0 2px 8px rgba(108, 117, 125, 0.3)'
+                      : '0 8px 24px rgba(255, 215, 0, 0.4)',
+                    minWidth: 280,
+                    '&:hover': {
+                      background: bonusReceivedToday 
+                        ? 'linear-gradient(135deg, #6c757d 0%, #495057 100%)'
+                        : 'linear-gradient(135deg, #FFA500 0%, #FFD700 100%)',
+                      boxShadow: bonusReceivedToday 
+                        ? '0 2px 8px rgba(108, 117, 125, 0.3)'
+                        : '0 12px 32px rgba(255, 215, 0, 0.5)',
+                      transform: bonusReceivedToday ? 'none' : 'translateY(-2px)',
+                    },
+                    '&:active': {
+                      transform: bonusReceivedToday ? 'none' : 'translateY(0)',
+                    },
+                    '&:disabled': {
+                      background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+                      color: '#fff',
+                      cursor: 'not-allowed',
+                    }
+                  }}
+                  startIcon={
+                    bonusLoading ? (
+                      <CircularProgress size={20} sx={{ color: '#333' }} />
+                    ) : (
+                      <Star 
+                        sx={{ 
+                          color: '#333', 
+                          fontSize: 22,
+                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.2))'
+                        }} 
+                      />
+                    )
                   }
-                  
-                  if (data.received) {
-                    setBonusMessage(data.message || "本日のログインボーナスはすでに受け取り済みです (+100P)");
-                    setBonusReceivedToday(true);
-                    // ローカルストレージにボーナス状態を保存
-                    if (user) {
-                      const today = new Date().toISOString().slice(0, 10);
-                      localStorage.setItem(`bonus_${user.id}_${today}`, today);
-                      console.log('💾 Bonus state saved to localStorage');
-                    }
-                    // プロフィールを再取得してポイントを更新
-                    const profileRes = await fetch("/api/user-profile");
-                    const profileData = await profileRes.json();
-                    if (profileData.profile && typeof profileData.profile.points === 'number') {
-                      setUserPoints(profileData.profile.points);
-                    }
-                  } else if (data.message) {
-                    setBonusMessage(data.message);
-                    setBonusReceivedToday(true);
-                    // ローカルストレージにボーナス状態を保存
-                    if (user) {
-                      const today = new Date().toISOString().slice(0, 10);
-                      localStorage.setItem(`bonus_${user.id}_${today}`, today);
-                      console.log('💾 Bonus state saved to localStorage');
-                    }
-                    // プロフィールを再取得してポイントを更新
-                    console.log('🔄 Refreshing user profile after bonus...');
-                    const profileRes = await fetch("/api/user-profile");
-                    const profileData = await profileRes.json();
-                    console.log('📋 Profile refresh result:', profileData);
-                    if (profileData.profile && typeof profileData.profile.points === 'number') {
-                      setUserPoints(profileData.profile.points);
-                      console.log('✅ Points updated after bonus:', profileData.profile.points);
-                    } else {
-                      console.log('⚠️ No points found in refreshed profile');
-                    }
-                  } else {
-                    setBonusMessage("ログインボーナスの取得に失敗しました");
+                >
+                  {bonusReceivedToday 
+                    ? "本日分は受け取り済み" 
+                    : bonusLoading 
+                      ? "取得中..." 
+                      : "ログインボーナスをゲット (+100P)"
                   }
-                } catch (error) {
-                  console.error('❌ Login bonus fetch error:', error);
-                  setBonusMessage("ログインボーナスの取得中にエラーが発生しました");
-                } finally {
-                  setBonusLoading(false);
-                }
-              }}
-              sx={{
-                fontWeight: 700,
-                fontSize: '1.2rem',
-                py: 2,
-                px: 4,
-                borderRadius: 4,
-                boxShadow: '0 4px 24px rgba(255, 215, 0, 0.15)',
-                background: 'linear-gradient(90deg, #FFD700 0%, #FFB300 100%)',
-                color: '#333',
-                letterSpacing: '0.05em',
-                transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
-                '&:hover': {
-                  background: 'linear-gradient(90deg, #FFB300 0%, #FFD700 100%)',
-                  boxShadow: '0 8px 32px rgba(255, 215, 0, 0.25)',
-                  transform: 'translateY(-2px) scale(1.04)',
-                },
-                '&:active': {
-                  transform: 'scale(0.98)',
-                },
-                minWidth: 220,
-              }}
-            >
-              {bonusReceivedToday ? "本日分は受け取り済み" : bonusLoading ? "取得中..." : "ログインボーナスをゲット (+100P)"}
-            </Button>
-            <Typography variant="h6" sx={{ ml: 2, minWidth: 60, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <MonetizationOn sx={{ color: '#FFD700', fontSize: 28, verticalAlign: 'middle' }} />
-              {userPoints !== null ? userPoints : "-"}
-            </Typography>
+                </Button>
+              </Box>
+
+              {/* ポイント表示 */}
+              <Box 
+                sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 1.5,
+                  p: 2.5,
+                  borderRadius: 2.5,
+                  background: 'rgba(255, 255, 255, 0.15)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                  minWidth: 120,
+                  justifyContent: 'center'
+                }}
+              >
+                <Star 
+                  sx={{ 
+                    color: '#FFD700', 
+                    fontSize: 22,
+                    filter: 'drop-shadow(0 2px 4px rgba(255,215,0,0.5))'
+                  }} 
+                />
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    color: '#fff',
+                    fontWeight: 700,
+                    letterSpacing: '0.5px',
+                    textShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                  }}
+                >
+                  {userPoints !== null ? userPoints : "-"}
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: 'rgba(255, 255, 255, 0.9)',
+                    fontWeight: 600,
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  P
+                </Typography>
+              </Box>
+            </Box>
           </Card>
         )}
 
