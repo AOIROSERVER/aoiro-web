@@ -354,7 +354,7 @@ function LoginContent() {
                       opacity: 0.8
                     }}
                   >
-                    アカウントを作成して、より便利に
+                    Discord連携で簡単ログイン
                   </Typography>
                 </Box>
               </Fade>

@@ -9,7 +9,13 @@ export async function GET(request: Request) {
   const refreshToken = requestUrl.searchParams.get('refresh_token')
   const expiresIn = requestUrl.searchParams.get('expires_in')
   const tokenType = requestUrl.searchParams.get('token_type')
-  const next = requestUrl.searchParams.get('next') || '/train-status'
+  const from = requestUrl.searchParams.get('from')
+  const next = requestUrl.searchParams.get('next') || (from === 'register' ? '/register' : '/train-status')
+  console.log('Next parameter calculation:', {
+    from,
+    nextParam: requestUrl.searchParams.get('next'),
+    calculatedNext: next
+  })
   const error = requestUrl.searchParams.get('error')
   const errorDescription = requestUrl.searchParams.get('error_description')
 
@@ -23,6 +29,8 @@ export async function GET(request: Request) {
   console.log('Error:', error)
   console.log('Error Description:', errorDescription)
   console.log('All query params:', Object.fromEntries(requestUrl.searchParams.entries()))
+  console.log('From parameter:', from)
+  console.log('Next parameter:', next)
   console.log('User Agent:', request.headers.get('user-agent'))
   console.log('Referer:', request.headers.get('referer'))
 
@@ -371,5 +379,25 @@ export async function GET(request: Request) {
 
   // 認証成功後のリダイレクト
   console.log('✅ Authentication successful, redirecting to:', next)
-  return NextResponse.redirect(requestUrl.origin + next)
+  console.log('From register page:', from === 'register')
+  console.log('From parameter value:', from)
+  console.log('Next parameter value:', next)
+  console.log('All URL parameters:', Object.fromEntries(requestUrl.searchParams.entries()))
+  
+  // 新規作成画面からの認証の場合は、Discord連携完了を示すパラメータを追加
+  if (from === 'register') {
+    // 確実にhttps://aoiroserver.siteにリダイレクト
+    const baseUrl = 'https://aoiroserver.site'
+    const redirectUrl = baseUrl + next + '?discord_linked=true'
+    console.log('🔄 Redirecting to register page with discord_linked=true:', redirectUrl)
+    console.log('Base URL used:', baseUrl)
+    console.log('Next path:', next)
+    return NextResponse.redirect(redirectUrl)
+  }
+  
+  // デフォルトページへのリダイレクトも確実にhttps://aoiroserver.siteを使用
+  const baseUrl = 'https://aoiroserver.site'
+  const defaultRedirectUrl = baseUrl + next
+  console.log('🔄 Redirecting to default page:', defaultRedirectUrl)
+  return NextResponse.redirect(defaultRedirectUrl)
 } 
