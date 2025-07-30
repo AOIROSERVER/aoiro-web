@@ -5,13 +5,26 @@ import {
   Container,
   Card,
   Typography,
-  TextField,
   Button,
   Alert,
   Avatar,
   Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Chip,
 } from "@mui/material";
-import { Person, Tag, Edit, Save, Cancel } from "@mui/icons-material";
+import { 
+  Person, 
+  Email, 
+  CalendarToday, 
+  AccountCircle,
+  Tag,
+  CheckCircle,
+  Info,
+  Chat
+} from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -23,18 +36,13 @@ interface UserProfile {
   created_at: string;
   updated_at: string;
   avatar_url?: string;
+  points?: number;
 }
 
 function ProfileContent() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [username, setUsername] = useState("");
-  const [gameTag, setGameTag] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const { user, signOut } = useAuth();
   const router = useRouter();
 
@@ -48,125 +56,49 @@ function ProfileContent() {
   }, [user, router]);
 
   useEffect(() => {
-    if (profile?.avatar_url) {
+    // ユーザーのメタデータからアバターURLを取得
+    const userAvatarUrl = user?.user_metadata?.picture || user?.user_metadata?.avatar_url;
+    if (userAvatarUrl) {
+      setAvatarUrl(userAvatarUrl);
+    } else if (profile?.avatar_url) {
       setAvatarUrl(profile.avatar_url);
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/user-profile');
+      setLoading(true);
+      console.log('🔄 Fetching profile...');
+      
+      const response = await fetch('/api/user-profile-secure');
+      console.log('📡 Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setProfile(data.profile);
-        setUsername(data.profile.username);
-        setGameTag(data.profile.game_tag);
-      } else {
-        setError('プロフィールの取得に失敗しました');
-      }
-    } catch (error) {
-      setError('プロフィールの取得に失敗しました');
-    }
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
-    setError(null);
-    setSuccessMessage(null);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    if (profile) {
-      setUsername(profile.username);
-      setGameTag(profile.game_tag);
-    }
-    setError(null);
-    setSuccessMessage(null);
-  };
-
-  const handleSave = async () => {
-    setLoading(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    // バリデーション
-    if (!username || !gameTag) {
-      setError('すべての項目を入力してください');
-      setLoading(false);
-      return;
-    }
-
-    if (gameTag.length < 3) {
-      setError('ゲームタグは3文字以上で入力してください');
-      setLoading(false);
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_-]+$/.test(gameTag)) {
-      setError('ゲームタグは英数字、ハイフン、アンダースコアのみ使用できます');
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/user-profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          game_tag: gameTag,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data.profile);
-        setIsEditing(false);
-        setSuccessMessage('プロフィールを更新しました');
+        console.log('📋 Profile data received:', data);
+        console.log('👤 User data:', user);
+        
+        if (data.profile) {
+          if (typeof data.profile.points === 'number') {
+            console.log('✅ Points updated:', data.profile.points);
+          } else {
+            console.log('⚠️ No points column in profile');
+          }
+          setProfile(data.profile);
+        } else {
+          console.log('⚠️ No profile found');
+        }
       } else {
         const errorData = await response.json();
-        setError(errorData.error || 'プロフィールの更新に失敗しました');
+        console.error('❌ Profile fetch error:', errorData);
+        // エラーはコンソールにのみ出力し、UIには表示しない
       }
     } catch (error) {
-      setError('プロフィールの更新に失敗しました');
+      console.error('❌ Profile fetch error:', error);
+      // エラーはコンソールにのみ出力し、UIには表示しない
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!user) return;
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    setUploading(true);
-    setError(null);
-    // ファイル名をユーザーIDで一意に
-    const filePath = `${user.id}/${file.name}`;
-    const { error } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true });
-    if (error) {
-      setError('画像のアップロードに失敗しました: ' + error.message);
-      setUploading(false);
-      return;
-    }
-    // 公開URLを取得
-    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    const publicUrl = data.publicUrl;
-    // プロフィールにURLを保存
-    const { error: updateError } = await supabase
-      .from('user_profiles')
-      .update({ avatar_url: publicUrl })
-      .eq('id', user.id);
-    if (updateError) {
-      setError('プロフィール画像の保存に失敗しました');
-    } else {
-      setAvatarUrl(publicUrl);
-      setSuccessMessage('プロフィール画像を更新しました');
-      fetchProfile();
-    }
-    setUploading(false);
   };
 
   const handleSignOut = async () => {
@@ -178,139 +110,230 @@ function ProfileContent() {
     return null;
   }
 
+    if (loading) {
+    return (
+      <Container component="main" maxWidth="sm" sx={{ pt: 8 }}>
+        <Card sx={{ 
+          p: 4, 
+          borderRadius: 4, 
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white'
+        }}>
+          <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4 }}>
+            <Typography sx={{ color: 'white' }}>読み込み中...</Typography>
+          </Box>
+        </Card>
+      </Container>
+    );
+  }
+
   return (
     <Container component="main" maxWidth="sm" sx={{ pt: 8 }}>
-      <Card sx={{ p: 4, borderRadius: 3, boxShadow: 3 }}>
+      <Card sx={{ 
+        p: 4, 
+        borderRadius: 4, 
+        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* 装飾的な背景要素 */}
+        <Box sx={{
+          position: 'absolute',
+          top: -50,
+          right: -50,
+          width: 100,
+          height: 100,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.1)',
+          zIndex: 0
+        }} />
+        <Box sx={{
+          position: 'absolute',
+          bottom: -30,
+          left: -30,
+          width: 60,
+          height: 60,
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.05)',
+          zIndex: 0
+        }} />
+
         <Box
           sx={{
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            position: 'relative',
+            zIndex: 1
           }}
         >
-          {/* アイコン画像アップロードUI */}
+          {/* アバター表示 */}
           <Avatar
             src={avatarUrl || undefined}
-            sx={{ width: 80, height: 80, mb: 2, bgcolor: "#4A90E2" }}
+            sx={{ 
+              width: 100, 
+              height: 100, 
+              mb: 3, 
+              bgcolor: 'rgba(255,255,255,0.2)',
+              border: '4px solid rgba(255,255,255,0.3)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
+            }}
           >
-            <Person sx={{ fontSize: 40 }} />
+            <Person sx={{ fontSize: 50, color: 'white' }} />
           </Avatar>
-          <Button
-            variant="outlined"
-            component="label"
-            disabled={uploading}
-            sx={{ mb: 2 }}
-          >
-            {uploading ? "アップロード中..." : "画像を変更"}
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleAvatarChange}
-            />
-          </Button>
 
-          <Typography component="h1" variant="h5" fontWeight="bold" mb={1}>
-            プロフィール
+          <Typography component="h1" variant="h4" fontWeight="bold" mb={1} sx={{ color: 'white' }}>
+            アカウント情報
           </Typography>
-          <Typography variant="body2" color="text.secondary" mb={3}>
-            アカウント情報を管理します
+          <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)', mb: 4, textAlign: 'center' }}>
+            あなたのアカウント詳細を確認できます
           </Typography>
 
-          {/* エラー表示 */}
-          {error && <Alert severity="error" sx={{ width: '100%', mb: 2 }}>{error}</Alert>}
-          
-          {/* 成功メッセージ表示 */}
-          {successMessage && <Alert severity="success" sx={{ width: '100%', mb: 2 }}>{successMessage}</Alert>}
 
-          {/* メールアドレス表示（編集不可） */}
-          <TextField
-            margin="normal"
-            fullWidth
-            id="email"
-            label="メールアドレス"
-            value={user.email || ''}
-            disabled
-            sx={{ mb: 2 }}
-          />
 
-          {/* ユーザー名入力 */}
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="username"
-            label="ユーザー名"
-            name="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={!isEditing || loading}
-            InputProps={{
-              startAdornment: <Person sx={{ color: "text.disabled", mr: 1 }} />,
-            }}
-          />
+          {/* AOIRO ID セクション */}
+          <Box sx={{ width: '100%', mb: 4 }}>
+            <Typography variant="h6" fontWeight="bold" mb={3} sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              color: 'white',
+              fontSize: '1.2rem'
+            }}>
+              <Chat sx={{ mr: 1.5, fontSize: '1.5rem' }} />
+              Discord アカウント情報
+            </Typography>
+            <Card sx={{ 
+              bgcolor: 'rgba(255,255,255,0.1)', 
+              borderRadius: 3, 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}>
+              <List sx={{ p: 0 }}>
+                <ListItem sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <ListItemIcon>
+                    <Person sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>Discord ユーザー名</Typography>}
+                    secondary={
+                      <Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                        {user?.user_metadata?.discord_username 
+                          ? `${user.user_metadata.discord_username}#${user.user_metadata.discord_discriminator || '0000'}`
+                          : user?.user_metadata?.username || user?.email?.split('@')[0] || '未設定'
+                        }
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+                <ListItem sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <ListItemIcon>
+                    <Tag sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>Discord ID</Typography>}
+                    secondary={
+                      <Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                        {user?.user_metadata?.discord_id || user?.user_metadata?.game_tag || user?.email?.split('@')[0] || '未設定'}
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+                <ListItem sx={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                  <ListItemIcon>
+                    <Email sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>メールアドレス</Typography>}
+                    secondary={<Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>{user.email || '未設定'}</Typography>}
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemIcon>
+                    <CalendarToday sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>アカウント作成日</Typography>}
+                    secondary={
+                      <Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                        {user?.created_at 
+                          ? new Date(user.created_at).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })
+                          : profile?.created_at 
+                            ? new Date(profile.created_at).toLocaleDateString('ja-JP', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })
+                            : '不明'
+                        }
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+              </List>
+            </Card>
+          </Box>
 
-          {/* ゲームタグ入力 */}
-          <TextField
-            margin="normal"
-            required
-            fullWidth
-            id="gameTag"
-            label="ゲームタグ"
-            name="gameTag"
-            value={gameTag}
-            onChange={(e) => setGameTag(e.target.value)}
-            disabled={!isEditing || loading}
-            helperText={isEditing ? "英数字、ハイフン、アンダースコアのみ使用可能（3文字以上）" : ""}
-            InputProps={{
-              startAdornment: <Tag sx={{ color: "text.disabled", mr: 1 }} />,
-            }}
-          />
+          {/* ポイント情報 セクション */}
+          <Box sx={{ width: '100%', mb: 4 }}>
+            <Typography variant="h6" fontWeight="bold" mb={3} sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              color: 'white',
+              fontSize: '1.2rem'
+            }}>
+              <CheckCircle sx={{ mr: 1.5, fontSize: '1.5rem' }} />
+              ポイント情報
+            </Typography>
+            <Card sx={{ 
+              bgcolor: 'rgba(255,255,255,0.1)', 
+              borderRadius: 3, 
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)'
+            }}>
+              <List sx={{ p: 0 }}>
+                <ListItem>
+                  <ListItemIcon>
+                    <Info sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>現在のポイント</Typography>}
+                    secondary={
+                      <Typography sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.2rem', fontWeight: 'bold' }}>
+                        {profile?.points !== null && profile?.points !== undefined ? profile.points : "-"} ポイント
+                      </Typography>
+                    } 
+                  />
+                </ListItem>
+              </List>
+            </Card>
+          </Box>
 
-          {/* 編集ボタン */}
-          {!isEditing ? (
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={handleEdit}
-              startIcon={<Edit />}
-              sx={{ mt: 3, mb: 2 }}
-            >
-              プロフィールを編集
-            </Button>
-          ) : (
-            <Box sx={{ display: 'flex', gap: 2, width: '100%', mt: 3, mb: 2 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleSave}
-                disabled={loading}
-                startIcon={<Save />}
-                sx={{ bgcolor: "#4A90E2" }}
-              >
-                {loading ? '保存中...' : '保存'}
-              </Button>
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={handleCancel}
-                disabled={loading}
-                startIcon={<Cancel />}
-              >
-                キャンセル
-              </Button>
-            </Box>
-          )}
-
-          <Divider sx={{ width: '100%', my: 2 }} />
+          <Divider sx={{ width: '100%', my: 3, borderColor: 'rgba(255,255,255,0.2)' }} />
 
           {/* ログアウトボタン */}
           <Button
             fullWidth
             variant="outlined"
-            color="error"
             onClick={handleSignOut}
-            sx={{ mt: 2 }}
+            sx={{ 
+              mt: 2,
+              color: 'white',
+              borderColor: 'rgba(255,255,255,0.3)',
+              '&:hover': {
+                borderColor: 'white',
+                bgcolor: 'rgba(255,255,255,0.1)'
+              },
+              py: 1.5,
+              fontSize: '1.1rem',
+              fontWeight: 'bold'
+            }}
           >
             ログアウト
           </Button>

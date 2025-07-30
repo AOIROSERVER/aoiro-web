@@ -32,7 +32,7 @@ export const metadata = {
     "apple-mobile-web-app-status-bar-style": "default",
     "apple-mobile-web-app-title": "AOIROSERVERアプリ",
     "mobile-web-app-capable": "yes",
-    "theme-color": "#3b82f6",
+    "theme-color": "#ffffff",
   },
 };
 
@@ -50,7 +50,7 @@ export default function RootLayout({ children }: { children: any }) {
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
         <link rel="icon" type="image/png" sizes="32x32" href="/header-icon.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/header-icon.png" />
-        <link rel="mask-icon" href="/header-icon.png" color="#3b82f6" />
+        <link rel="mask-icon" href="/header-icon.png" color="#ffffff" />
       </head>
       <body className={inter.className}>
         <ClientThemeProvider>
