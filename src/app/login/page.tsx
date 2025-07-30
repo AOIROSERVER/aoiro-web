@@ -13,7 +13,7 @@ import {
   Fade,
   Slide,
 } from "@mui/material";
-import { Email, Lock, LockOpen, Login as LoginIcon, Visibility, VisibilityOff } from "@mui/icons-material";
+import { Email, Lock, LockOpen, Login as LoginIcon, Visibility, VisibilityOff, CheckCircle } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { setAuthCookie } from "@/lib/supabase";
@@ -52,6 +52,10 @@ function LoginContent() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [discordLinked, setDiscordLinked] = useState(false);
+  const [discordUsername, setDiscordUsername] = useState("");
+  const [discordId, setDiscordId] = useState("");
+  const [discordSuccessMessage, setDiscordSuccessMessage] = useState("");
   const { supabase, user, session } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -85,6 +89,7 @@ function LoginContent() {
   useEffect(() => {
     const errorParam = searchParams ? searchParams.get('error') : null;
     const messageParam = searchParams ? searchParams.get('message') : null;
+    const discordLinkedParam = searchParams ? searchParams.get('discord_linked') : null;
     
     if (errorParam) {
       switch (errorParam) {
@@ -106,9 +111,6 @@ function LoginContent() {
         case 'client_id_error':
           setError('クライアントIDの設定に問題があります。管理者にお問い合わせください。');
           break;
-        case 'pkce_error':
-          setError('認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。');
-          break;
         case 'pkce_grant_error':
           setError('認証フローに問題があります。ブラウザのキャッシュをクリアして再度お試しください。');
           break;
@@ -119,7 +121,49 @@ function LoginContent() {
       setError(null);
       setSuccessMessage('アカウントが正常に作成されました。確認メールをご確認ください。');
     }
-  }, [searchParams]);
+    
+    // Discord連携が完了した場合
+    if (discordLinkedParam === 'true') {
+      console.log('🎉 Discord連携完了を検知しました');
+      setDiscordLinked(true);
+      setError(null);
+      
+      // セッションからDiscordユーザー情報を取得
+      const getDiscordUserInfo = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          console.log('Discord session:', session);
+          if (session?.user) {
+            const discordName = session.user.user_metadata?.full_name || 
+                               session.user.user_metadata?.name || 
+                               session.user.user_metadata?.username ||
+                               'Discord User';
+            const discordUserId = session.user.user_metadata?.sub || 
+                                 session.user.user_metadata?.discord_id ||
+                                 session.user.id ||
+                                 'Unknown';
+            console.log('Discord username:', discordName);
+            console.log('Discord ID:', discordUserId);
+            setDiscordUsername(discordName);
+            setDiscordId(discordUserId);
+            
+            // 成功メッセージを表示
+            console.log('✅ Discord連携が正常に完了しました');
+            setDiscordSuccessMessage('Discordアカウントでログインしました！');
+          } else {
+            console.log('No session user found');
+            setDiscordUsername('Discord User');
+            setDiscordId('Unknown');
+          }
+        } catch (error) {
+          console.error('Discord user info fetch error:', error);
+          setDiscordUsername('Discord User');
+        }
+      };
+      
+      getDiscordUserInfo();
+    }
+  }, [searchParams, supabase]);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -583,30 +627,97 @@ function LoginContent() {
                       onClick={() => handleSocialLogin('discord')}
                       disabled={loading}
                       startIcon={<DiscordIcon />}
-                      sx={{
-                        py: 1.5,
+                      sx={{ 
+                        py: 2.5, 
                         borderRadius: 3,
-                        fontSize: '1rem',
-                        fontWeight: 500,
-                        letterSpacing: '0.3px',
+                        border: '2px solid #7289DA',
+                        color: '#7289DA',
+                        fontSize: '1.1rem',
+                        fontWeight: 600,
+                        letterSpacing: '0.5px',
                         textTransform: 'none',
-                        borderWidth: 2,
-                        borderColor: '#5865F2',
-                        color: '#5865F2',
+                        backgroundColor: 'rgba(114, 137, 218, 0.05)',
+                        position: 'relative',
+                        overflow: 'hidden',
                         '&:hover': {
-                          borderColor: '#4752c4',
-                          backgroundColor: 'rgba(88, 101, 242, 0.04)',
+                          backgroundColor: 'rgba(114, 137, 218, 0.1)',
+                          borderColor: '#5b6eae',
+                          color: '#5b6eae',
                           transform: 'translateY(-2px)',
-                          boxShadow: '0 6px 20px rgba(88, 101, 242, 0.2)',
+                          boxShadow: '0 8px 25px rgba(114, 137, 218, 0.3)',
+                        },
+                        '&:disabled': {
+                          backgroundColor: 'rgba(114, 137, 218, 0.05)',
+                          borderColor: '#b0b0b0',
+                          color: '#b0b0b0',
+                          transform: 'none',
+                          boxShadow: 'none',
                         },
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: 0,
+                          left: '-100%',
+                          width: '100%',
+                          height: '100%',
+                          background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent)',
+                          transition: 'left 0.5s',
+                        },
+                        '&:hover::before': {
+                          left: '100%',
+                        },
                       }}
                     >
-                      Discordでログイン
+                      Discordアカウントでログイン
                     </Button>
                   </Box>
                 </Box>
               </Fade>
+
+              {/* Discord連携完了状態表示 */}
+              {discordLinked && (
+                <Fade in={discordLinked} timeout={800}>
+                  <Box sx={{ 
+                    p: 3, 
+                    bgcolor: 'rgba(76, 175, 80, 0.1)', 
+                    borderRadius: 2,
+                    border: '2px solid #4CAF50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    mb: 3,
+                    animation: 'pulse 2s ease-in-out',
+                    '@keyframes pulse': {
+                      '0%': { transform: 'scale(1)' },
+                      '50%': { transform: 'scale(1.02)' },
+                      '100%': { transform: 'scale(1)' },
+                    }
+                  }}>
+                    <CheckCircle sx={{ color: '#4CAF50', fontSize: 28 }} />
+                    <Box>
+                      <Typography variant="body1" color="success.main" sx={{ fontWeight: 'bold', mb: 0.5 }}>
+                        Discordアカウントでログイン完了
+                      </Typography>
+                      {discordUsername && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          ユーザー名: {discordUsername}
+                        </Typography>
+                      )}
+                      {discordId && discordId !== 'Unknown' && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          Discord ID: {discordId}
+                        </Typography>
+                      )}
+                      {discordSuccessMessage && (
+                        <Typography variant="body2" color="success.main" sx={{ fontStyle: 'italic' }}>
+                          {discordSuccessMessage}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Fade>
+              )}
 
               {/* 管理者ログインボタン */}
               <Fade in={true} timeout={1800}>
