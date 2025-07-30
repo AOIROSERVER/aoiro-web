@@ -82,42 +82,80 @@ export async function GET(request: Request) {
       
       // OAuthコードをセッションに交換
       console.log('🔄 Calling exchangeCodeForSession...')
+      console.log('Code details for exchange:', {
+        codeLength: code?.length,
+        codePrefix: code?.substring(0, 20),
+        codeSuffix: code?.substring(code.length - 10),
+        isCodeValid: !!code && code.length > 10
+      })
+      
       const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(code!)
       console.log('Exchange result:', {
         hasData: !!data,
         hasSession: !!data?.session,
         hasUser: !!data?.user,
         hasError: !!sessionError,
-        errorMessage: sessionError?.message
+        errorMessage: sessionError?.message,
+        errorStatus: sessionError?.status,
+        errorName: sessionError?.name
       })
         
-              if (sessionError) {
-          console.error('❌ Session setting error:', sessionError)
-          console.error('Session error details:', {
-            message: sessionError.message,
-            status: sessionError.status,
-            name: sessionError.name,
-            stack: sessionError.stack
-          })
-          console.error('Discord OAuth context:', {
-            codeLength: code?.length,
-            codePrefix: code?.substring(0, 20),
-            provider: 'discord',
-            from: from,
-            url: request.url,
-            origin: requestUrl.origin
-          })
-          
-          // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
-          if (from === 'register') {
-            const baseUrl = 'https://aoiroserver.site'
-            const redirectUrl = baseUrl + '/register?error=session_error'
-            console.log('🔄 Redirecting to register page with session error:', redirectUrl)
-            return NextResponse.redirect(redirectUrl)
-          }
-          
-          return NextResponse.redirect('https://aoiroserver.site/login?error=session_error')
+      if (sessionError) {
+        console.error('❌ Session setting error:', sessionError)
+        console.error('Session error details:', {
+          message: sessionError.message,
+          status: sessionError.status,
+          name: sessionError.name,
+          stack: sessionError.stack
+        })
+        console.error('Discord OAuth context:', {
+          codeLength: code?.length,
+          codePrefix: code?.substring(0, 20),
+          provider: 'discord',
+          from: from,
+          url: request.url,
+          origin: requestUrl.origin,
+          userAgent: request.headers.get('user-agent'),
+          referer: request.headers.get('referer')
+        })
+        
+        // Discord OAuth特有のエラーハンドリング
+        if (sessionError.message?.includes('invalid_grant')) {
+          console.error('❌ Invalid grant error - code may be expired or used')
+          return NextResponse.redirect('https://aoiroserver.site/login?error=invalid_grant')
         }
+        
+        if (sessionError.message?.includes('redirect_uri')) {
+          console.error('❌ Redirect URI mismatch')
+          return NextResponse.redirect('https://aoiroserver.site/login?error=redirect_uri_mismatch')
+        }
+        
+        if (sessionError.message?.includes('client_id')) {
+          console.error('❌ Client ID error')
+          return NextResponse.redirect('https://aoiroserver.site/login?error=client_id_error')
+        }
+        
+        // PKCE関連のエラーハンドリング
+        if (sessionError.message?.includes('pkce') || sessionError.message?.includes('code_verifier')) {
+          console.error('❌ PKCE error - code verifier mismatch or missing')
+          return NextResponse.redirect('https://aoiroserver.site/login?error=pkce_error')
+        }
+        
+        if (sessionError.status === 400 && sessionError.message?.includes('grant_type')) {
+          console.error('❌ Grant type error - PKCE flow issue')
+          return NextResponse.redirect('https://aoiroserver.site/login?error=pkce_grant_error')
+        }
+        
+        // 新規作成画面からの認証の場合は、新規作成画面にエラー付きでリダイレクト
+        if (from === 'register') {
+          const baseUrl = 'https://aoiroserver.site'
+          const redirectUrl = baseUrl + '/register?error=session_error'
+          console.log('🔄 Redirecting to register page with session error:', redirectUrl)
+          return NextResponse.redirect(redirectUrl)
+        }
+        
+        return NextResponse.redirect('https://aoiroserver.site/login?error=session_error')
+      }
       
       if (!data.session) {
         console.error('❌ No session created')

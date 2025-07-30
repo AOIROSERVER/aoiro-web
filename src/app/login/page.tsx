@@ -97,6 +97,21 @@ function LoginContent() {
         case 'pkce_error':
           setError('認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。');
           break;
+        case 'invalid_grant':
+          setError('認証コードが無効です。再度お試しください。');
+          break;
+        case 'redirect_uri_mismatch':
+          setError('リダイレクトURIの設定に問題があります。管理者にお問い合わせください。');
+          break;
+        case 'client_id_error':
+          setError('クライアントIDの設定に問題があります。管理者にお問い合わせください。');
+          break;
+        case 'pkce_error':
+          setError('認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。');
+          break;
+        case 'pkce_grant_error':
+          setError('認証フローに問題があります。ブラウザのキャッシュをクリアして再度お試しください。');
+          break;
         default:
           setError('ログインに失敗しました。再度お試しください。');
       }
@@ -170,13 +185,31 @@ function LoginContent() {
       console.log(`🔄 Starting ${provider} OAuth login...`);
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
+      console.log('User Agent:', navigator.userAgent);
       
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('Redirect URL:', redirectUrl);
       
+      // Discord OAuthの場合は追加のデバッグ情報
+      if (provider === 'discord') {
+        console.log('🎮 Discord OAuth Debug Info:');
+        console.log('- Provider:', provider);
+        console.log('- Redirect URL:', redirectUrl);
+        console.log('- Origin:', window.location.origin);
+        console.log('- Protocol:', window.location.protocol);
+        console.log('- Hostname:', window.location.hostname);
+        console.log('- Port:', window.location.port);
+      }
+      
       // セッションをクリアしてから新しい認証を開始
       console.log('🧹 Clearing existing session...');
-      await supabase.auth.signOut();
+      try {
+        await supabase.auth.signOut();
+        console.log('✅ Session cleared successfully');
+      } catch (error) {
+        console.warn('⚠️ Session clear warning:', error);
+        // セッションクリアに失敗しても続行
+      }
       
       // プロバイダーごとに適切な設定を分ける
       const oauthOptions: any = {
@@ -184,14 +217,28 @@ function LoginContent() {
         skipBrowserRedirect: false,
       };
       
-      // Discordのみにresponse_type: 'code'を追加
+      // Discord OAuthの場合は特別な設定
       if (provider === 'discord') {
         oauthOptions.queryParams = {
           response_type: 'code',
         };
+        
+        // PKCEフローを明示的に有効化
+        oauthOptions.flowType = 'pkce';
+        
+        console.log('🎮 Discord OAuth options:', oauthOptions);
       }
       
       console.log(`📡 Initiating ${provider} OAuth with options:`, oauthOptions);
+      
+      // Discord OAuthの場合は追加のデバッグ情報
+      if (provider === 'discord') {
+        console.log('🎮 Discord OAuth Debug - Before signInWithOAuth:');
+        console.log('- Provider:', provider);
+        console.log('- Options:', JSON.stringify(oauthOptions, null, 2));
+        console.log('- Current URL:', window.location.href);
+        console.log('- User Agent:', navigator.userAgent);
+      }
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
