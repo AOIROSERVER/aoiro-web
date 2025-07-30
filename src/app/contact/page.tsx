@@ -390,14 +390,20 @@ export default function ContactPage() {
               その他の連絡方法
             </Typography>
             
-                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                         <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: { xs: 2, sm: 4 },
+              flexDirection: { xs: 'column', sm: 'row' }
+            }}>
                {/* Discordカード */}
                <Card sx={{ 
                  background: 'linear-gradient(135deg, #5865F2 0%, #7289DA 100%)',
                  color: 'white',
                  borderRadius: 4,
                  cursor: 'pointer',
-                 flex: 1,
+                 flex: { xs: 'none', sm: 1 },
+                 width: { xs: '100%', sm: 'auto' },
                  position: 'relative',
                  overflow: 'hidden',
                  '&:hover': { 
@@ -423,11 +429,16 @@ export default function ContactPage() {
                    transition: 'all 0.4s ease'
                  }} />
                  
-                 <CardContent sx={{ p: 4, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                 <CardContent sx={{ 
+                   p: { xs: 3, sm: 4 }, 
+                   textAlign: 'center', 
+                   position: 'relative', 
+                   zIndex: 1 
+                 }}>
                    <Box sx={{ 
-                     width: 60, 
-                     height: 60, 
-                     mb: 3,
+                     width: { xs: 50, sm: 60 }, 
+                     height: { xs: 50, sm: 60 }, 
+                     mb: { xs: 2, sm: 3 },
                      display: 'flex',
                      alignItems: 'center',
                      justifyContent: 'center',
@@ -436,7 +447,7 @@ export default function ContactPage() {
                      borderRadius: '50%',
                      backdropFilter: 'blur(10px)'
                    }}>
-                     <svg width="40" height="40" viewBox="0 0 24 24" fill="white">
+                     <svg width={40} height={40} viewBox="0 0 24 24" fill="white" style={{ width: '60%', height: '60%' }}>
                        <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419-.019 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1568 2.4189Z"/>
                      </svg>
                    </Box>
@@ -445,11 +456,17 @@ export default function ContactPage() {
                      backgroundClip: 'text',
                      WebkitBackgroundClip: 'text',
                      WebkitTextFillColor: 'transparent',
-                     textShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                     textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                     fontSize: { xs: '1.2rem', sm: '1.5rem' }
                    }}>
                      Discord
                    </Typography>
-                   <Typography variant="body1" sx={{ mb: 3, opacity: 0.9, fontWeight: 500 }}>
+                   <Typography variant="body1" sx={{ 
+                     mb: { xs: 2, sm: 3 }, 
+                     opacity: 0.9, 
+                     fontWeight: 500,
+                     fontSize: { xs: '0.9rem', sm: '1rem' }
+                   }}>
                      コミュニティに参加
                    </Typography>
                    
@@ -462,11 +479,11 @@ export default function ContactPage() {
                        backdropFilter: 'blur(10px)',
                        border: '1px solid rgba(255,255,255,0.3)',
                        borderRadius: '25px',
-                       px: 4,
-                       py: 1.5,
+                       px: { xs: 3, sm: 4 },
+                       py: { xs: 1, sm: 1.5 },
                        color: 'white',
                        fontWeight: 'bold',
-                       fontSize: '0.9rem',
+                       fontSize: { xs: '0.8rem', sm: '0.9rem' },
                        textTransform: 'none',
                        position: 'relative',
                        overflow: 'hidden',
@@ -490,7 +507,7 @@ export default function ContactPage() {
                        },
                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                      }}
-                     startIcon={<Launch sx={{ fontSize: 18 }} />}
+                     startIcon={<Launch sx={{ fontSize: { xs: 16, sm: 18 } }} />}
                    >
                      サーバーに参加
                    </Button>
@@ -502,7 +519,8 @@ export default function ContactPage() {
                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                  color: 'white',
                  borderRadius: 4,
-                 minWidth: 200,
+                 minWidth: { xs: '100%', sm: 200 },
+                 width: { xs: '100%', sm: 'auto' },
                  position: 'relative',
                  overflow: 'hidden',
                  '&:hover': {
@@ -522,19 +540,24 @@ export default function ContactPage() {
                    borderRadius: '50%'
                  }} />
                  
-                 <CardContent sx={{ p: 4, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                 <CardContent sx={{ 
+                   p: { xs: 3, sm: 4 }, 
+                   textAlign: 'center', 
+                   position: 'relative', 
+                   zIndex: 1 
+                 }}>
                    <Typography variant="h6" fontWeight="bold" sx={{ 
                      color: 'white', 
-                     mb: 3,
-                     fontSize: '1.1rem'
+                     mb: { xs: 2, sm: 3 },
+                     fontSize: { xs: '1rem', sm: '1.1rem' }
                    }}>
                      サーバー情報
                    </Typography>
-                   <Box sx={{ mb: 4 }}>
+                   <Box sx={{ mb: { xs: 3, sm: 4 } }}>
                      <Typography variant="h3" sx={{ 
                        color: 'white', 
                        fontWeight: 'bold', 
-                       fontSize: '2.2rem',
+                       fontSize: { xs: '1.8rem', sm: '2.2rem' },
                        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                        mb: 1
                      }}>
@@ -543,7 +566,7 @@ export default function ContactPage() {
                      <Typography variant="body2" sx={{ 
                        color: 'rgba(255,255,255,0.9)',
                        fontWeight: 500,
-                       fontSize: '0.9rem'
+                       fontSize: { xs: '0.8rem', sm: '0.9rem' }
                      }}>
                        参加人数
                      </Typography>
@@ -552,7 +575,7 @@ export default function ContactPage() {
                      <Typography variant="h3" sx={{ 
                        color: '#4CAF50', 
                        fontWeight: 'bold', 
-                       fontSize: '2.2rem',
+                       fontSize: { xs: '1.8rem', sm: '2.2rem' },
                        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                        mb: 1
                      }}>
@@ -561,7 +584,7 @@ export default function ContactPage() {
                      <Typography variant="body2" sx={{ 
                        color: 'rgba(255,255,255,0.9)',
                        fontWeight: 500,
-                       fontSize: '0.9rem'
+                       fontSize: { xs: '0.8rem', sm: '0.9rem' }
                      }}>
                        オンライン
                      </Typography>
