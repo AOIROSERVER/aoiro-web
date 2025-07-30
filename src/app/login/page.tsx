@@ -520,8 +520,49 @@ function LoginContent() {
                 </Button>
               </Fade>
 
-              {/* 管理者ログインボタン */}
+              {/* ソーシャルログインボタン */}
               <Fade in={true} timeout={1600}>
+                <Box sx={{ width: '100%', mb: 3 }}>
+                  <Divider sx={{ my: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      または
+                    </Typography>
+                  </Divider>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      onClick={() => handleSocialLogin('discord')}
+                      disabled={loading}
+                      startIcon={<DiscordIcon />}
+                      sx={{
+                        py: 1.5,
+                        borderRadius: 3,
+                        fontSize: '1rem',
+                        fontWeight: 500,
+                        letterSpacing: '0.3px',
+                        textTransform: 'none',
+                        borderWidth: 2,
+                        borderColor: '#5865F2',
+                        color: '#5865F2',
+                        '&:hover': {
+                          borderColor: '#4752c4',
+                          backgroundColor: 'rgba(88, 101, 242, 0.04)',
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 6px 20px rgba(88, 101, 242, 0.2)',
+                        },
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      }}
+                    >
+                      Discordでログイン
+                    </Button>
+                  </Box>
+                </Box>
+              </Fade>
+
+              {/* 管理者ログインボタン */}
+              <Fade in={true} timeout={1800}>
                 <Box sx={{ width: '100%' }}>
                   <Button
                     fullWidth
@@ -550,7 +591,7 @@ function LoginContent() {
               </Fade>
 
               {/* リンク */}
-              <Fade in={true} timeout={1800}>
+              <Fade in={true} timeout={2000}>
                 <Box
                   sx={{
                     display: "flex",
