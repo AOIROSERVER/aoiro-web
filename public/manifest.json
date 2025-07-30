@@ -1,6 +1,6 @@
 {
   "name": "AOIROSERVERアプリ",
-  "short_name": "AOIROSERVERアプリ",
+  "short_name": "ARSアプリ",
   "description": "鉄道運行状況と道路状況を確認できるアプリ",
   "start_url": "/",
   "display": "standalone",
