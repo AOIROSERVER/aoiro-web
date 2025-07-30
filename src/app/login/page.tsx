@@ -222,75 +222,62 @@ function LoginContent() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'azure' | 'discord') => {
+  const handleDiscordLink = async () => {
     setLoading(true);
     setError(null);
+    setDiscordSuccessMessage('');
+    setDiscordId('');
     try {
-      console.log(`🔄 Starting ${provider} OAuth login...`);
+      console.log('🔄 Starting Discord OAuth link...');
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
-      console.log('User Agent:', navigator.userAgent);
       
-      const redirectUrl = `${window.location.origin}/auth/callback`;
-      console.log('Redirect URL:', redirectUrl);
+      // Supabaseの直接URLを使用（Discord Developer Portalの設定と一致）
+      const supabaseCallbackUrl = 'https://cqxadmvnsusscsusdrmqd.supabase.co/auth/v1/callback';
+      const customCallbackUrl = 'https://aoiroserver.site/auth/callback';
+      console.log('Supabase callback URL:', supabaseCallbackUrl);
+      console.log('Custom callback URL:', customCallbackUrl);
+      console.log('From login page:', true);
       
-      // Discord OAuthの場合は追加のデバッグ情報
-      if (provider === 'discord') {
-        console.log('🎮 Discord OAuth Debug Info:');
-        console.log('- Provider:', provider);
-        console.log('- Redirect URL:', redirectUrl);
-        console.log('- Origin:', window.location.origin);
-        console.log('- Protocol:', window.location.protocol);
-        console.log('- Hostname:', window.location.hostname);
-        console.log('- Port:', window.location.port);
-      }
+      // 既存のセッションを確認（クリアは行わない）
+      console.log('🔍 Checking existing session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      console.log('Session user:', session?.user);
+      console.log('Session access token:', session?.access_token ? 'present' : 'missing');
       
-      // セッションをクリアしてから新しい認証を開始
-      console.log('🧹 Clearing existing session...');
-      try {
-        await supabase.auth.signOut();
-        console.log('✅ Session cleared successfully');
-      } catch (error) {
-        console.warn('⚠️ Session clear warning:', error);
-        // セッションクリアに失敗しても続行
-      }
+      // Supabaseの直接URLにfromパラメータを追加
+      const redirectUrlWithParams = supabaseCallbackUrl + '?from=login&next=/more';
+      console.log('Final redirect URL with params:', redirectUrlWithParams);
+      console.log('URL parameters:', {
+        from: 'login',
+        next: '/more',
+        fullUrl: redirectUrlWithParams
+      });
+      console.log('Expected callback URL:', redirectUrlWithParams);
+      console.log('URL encoding test:', encodeURIComponent('from=login&next=/more'));
       
-      // プロバイダーごとに適切な設定を分ける
-      const oauthOptions: any = {
-        redirectTo: redirectUrl,
+      const oauthOptions = {
+        redirectTo: redirectUrlWithParams,
         skipBrowserRedirect: false,
+        queryParams: {
+          response_type: 'code',
+        },
+        // 追加のデバッグ情報
+        options: {
+          redirectTo: redirectUrlWithParams,
+        }
       };
       
-      // Discord OAuthの場合は特別な設定
-      if (provider === 'discord') {
-        oauthOptions.queryParams = {
-          response_type: 'code',
-        };
-        
-        // PKCEフローを明示的に有効化
-        oauthOptions.flowType = 'pkce';
-        
-        console.log('🎮 Discord OAuth options:', oauthOptions);
-      }
-      
-      console.log(`📡 Initiating ${provider} OAuth with options:`, oauthOptions);
-      
-      // Discord OAuthの場合は追加のデバッグ情報
-      if (provider === 'discord') {
-        console.log('🎮 Discord OAuth Debug - Before signInWithOAuth:');
-        console.log('- Provider:', provider);
-        console.log('- Options:', JSON.stringify(oauthOptions, null, 2));
-        console.log('- Current URL:', window.location.href);
-        console.log('- User Agent:', navigator.userAgent);
-      }
+      console.log('📡 Initiating Discord OAuth with options:', oauthOptions);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: 'discord',
         options: oauthOptions,
       });
       
       if (error) {
-        console.error(`❌ ${provider} OAuth error:`, error);
+        console.error('❌ Discord OAuth error:', error);
         console.error('Error details:', {
           message: error.message,
           status: error.status,
@@ -300,67 +287,39 @@ function LoginContent() {
         throw error;
       }
       
-      console.log(`✅ ${provider} OAuth initiated successfully`);
+      console.log('✅ Discord OAuth initiated successfully');
       console.log('OAuth data:', data);
-      console.log('Provider:', provider);
-      console.log('Redirect URL used:', redirectUrl);
+      console.log('Provider: discord');
+      console.log('Redirect URL used:', redirectUrlWithParams);
+      console.log('OAuth options used:', oauthOptions);
       
       // ブラウザリダイレクトが自動的に行われる
       console.log('🔄 Waiting for browser redirect...');
+      console.log('Expected callback URL:', redirectUrlWithParams);
+      console.log('Supabase will handle the callback and redirect to:', customCallbackUrl);
       
     } catch (err: any) {
-      console.error(`❌ ${provider} login error:`, err);
+      console.error('❌ Discord link error:', err);
       console.error('Full error object:', err);
       console.error('Error type:', typeof err);
       console.error('Error keys:', Object.keys(err || {}));
       
       let errorMessage = err.error_description || err.message || '認証に失敗しました';
       
-      // プロバイダー別のエラーメッセージ
-      if (provider === 'discord') {
-        if (err.message?.includes('redirect_uri')) {
-          errorMessage = 'DiscordのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
-        } else if (err.message?.includes('client_id')) {
-          errorMessage = 'DiscordのクライアントID設定に問題があります。管理者にお問い合わせください。';
-        } else if (err.message?.includes('scope')) {
-          errorMessage = 'Discordのスコープ設定に問題があります。管理者にお問い合わせください。';
-        } else if (err.message?.includes('invalid_grant')) {
-          errorMessage = 'Discordの認証コードが無効です。再度お試しください。';
-        } else if (err.message?.includes('unauthorized_client')) {
-          errorMessage = 'Discordのクライアント認証に失敗しました。設定を確認してください。';
-        } else if (err.message?.includes('bad_code_verifier')) {
-          errorMessage = '認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。';
-        }
-      } else if (provider === 'google') {
-        console.error('Google OAuth詳細エラー:', {
-          message: err.message,
-          status: err.status,
-          name: err.name,
-          stack: err.stack
-        });
-        
-        if (err.message?.includes('redirect_uri')) {
-          errorMessage = 'GoogleのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
-        } else if (err.message?.includes('client_id')) {
-          errorMessage = 'GoogleのクライアントID設定に問題があります。管理者にお問い合わせください。';
-        } else if (err.message?.includes('invalid_grant')) {
-          errorMessage = 'Googleの認証コードが無効です。再度お試しください。';
-        } else if (err.message?.includes('unauthorized_client')) {
-          errorMessage = 'Googleのクライアント認証に失敗しました。設定を確認してください。';
-        } else if (err.message?.includes('access_denied')) {
-          errorMessage = 'Googleログインがキャンセルされました。再度お試しください。';
-        } else if (err.message?.includes('popup_closed')) {
-          errorMessage = 'Googleログインのポップアップが閉じられました。再度お試しください。';
-        } else if (err.message?.includes('network')) {
-          errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。';
-        } else if (err.message?.includes('auth_error')) {
-          errorMessage = 'Google認証でエラーが発生しました。ブラウザのキャッシュをクリアして再度お試しください。';
-        } else {
-          errorMessage = `Googleログインエラー: ${err.message || '不明なエラーが発生しました'}`;
-        }
+      if (err.message?.includes('redirect_uri')) {
+        errorMessage = 'DiscordのリダイレクトURI設定に問題があります。管理者にお問い合わせください。';
+      } else if (err.message?.includes('client_id')) {
+        errorMessage = 'DiscordのクライアントID設定に問題があります。管理者にお問い合わせください。';
+      } else if (err.message?.includes('scope')) {
+        errorMessage = 'Discordのスコープ設定に問題があります。管理者にお問い合わせください。';
+      } else if (err.message?.includes('invalid_grant')) {
+        errorMessage = 'Discordの認証コードが無効です。再度お試しください。';
+      } else if (err.message?.includes('unauthorized_client')) {
+        errorMessage = 'Discordのクライアント認証に失敗しました。設定を確認してください。';
+      } else if (err.message?.includes('bad_code_verifier')) {
+        errorMessage = '認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。';
       }
       
-      console.error(`Final error message for ${provider}:`, errorMessage);
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -370,47 +329,24 @@ function LoginContent() {
   return (
     <Box
       sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         py: 4,
-        position: 'relative',
-        overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%), radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%)',
-          zIndex: 0,
-        }
       }}
     >
-      <Container component="main" maxWidth="sm" sx={{ position: 'relative', zIndex: 1 }}>
+      <Container maxWidth="sm">
         <Slide direction="up" in={true} timeout={800}>
-          <Card 
-            sx={{ 
-              p: 4, 
-              borderRadius: 4, 
-              boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              position: 'relative',
-              overflow: 'hidden',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb)',
-              }
+          <Card
+            sx={{
+              p: 4,
+              borderRadius: 4,
+              boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
             }}
           >
             <Box
@@ -464,18 +400,11 @@ function LoginContent() {
                       }
                     }}
                   >
-                    <Typography variant="body2" component="div">
-                      {error}
-                    </Typography>
-                    {error.includes('Google') && (
-                      <Typography variant="caption" component="div" sx={{ mt: 1 }}>
-                        詳細なエラー情報を確認するには、ブラウザの開発者ツール（F12）のコンソールを確認してください。
-                      </Typography>
-                    )}
+                    {error}
                   </Alert>
                 </Fade>
               )}
-              
+
               {/* 成功メッセージ表示 */}
               {successMessage && (
                 <Fade in={true} timeout={500}>
@@ -484,15 +413,13 @@ function LoginContent() {
                     sx={{ 
                       width: '100%', 
                       mb: 3,
-                      borderRadius: 2
+                      borderRadius: 2,
+                      '& .MuiAlert-icon': {
+                        color: '#2e7d32'
+                      }
                     }}
                   >
                     {successMessage}
-                    <Box mt={1}>
-                      <Typography variant="body2" color="text.secondary">
-                        ※ログイン後、右上の「その他」→「プロフィール」からアイコン画像を設定できます。
-                      </Typography>
-                    </Box>
                   </Alert>
                 </Fade>
               )}
@@ -624,7 +551,7 @@ function LoginContent() {
                     <Button
                       fullWidth
                       variant="outlined"
-                      onClick={() => handleSocialLogin('discord')}
+                      onClick={handleDiscordLink}
                       disabled={loading}
                       startIcon={<DiscordIcon />}
                       sx={{ 
