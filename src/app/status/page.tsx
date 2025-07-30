@@ -110,7 +110,7 @@ export default function StatusPage() {
       status: 'operational',
       responseTime: 95,
       lastChecked: new Date().toISOString(),
-      description: 'AOIROSERVERアプリサイト',
+      description: 'AOIROSERVERアプリ',
       icon: <Web />,
       url: 'https://aoiroserver.site'
     },

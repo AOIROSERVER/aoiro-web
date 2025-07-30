@@ -27,7 +27,7 @@ const services = [
   },
   {
     name: 'AOIROSERVER アプリ',
-    description: 'AOIROSERVERアプリサイト',
+    description: 'AOIROSERVERアプリ',
     url: 'https://aoiroserver.site'
   },
   {
@@ -223,7 +223,7 @@ const otherMockServices: ServiceStatus[] = [
     status: 'operational',
     responseTime: 95,
     lastChecked: new Date().toISOString(),
-    description: 'AOIROSERVERアプリサイト',
+    description: 'AOIROSERVERアプリ',
     url: 'https://aoiroserver.site'
   },
   {
