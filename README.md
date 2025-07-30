@@ -1,4 +1,4 @@
-# あおいろおく Web
+# AOIROSERVERアプリ Web
 
 鉄道運行状況と道路状況を確認できるPWA（Progressive Web App）
 

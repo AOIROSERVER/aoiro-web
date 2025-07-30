@@ -12,13 +12,13 @@ const Footer = dynamic(() => import("./Footer"), { ssr: false });
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "あおいろおく",
+  title: "AOIROSERVERアプリ",
   description: "鉄道運行状況と道路状況を確認できるアプリ",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "あおいろおく",
+    title: "AOIROSERVERアプリ",
   },
   viewport: {
     width: "device-width",
@@ -30,7 +30,7 @@ export const metadata = {
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
-    "apple-mobile-web-app-title": "あおいろおく",
+    "apple-mobile-web-app-title": "AOIROSERVERアプリ",
     "mobile-web-app-capable": "yes",
     "theme-color": "#3b82f6",
   },
