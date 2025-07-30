@@ -247,15 +247,15 @@ function LoginContent() {
       console.log('Session access token:', session?.access_token ? 'present' : 'missing');
       
       // Supabaseの直接URLにfromパラメータを追加
-      const redirectUrlWithParams = supabaseCallbackUrl + '?from=login&next=/more';
+      const redirectUrlWithParams = supabaseCallbackUrl + '?from=login&next=/register';
       console.log('Final redirect URL with params:', redirectUrlWithParams);
       console.log('URL parameters:', {
         from: 'login',
-        next: '/more',
+        next: '/register',
         fullUrl: redirectUrlWithParams
       });
       console.log('Expected callback URL:', redirectUrlWithParams);
-      console.log('URL encoding test:', encodeURIComponent('from=login&next=/more'));
+      console.log('URL encoding test:', encodeURIComponent('from=login&next=/register'));
       
       const oauthOptions = {
         redirectTo: redirectUrlWithParams,
