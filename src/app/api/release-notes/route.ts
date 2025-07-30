@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+let supabase: any;
+
+try {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase URL and key are required');
+  }
+
+  supabase = createClient(supabaseUrl, supabaseKey);
+} catch (error) {
+  console.error('Supabase client initialization error:', error);
+  supabase = null;
+}
 
 // リリースノートの型定義
 type ReleaseNote = {
@@ -19,6 +30,10 @@ type ReleaseNote = {
 
 export async function GET() {
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase client is not initialized' }, { status: 500 });
+    }
+
     const { data, error } = await supabase
       .from('release_notes')
       .select('*')
@@ -38,6 +53,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!supabase) {
+      return NextResponse.json({ error: 'Supabase client is not initialized' }, { status: 500 });
+    }
+
     const body = await request.json();
     const { title, content, version, author } = body;
 
