@@ -1,7 +1,7 @@
 "use client";
-import { Box, Card, Typography, Avatar } from "@mui/material";
+import { Box, Card, Typography, Avatar, IconButton } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { Train, DirectionsBus, DirectionsWalk, MoreHoriz } from "@mui/icons-material";
+import { Train, DirectionsBus, DirectionsWalk, MoreHoriz, ArrowBack } from "@mui/icons-material";
 import { ReactElement } from "react";
 
 interface CardData {
@@ -47,44 +47,58 @@ export default function HomePage() {
   const router = useRouter();
 
   return (
-    <Box sx={{ p: 2, background: '#f5f5f5', minHeight: '100vh' }}>
+    <Box sx={{ p: 0, background: '#f5f5f5', minHeight: '100vh' }}>
       {/* ヘッダー */}
-      <Box className="home-header" mb={3}>
-        <Typography className="home-title">AOIRO SERVER</Typography>
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        px: 2,
+        py: 2,
+        background: '#fff',
+        borderBottom: '1px solid #e0e0e0'
+      }}>
+        <IconButton onClick={() => router.back()}>
+          <ArrowBack sx={{ color: '#1a237e' }} />
+        </IconButton>
+        <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20, ml: 1 }}>
+          AOIRO SERVER
+        </Typography>
       </Box>
 
       {/* カードグリッド */}
-      <Box className="card-grid">
-        {CARD_DATA.map((card) => (
-          <Card
-            key={card.id}
-            className="home-card"
-            onClick={() => router.push(card.route)}
-          >
-            <Avatar
-              sx={{
-                bgcolor: card.color,
-                width: { xs: 50, sm: 60 },
-                height: { xs: 50, sm: 60 },
-                mb: { xs: 1, sm: 2 },
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
+      <Box sx={{ p: 2 }}>
+        <Box className="card-grid">
+          {CARD_DATA.map((card) => (
+            <Card
+              key={card.id}
+              className="home-card"
+              onClick={() => router.push(card.route)}
             >
-              {card.icon}
-            </Avatar>
-            <Typography
-              variant="h6"
-              fontWeight="bold"
-              sx={{ 
-                color: '#050045', 
-                textAlign: 'center',
-                fontSize: { xs: 14, sm: 16 }
-              }}
-            >
-              {card.title}
-            </Typography>
-          </Card>
-        ))}
+              <Avatar
+                sx={{
+                  bgcolor: card.color,
+                  width: { xs: 50, sm: 60 },
+                  height: { xs: 50, sm: 60 },
+                  mb: { xs: 1, sm: 2 },
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                {card.icon}
+              </Avatar>
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                sx={{ 
+                  color: '#050045', 
+                  textAlign: 'center',
+                  fontSize: { xs: 14, sm: 16 }
+                }}
+              >
+                {card.title}
+              </Typography>
+            </Card>
+          ))}
+        </Box>
       </Box>
     </Box>
   );

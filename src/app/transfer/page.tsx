@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Box, Typography } from "@mui/material";
 import { SwapHoriz } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 interface Route {
   id: string;
@@ -20,6 +21,7 @@ export default function TransferPage() {
   const [arrivalStation, setArrivalStation] = useState('');
   const [searchResults, setSearchResults] = useState<Route[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const router = useRouter();
 
   const stations = [
     '東京', '新宿', '渋谷', '武蔵小杉', '大崎', '大井町', '有楽町', '浜松',

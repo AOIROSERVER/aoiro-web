@@ -25,8 +25,10 @@ import {
   Notifications,
   Security,
   Speed,
+  ArrowBack,
 } from "@mui/icons-material";
 import { useServerStatus } from "../../contexts/ServerStatusContext";
+import { useRouter } from "next/navigation";
 
 // サービスステータス型
 type ServiceStatus = {
@@ -79,6 +81,7 @@ export default function StatusPage() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   const { serverStatus } = useServerStatus();
+  const router = useRouter();
 
   // サービス定義（実際のサービスのみ）
   const serviceDefinitions: ServiceStatus[] = [
@@ -236,12 +239,24 @@ export default function StatusPage() {
   };
 
   return (
-    <Box sx={{ p: 2, background: "#f7f8fa", minHeight: "100vh" }}>
+    <Box sx={{ p: 0, background: "#f7f8fa", minHeight: "100vh" }}>
       {/* ヘッダー */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        px: 2,
+        py: 2,
+        background: '#fff',
+        borderBottom: '1px solid #e0e0e0',
+        mb: 3
+      }}>
         <Box display="flex" alignItems="center" gap={1}>
-          <Cloud sx={{ color: "#4A90E2", fontSize: 32 }} />
-          <Typography variant="h5" fontWeight="bold" sx={{ color: '#212529' }}>
+          <IconButton onClick={() => router.back()}>
+            <ArrowBack sx={{ color: '#1a237e' }} />
+          </IconButton>
+          <Cloud sx={{ color: "#4A90E2", fontSize: 28, ml: 1 }} />
+          <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20, ml: 1 }}>
             稼働状況
           </Typography>
         </Box>
@@ -256,102 +271,105 @@ export default function StatusPage() {
         </Tooltip>
       </Box>
 
-      {/* 全体ステータス */}
-      <Card sx={{ mb: 3, borderRadius: 3, p: 2 }}>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Box>
-            <Typography variant="h6" fontWeight="bold" sx={{ color: '#212529' }}>
-              全体ステータス
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {getOverallStatusText()}
-            </Typography>
+      {/* コンテンツ */}
+      <Box sx={{ p: 2 }}>
+        {/* 全体ステータス */}
+        <Card sx={{ mb: 3, borderRadius: 3, p: 2 }}>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box>
+              <Typography variant="h6" fontWeight="bold" sx={{ color: '#212529' }}>
+                全体ステータス
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {getOverallStatusText()}
+              </Typography>
+            </Box>
+            <StatusIndicator status={overallStatus} />
           </Box>
-          <StatusIndicator status={overallStatus} />
-        </Box>
-        {lastUpdated && (
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-            最終更新: {lastUpdated}
-          </Typography>
-        )}
-      </Card>
+          {lastUpdated && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              最終更新: {lastUpdated}
+            </Typography>
+          )}
+        </Card>
 
-      {/* サービス一覧 */}
-      <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ color: '#212529' }}>
-        サービス詳細
-      </Typography>
-      
-      {loading ? (
-        <Box display="flex" justifyContent="center" alignItems="center" py={4}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Grid container spacing={2}>
-          {services.map((service, index) => (
-            <Grid item xs={12} sm={6} md={4} key={index}>
-              <Card sx={{ p: 2, borderRadius: 3, height: '100%' }}>
-                <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Box sx={{ color: '#4A90E2' }}>
-                      {service.icon}
+        {/* サービス一覧 */}
+        <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ color: '#212529' }}>
+          サービス詳細
+        </Typography>
+        
+        {loading ? (
+          <Box display="flex" justifyContent="center" alignItems="center" py={4}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Grid container spacing={2}>
+            {services.map((service, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Card sx={{ p: 2, borderRadius: 3, height: '100%' }}>
+                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Box sx={{ color: '#4A90E2' }}>
+                        {service.icon}
+                      </Box>
+                      <Typography variant="h6" fontWeight="bold" sx={{ color: '#212529' }}>
+                        {service.name}
+                      </Typography>
                     </Box>
-                    <Typography variant="h6" fontWeight="bold" sx={{ color: '#212529' }}>
-                      {service.name}
-                    </Typography>
+                    <StatusIndicator status={service.status} />
                   </Box>
-                  <StatusIndicator status={service.status} />
-                </Box>
-                
-                <Typography variant="body2" color="text.secondary" mb={1}>
-                  {service.description}
-                </Typography>
-                
-                <Divider sx={{ my: 1 }} />
-                
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="caption" color="text.secondary">
-                    応答時間: {service.responseTime}ms
+                  
+                  <Typography variant="body2" color="text.secondary" mb={1}>
+                    {service.description}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {new Date(service.lastChecked).toLocaleTimeString('ja-JP')}
-                  </Typography>
-                </Box>
-                
-                {/* Minecraftサーバー情報 */}
-                {service.name === 'AOIROSERVER' && service.playerCount !== undefined && (
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+                  
+                  <Divider sx={{ my: 1 }} />
+                  
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography variant="caption" color="text.secondary">
-                      プレイヤー: {service.playerCount}/{service.maxPlayers}
+                      応答時間: {service.responseTime}ms
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      バージョン: {service.version}
+                      {new Date(service.lastChecked).toLocaleTimeString('ja-JP')}
                     </Typography>
                   </Box>
-                )}
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+                  
+                  {/* Minecraftサーバー情報 */}
+                  {service.name === 'AOIROSERVER' && service.playerCount !== undefined && (
+                    <Box display="flex" justifyContent="space-between" alignItems="center" mt={1}>
+                      <Typography variant="caption" color="text.secondary">
+                        プレイヤー: {service.playerCount}/{service.maxPlayers}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        バージョン: {service.version}
+                      </Typography>
+                    </Box>
+                  )}
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
 
-      {/* 情報 */}
-      <Card sx={{ mt: 3, borderRadius: 3, p: 2 }}>
-        <Typography variant="subtitle2" fontWeight="bold" mb={1} sx={{ color: '#212529' }}>
-          ステータスについて
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          • 正常: サービスが正常に稼働しています
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          • 一部障害: 一部の機能に問題があります
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          • 障害: サービスが利用できません
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          • メンテナンス: 計画的なメンテナンス中です
-        </Typography>
-      </Card>
+        {/* 情報 */}
+        <Card sx={{ mt: 3, borderRadius: 3, p: 2 }}>
+          <Typography variant="subtitle2" fontWeight="bold" mb={1} sx={{ color: '#212529' }}>
+            ステータスについて
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            • 正常: サービスが正常に稼働しています
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            • 一部障害: 一部の機能に問題があります
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            • 障害: サービスが利用できません
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            • メンテナンス: 計画的なメンテナンス中です
+          </Typography>
+        </Card>
+      </Box>
     </Box>
   );
 } 

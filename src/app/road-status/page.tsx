@@ -45,8 +45,6 @@ const roadIcons: { [key: string]: string } = {
 };
 
 const RoadListItem = ({ road }: { road: any }) => {
-  const router = useRouter();
-
   const getStatusInfo = (status: string) => {
     switch (status) {
       case '渋滞':
@@ -70,12 +68,7 @@ const RoadListItem = ({ road }: { road: any }) => {
         mb: 1.5, 
         borderRadius: 3, 
         boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
-        cursor: 'pointer',
-        '&:hover': {
-          boxShadow: '0 4px 16px rgba(0,0,0,0.1)'
-        }
       }}
-      onClick={() => router.push(`/road-status/${road.id}`)}
     >
       <Box sx={{ display: 'flex', p: 1.5, alignItems: 'center' }}>
         <Box sx={{ flexGrow: 1 }}>

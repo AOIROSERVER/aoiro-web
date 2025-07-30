@@ -9,6 +9,7 @@ import WcIcon from '@mui/icons-material/Wc';
 import ElevatorIcon from '@mui/icons-material/Elevator';
 import WifiIcon from '@mui/icons-material/Wifi';
 import PeopleIcon from '@mui/icons-material/People';
+import { ArrowBack } from "@mui/icons-material";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -375,128 +376,149 @@ export default function TrainLineDetail() {
   };
 
   return (
-    <Box sx={{ background: '#fafbfc', minHeight: '100vh', pb: 4 }}>
+    <Box sx={{ p: 0, background: '#fafbfc', minHeight: '100vh' }}>
       {/* ヘッダー */}
-      <Box sx={{ px: 3, pt: 3, pb: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a237e', fontSize: 22 }}>{line.name}</Typography>
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        px: 2,
+        py: 2,
+        background: '#fff',
+        borderBottom: '1px solid #e0e0e0'
+      }}>
+        <IconButton onClick={() => router.back()}>
+          <ArrowBack sx={{ color: '#1a237e' }} />
+        </IconButton>
+        <TrainIcon sx={{ color: '#1a237e', fontSize: 28, ml: 1 }} />
+        <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20, ml: 1 }}>
+          路線詳細
+        </Typography>
       </Box>
-      {/* 運行情報詳細 */}
-      <Box sx={{ px: 2, mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <ErrorOutlineIcon sx={{ color: '#e53935', mr: 1 }} />
-          <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 16 }}>運行情報詳細</Typography>
+
+      {/* コンテンツ */}
+      <Box sx={{ p: 2 }}>
+        {/* 路線名 */}
+        <Box sx={{ px: 3, pt: 3, pb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: '#1a237e', fontSize: 22 }}>{line.name}</Typography>
         </Box>
-        <Card sx={{ p: 3, borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', mb: 2 }}>
-          {/* ステータス */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: status !== '平常運転' ? 2 : 0 }}>
-            {statusIcon}
-            <Typography sx={{ color: statusColor, fontWeight: 800, fontSize: 20 }}>{status}</Typography>
+        {/* 運行情報詳細 */}
+        <Box sx={{ px: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <ErrorOutlineIcon sx={{ color: '#e53935', mr: 1 }} />
+            <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 16 }}>運行情報詳細</Typography>
           </Box>
-          {/* 影響区間・詳細情報は平常運転以外の時のみ絶対に表示しない */}
-          {status !== '平常運転' && (
-            <>
-              <Divider sx={{ my: 1.5 }} />
-              {/* 影響区間 */}
-              <Box sx={{ mb: 2 }}>
-                <Typography sx={{ color: '#888', fontWeight: 600, fontSize: 15, mb: 0.5 }}>影響区間</Typography>
-                <Typography sx={{ color: '#222', fontSize: 16 }}>{section ? section : '情報なし'}</Typography>
-              </Box>
-              <Divider sx={{ my: 1.5 }} />
-              {/* 詳細情報 */}
-              <Box>
-                <Typography sx={{ color: '#888', fontWeight: 600, fontSize: 15, mb: 0.5 }}>詳細情報</Typography>
-                <Typography sx={{ color: '#222', fontSize: 15 }}>{detail ? detail : '情報なし'}</Typography>
-              </Box>
-            </>
-          )}
-        </Card>
-      </Box>
-      {/* 列車位置情報 */}
-      <Box sx={{ px: 2, mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <TrainIcon sx={{ color: '#2962ff', mr: 1 }} />
-          <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 16 }}>列車位置情報</Typography>
-        </Box>
-        <Card 
-          sx={{ 
-            p: 2, 
-            borderRadius: 3, 
-            boxShadow: '0 2px 8px rgba(0,0,0,0.07)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            cursor: 'pointer',
-            '&:hover': {
-              backgroundColor: '#f5f5f5',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-            }
-          }}
-          onClick={handleTrainPositionClick}
-        >
-          <Typography sx={{ color: '#757575', fontWeight: 500, fontSize: 15 }}>リアルタイムで列車の位置を確認</Typography>
-          <ArrowForwardIosIcon sx={{ color: '#bdbdbd', fontSize: 18 }} />
-        </Card>
-      </Box>
-      {/* 主要駅一覧 */}
-      <Box sx={{ px: 2, mb: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <DirectionsRailwayFilledIcon sx={{ color: '#2962ff', mr: 1 }} />
-          <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 16 }}>主要駅一覧</Typography>
-        </Box>
-        <Stack spacing={2} direction="column" sx={{ position: 'relative' }}>
-          {/* 縦線（Stack全体で1本） */}
-          <Box sx={{
-            position: 'absolute',
-            left: 14,
-            top: 0,
-            bottom: 0,
-            width: 4,
-            background: lineColor,
-            zIndex: 0,
-            borderRadius: 2,
-          }} />
-          {line.stations.map((station, idx) => (
-            <Box key={station.name} sx={{ display: 'flex', alignItems: 'center', minHeight: 48, position: 'relative', zIndex: 1 }}>
-              {/* 丸 */}
-              <Box sx={{ width: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', height: 48 }}>
-                <Box sx={{
-                  width: 20,
-                  height: 20,
-                  borderRadius: '50%',
-                  border: `4px solid ${lineColor}`,
-                  background: '#fff',
-                  boxSizing: 'border-box',
-                  position: 'relative',
-                  zIndex: 2,
-                }} />
-              </Box>
-              {/* 駅カード */}
-              <Card 
-                sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', p: 2, display: 'flex', alignItems: 'center', mb: 0, position: 'relative', flex: 1, cursor: 'pointer', transition: 'box-shadow 0.2s', '&:active': { boxShadow: '0 1px 4px rgba(0,0,0,0.10)' } }}
-                onClick={() => router.push(`/station-info/${('id' in station ? (station as any).id : station.name)}`)}
-              >
-                <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 17 }}>{station.name}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 1 }}>
-                    <Typography sx={{ color: station.congestionColor, fontWeight: 700, fontSize: 14, mr: 1 }}>{station.type}</Typography>
-                    {station.transfer.map((tr) => (
-                      <Chip key={tr} label={tr} size="small" sx={{ background: tr === 'JY' ? '#8bc34a' : tr === 'JK' ? '#29b6f6' : '#ab47bc', color: '#fff', fontWeight: 700, fontSize: 13, ml: 0.5 }} />
-                    ))}
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 1 }}>
-                    {station.icons.map((icon, i) => (
-                      <Box key={i} sx={{ color: '#757575', mr: 0.5 }}>{icon}</Box>
-                    ))}
-                    {station.name === '東京' && <WifiIcon fontSize="small" sx={{ color: '#757575', ml: 0.5 }} />}
-                  </Box>
-                </Box>
-                <Box sx={{ minWidth: 40, textAlign: 'right' }}>
-                  <Typography sx={{ color: '#757575', fontWeight: 500, fontSize: 15 }}>{station.time}</Typography>
-                </Box>
-              </Card>
+          <Card sx={{ p: 3, borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', mb: 2 }}>
+            {/* ステータス */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: status !== '平常運転' ? 2 : 0 }}>
+              {statusIcon}
+              <Typography sx={{ color: statusColor, fontWeight: 800, fontSize: 20 }}>{status}</Typography>
             </Box>
-          ))}
-        </Stack>
+            {/* 影響区間・詳細情報は平常運転以外の時のみ絶対に表示しない */}
+            {status !== '平常運転' && (
+              <>
+                <Divider sx={{ my: 1.5 }} />
+                {/* 影響区間 */}
+                <Box sx={{ mb: 2 }}>
+                  <Typography sx={{ color: '#888', fontWeight: 600, fontSize: 15, mb: 0.5 }}>影響区間</Typography>
+                  <Typography sx={{ color: '#222', fontSize: 16 }}>{section ? section : '情報なし'}</Typography>
+                </Box>
+                <Divider sx={{ my: 1.5 }} />
+                {/* 詳細情報 */}
+                <Box>
+                  <Typography sx={{ color: '#888', fontWeight: 600, fontSize: 15, mb: 0.5 }}>詳細情報</Typography>
+                  <Typography sx={{ color: '#222', fontSize: 15 }}>{detail ? detail : '情報なし'}</Typography>
+                </Box>
+              </>
+            )}
+          </Card>
+        </Box>
+        {/* 列車位置情報 */}
+        <Box sx={{ px: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <TrainIcon sx={{ color: '#2962ff', mr: 1 }} />
+            <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 16 }}>列車位置情報</Typography>
+          </Box>
+          <Card 
+            sx={{ 
+              p: 2, 
+              borderRadius: 3, 
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between', 
+              cursor: 'pointer',
+              '&:hover': {
+                backgroundColor: '#f5f5f5',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+              }
+            }}
+            onClick={handleTrainPositionClick}
+          >
+            <Typography sx={{ color: '#757575', fontWeight: 500, fontSize: 15 }}>リアルタイムで列車の位置を確認</Typography>
+            <ArrowForwardIosIcon sx={{ color: '#bdbdbd', fontSize: 18 }} />
+          </Card>
+        </Box>
+        {/* 主要駅一覧 */}
+        <Box sx={{ px: 2, mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <DirectionsRailwayFilledIcon sx={{ color: '#2962ff', mr: 1 }} />
+            <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 16 }}>主要駅一覧</Typography>
+          </Box>
+          <Stack spacing={2} direction="column" sx={{ position: 'relative' }}>
+            {/* 縦線（Stack全体で1本） */}
+            <Box sx={{
+              position: 'absolute',
+              left: 14,
+              top: 0,
+              bottom: 0,
+              width: 4,
+              background: lineColor,
+              zIndex: 0,
+              borderRadius: 2,
+            }} />
+            {line.stations.map((station, idx) => (
+              <Box key={station.name} sx={{ display: 'flex', alignItems: 'center', minHeight: 48, position: 'relative', zIndex: 1 }}>
+                {/* 丸 */}
+                <Box sx={{ width: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', height: 48 }}>
+                  <Box sx={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: '50%',
+                    border: `4px solid ${lineColor}`,
+                    background: '#fff',
+                    boxSizing: 'border-box',
+                    position: 'relative',
+                    zIndex: 2,
+                  }} />
+                </Box>
+                {/* 駅カード */}
+                <Card 
+                  sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.07)', p: 2, display: 'flex', alignItems: 'center', mb: 0, position: 'relative', flex: 1, cursor: 'pointer', transition: 'box-shadow 0.2s', '&:active': { boxShadow: '0 1px 4px rgba(0,0,0,0.10)' } }}
+                  onClick={() => router.push(`/station-info/${('id' in station ? (station as any).id : station.name)}`)}
+                >
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 700, color: '#222', fontSize: 17 }}>{station.name}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 1 }}>
+                      <Typography sx={{ color: station.congestionColor, fontWeight: 700, fontSize: 14, mr: 1 }}>{station.type}</Typography>
+                      {station.transfer.map((tr) => (
+                        <Chip key={tr} label={tr} size="small" sx={{ background: tr === 'JY' ? '#8bc34a' : tr === 'JK' ? '#29b6f6' : '#ab47bc', color: '#fff', fontWeight: 700, fontSize: 13, ml: 0.5 }} />
+                      ))}
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.5, gap: 1 }}>
+                      {station.icons.map((icon, i) => (
+                        <Box key={i} sx={{ color: '#757575', mr: 0.5 }}>{icon}</Box>
+                      ))}
+                      {station.name === '東京' && <WifiIcon fontSize="small" sx={{ color: '#757575', ml: 0.5 }} />}
+                    </Box>
+                  </Box>
+                  <Box sx={{ minWidth: 40, textAlign: 'right' }}>
+                    <Typography sx={{ color: '#757575', fontWeight: 500, fontSize: 15 }}>{station.time}</Typography>
+                  </Box>
+                </Card>
+              </Box>
+            ))}
+          </Stack>
+        </Box>
       </Box>
     </Box>
   );

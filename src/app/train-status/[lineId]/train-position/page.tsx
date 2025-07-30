@@ -3,7 +3,9 @@ import React from "react";
 import { Box, Typography, Card, Modal, Paper, LinearProgress, IconButton } from "@mui/material";
 import TrainIcon from "@mui/icons-material/Train";
 import CloseIcon from '@mui/icons-material/Close';
+import { ArrowBack } from "@mui/icons-material";
 import { useEffect, useState, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import './train-icon-anim.css';
 
 // 路線ごとの駅データを定義（主要駅一覧に合わせる）
@@ -320,6 +322,7 @@ export default function TrainPositionPage() {
   const lastStationRef = useRef<string|null>(null);
   const timerRef = useRef<any>(null);
   const [moveAnim, setMoveAnim] = useState(false);
+  const router = useRouter();
   const stations = useMemo(() => (lineCode && LINE_STATIONS[lineCode] ? LINE_STATIONS[lineCode] : []), [lineCode]);
 
   // line名・方向の正規化関数
@@ -620,274 +623,295 @@ export default function TrainPositionPage() {
   return (
     <Box sx={{ p: 0, maxWidth: '100%', mx: 'auto', backgroundColor: 'white', minHeight: '100vh' }} className="train-position-page">
       {/* ヘッダー */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, mt: 3, justifyContent: 'center', px: 3 }} className="train-position-header">
-        <Box
-          className="line-icon"
-          sx={{
-            width: 48,
-            height: 48,
-            borderRadius: '15%',
-            backgroundColor: 'white',
-            border: `3px solid ${lineColor}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            mr: 2,
-            fontSize: '20px',
-            fontWeight: 'bold',
-            color: '#0d2a70'
-          }}
-        >
-          {lineCode === 'JY1' || lineCode === 'JY2' ? 'JY' : 
-           lineCode === 'JK' ? 'JK' :
-           lineCode === 'CA' ? 'CA' :
-           lineCode === 'JB' ? 'JB' :
-           lineCode === 'JC' ? 'JC' :
-           lineCode === 'M' ? 'M' :
-           lineCode === 'H' ? 'H' :
-           lineCode === 'G' ? 'G' :
-           lineCode === 'JT' ? 'JT' :
-           lineCode === 'JO' ? 'JO' :
-           lineCode === 'AK' ? 'AK' :
-           lineCode === 'AU' ? 'AU' :
-           lineCode === 'C' ? 'C' :
-           lineCode === 'Z' ? 'Z' : 'JY'}
-        </Box>
-        <Box className="title-container">
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', textAlign: 'center', color: 'black' }} className="train-position-title">
-            {lineName} 列車位置情報
-          </Typography>
-        </Box>
+      <Box sx={{
+        display: 'flex',
+        alignItems: 'center',
+        px: 2,
+        py: 2,
+        background: '#fff',
+        borderBottom: '1px solid #e0e0e0'
+      }}>
+        <IconButton onClick={() => router.back()}>
+          <ArrowBack sx={{ color: '#1a237e' }} />
+        </IconButton>
+        <TrainIcon sx={{ color: '#1a237e', fontSize: 28, ml: 1 }} />
+        <Typography variant="h6" fontWeight="bold" sx={{ color: '#1a237e', fontSize: 20, ml: 1 }}>
+          列車位置情報
+        </Typography>
       </Box>
 
-      {/* 路線図 */}
-      <Box sx={{ p: 0, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-        {/* 上り・下り表記（山手線以外） */}
-        {(lineCode !== 'JY1' && lineCode !== 'JY2') && (
-          <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 4, px: 3 }}>
-            {/* 中央線の上部に配置 */}
-            <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 4, zIndex: 200, top: -10 }} className="direction-buttons">
-              <Typography
-                sx={{
-                  fontWeight: direction === '上り' ? 'bold' : 400,
-                  color: '#333',
-                  fontSize: 16,
-                  letterSpacing: 1,
-                  backgroundColor: 'white',
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: 1,
-                  border: '1px solid #ddd',
-                }}
-              >
-                上り
-              </Typography>
-              <Typography
-                sx={{
-                  fontWeight: direction === '下り' ? 'bold' : 400,
-                  color: '#333',
-                  fontSize: 16,
-                  letterSpacing: 1,
-                  backgroundColor: 'white',
-                  px: 2,
-                  py: 0.5,
-                  borderRadius: 1,
-                  border: '1px solid #ddd',
-                }}
-              >
-                下り
-              </Typography>
-            </Box>
-          </Box>
-        )}
-        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-          {/* 縦線（中央配置） */}
+      {/* コンテンツ */}
+      <Box sx={{ p: 2 }}>
+        {/* 路線情報ヘッダー */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, mt: 3, justifyContent: 'center', px: 3 }} className="train-position-header">
           <Box
+            className="line-icon"
             sx={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              width: 4,
-              backgroundColor: lineColor,
-              borderRadius: 2,
-              zIndex: 100
+              width: 48,
+              height: 48,
+              borderRadius: '15%',
+              backgroundColor: 'white',
+              border: `3px solid ${lineColor}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mr: 2,
+              fontSize: '20px',
+              fontWeight: 'bold',
+              color: '#0d2a70'
             }}
-          />
-          
-          {/* 駅ドット（中央線上の白丸）を全駅分絶対配置で描画 */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-            {stations.map((station, index) => {
-              // 駅ごとに路線記号の数字部分を連番で表示
-              const match = lineCode.match(/^([A-Z]+)/i);
-              const lineAlpha = match ? match[1] : lineCode;
-              const lineNum = (index + 1).toString();
-              // 駅名が長い場合はフォントサイズを小さくする
-              const isLongName = station.name.length >= 8;
-              return (
-                <React.Fragment key={station.code}>
-                  {/* 1駅分の行 */}
-                  <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', minHeight: `${ROW_HEIGHT}px`, background: '#f3f3f3' }}>
-                    {/* 駅名ボックス */}
-                    <Box
-                      className="station-name-box"
-                      sx={{
-                        width: { xs: 120, sm: 140 },
-                        minWidth: { xs: 80, sm: 100 },
-                        backgroundColor: 'white',
-                        border: `2px solid ${lineColor}`,
-                        borderRadius: 2,
-                        px: { xs: 1, sm: 2 },
-                        py: 1,
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        textAlign: 'left',
-                        overflow: 'visible',
-                        zIndex: 100,
-                        marginLeft: '4px',
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        mr: 2,
-                        cursor: 'pointer',
-                        '&:hover': {
-                          backgroundColor: '#f5f5f5',
-                          transform: 'scale(1.02)',
-                          transition: 'all 0.2s ease-in-out'
-                        }
-                      }}
-                      onClick={() => {
-                        window.location.href = `/station-info/${station.name}`;
-                      }}
-                    >
-                      {/* 路線記号バッジ */}
+          >
+            {lineCode === 'JY1' || lineCode === 'JY2' ? 'JY' : 
+             lineCode === 'JK' ? 'JK' :
+             lineCode === 'CA' ? 'CA' :
+             lineCode === 'JB' ? 'JB' :
+             lineCode === 'JC' ? 'JC' :
+             lineCode === 'M' ? 'M' :
+             lineCode === 'H' ? 'H' :
+             lineCode === 'G' ? 'G' :
+             lineCode === 'JT' ? 'JT' :
+             lineCode === 'JO' ? 'JO' :
+             lineCode === 'AK' ? 'AK' :
+             lineCode === 'AU' ? 'AU' :
+             lineCode === 'C' ? 'C' :
+             lineCode === 'Z' ? 'Z' : 'JY'}
+          </Box>
+          <Box className="title-container">
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', textAlign: 'center', color: 'black' }} className="train-position-title">
+              {lineName} 列車位置情報
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* 路線図 */}
+        <Box sx={{ p: 0, borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          {/* 上り・下り表記（山手線以外） */}
+          {(lineCode !== 'JY1' && lineCode !== 'JY2') && (
+            <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center', mb: 4, px: 3 }}>
+              {/* 中央線の上部に配置 */}
+              <Box sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 4, zIndex: 200, top: -10 }} className="direction-buttons">
+                <Typography
+                  sx={{
+                    fontWeight: direction === '上り' ? 'bold' : 400,
+                    color: '#333',
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    backgroundColor: 'white',
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: 1,
+                    border: '1px solid #ddd',
+                  }}
+                >
+                  上り
+                </Typography>
+                <Typography
+                  sx={{
+                    fontWeight: direction === '下り' ? 'bold' : 400,
+                    color: '#333',
+                    fontSize: 16,
+                    letterSpacing: 1,
+                    backgroundColor: 'white',
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: 1,
+                    border: '1px solid #ddd',
+                  }}
+                >
+                  下り
+                </Typography>
+              </Box>
+            </Box>
+          )}
+          <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+            {/* 縦線（中央配置） */}
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                width: 4,
+                backgroundColor: lineColor,
+                borderRadius: 2,
+                zIndex: 100
+              }}
+            />
+            
+            {/* 駅ドット（中央線上の白丸）を全駅分絶対配置で描画 */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+              {stations.map((station, index) => {
+                // 駅ごとに路線記号の数字部分を連番で表示
+                const match = lineCode.match(/^([A-Z]+)/i);
+                const lineAlpha = match ? match[1] : lineCode;
+                const lineNum = (index + 1).toString();
+                // 駅名が長い場合はフォントサイズを小さくする
+                const isLongName = station.name.length >= 8;
+                return (
+                  <React.Fragment key={station.code}>
+                    {/* 1駅分の行 */}
+                    <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%', minHeight: `${ROW_HEIGHT}px`, background: '#f3f3f3' }}>
+                      {/* 駅名ボックス */}
                       <Box
+                        className="station-name-box"
                         sx={{
-                          width: { xs: 24, sm: 32 },
-                          height: { xs: 24, sm: 32 },
-                          borderRadius: { xs: '6px', sm: '8px' },
+                          width: { xs: 120, sm: 140 },
+                          minWidth: { xs: 80, sm: 100 },
                           backgroundColor: 'white',
                           border: `2px solid ${lineColor}`,
+                          borderRadius: 2,
+                          px: { xs: 1, sm: 2 },
+                          py: 1,
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          textAlign: 'left',
+                          overflow: 'visible',
+                          zIndex: 100,
+                          marginLeft: '4px',
                           display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#0d2a70',
-                          marginRight: 1,
-                          mr: { xs: 0.5, sm: 1 },
-                          p: 0,
-                          lineHeight: 1,
-                          overflow: 'hidden',
-                          flexShrink: 0,
-                          flexGrow: 0,
-                          alignSelf: 'flex-start',
+                          alignItems: 'flex-start',
+                          mr: 2,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: '#f5f5f5',
+                            transform: 'scale(1.02)',
+                            transition: 'all 0.2s ease-in-out'
+                          }
+                        }}
+                        onClick={() => {
+                          window.location.href = `/station-info/${station.name}`;
                         }}
                       >
-                        <span style={{ 
-                          fontSize: window.innerWidth < 600 ? '8px' : '11px', 
-                          fontWeight: 700, 
-                          lineHeight: 1 
-                        }}>
-                          {lineAlpha}
-                        </span>
-                        {lineNum && (
+                        {/* 路線記号バッジ */}
+                        <Box
+                          sx={{
+                            width: { xs: 24, sm: 32 },
+                            height: { xs: 24, sm: 32 },
+                            borderRadius: { xs: '6px', sm: '8px' },
+                            backgroundColor: 'white',
+                            border: `2px solid ${lineColor}`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#0d2a70',
+                            marginRight: 1,
+                            mr: { xs: 0.5, sm: 1 },
+                            p: 0,
+                            lineHeight: 1,
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                            flexGrow: 0,
+                            alignSelf: 'flex-start',
+                          }}
+                        >
                           <span style={{ 
-                            fontSize: window.innerWidth < 600 ? '10px' : '15px', 
+                            fontSize: window.innerWidth < 600 ? '8px' : '11px', 
                             fontWeight: 700, 
                             lineHeight: 1 
                           }}>
-                            {lineNum}
+                            {lineAlpha}
                           </span>
-                        )}
+                          {lineNum && (
+                            <span style={{ 
+                              fontSize: window.innerWidth < 600 ? '10px' : '15px', 
+                              fontWeight: 700, 
+                              lineHeight: 1 
+                            }}>
+                              {lineNum}
+                            </span>
+                          )}
+                        </Box>
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            fontWeight: 600, 
+                            color: '#222', 
+                            fontSize: window.innerWidth < 600 ? '0.75rem' : (isLongName ? '0.85rem' : '1rem'), 
+                            textAlign: 'left', 
+                            ml: { xs: 0.5, sm: 1 } 
+                          }}
+                        >
+                          {station.name}
+                        </Typography>
                       </Box>
-                      <Typography 
-                        variant="h6" 
-                        sx={{ 
-                          fontWeight: 600, 
-                          color: '#222', 
-                          fontSize: window.innerWidth < 600 ? '0.75rem' : (isLongName ? '0.85rem' : '1rem'), 
-                          textAlign: 'left', 
-                          ml: { xs: 0.5, sm: 1 } 
-                        }}
-                      >
-                        {station.name}
-                      </Typography>
-                    </Box>
-                    {/* 中央線（縦線） */}
-                    <Box sx={{ position: 'absolute', left: '50%', top: 0, height: '100%', width: 4, background: lineColor, borderRadius: 2, zIndex: 1, transform: 'translateX(-50%)' }} />
-                    {/* 駅ドット（白丸） */}
-                    <Box
-                      sx={{
-                        position: 'absolute',
-                        left: '50%',
-                        top: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: 20,
-                        height: 20,
-                        borderRadius: '50%',
-                        background: '#fff',
-                        border: `4px solid ${lineColor}`,
-                        zIndex: 100,
-                        pointerEvents: 'none',
-                      }}
-                    />
-                    {/* 電車マーク（駅ドットの左側） */}
-                    {currentStations.includes(normalizeStationName(station.name)) && (
-                      <Box sx={{ 
-                        position: 'absolute', 
-                        left: currentDirection === '下り' ? 'calc(50% + 56px)' : 'calc(50% - 56px)', 
-                        top: currentDirection === '下り' ? 'calc(50% + 20px)' : 'calc(50% - 0px)', 
-                        transform: 'translate(-50%, -50%)', 
-                        width: 48, 
-                        height: 68, 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        alignItems: 'center', 
-                        justifyContent: 'flex-start', 
-                        zIndex: 3 
-                      }}
-                      onClick={() => {
-                        console.log('電車マーククリック - 駅:', station.name, '方向:', currentDirection, '路線:', lineName);
-                      }}
-                      >
-                        {/* Googleマップ風の白い半透明円エフェクト */}
-                        <span style={{
+                      {/* 中央線（縦線） */}
+                      <Box sx={{ position: 'absolute', left: '50%', top: 0, height: '100%', width: 4, background: lineColor, borderRadius: 2, zIndex: 1, transform: 'translateX(-50%)' }} />
+                      {/* 駅ドット（白丸） */}
+                      <Box
+                        sx={{
                           position: 'absolute',
                           left: '50%',
-                          top: 24,
-                          width: 56,
-                          height: 56,
-                          background: 'rgba(200,200,200,0.5)',
-                          borderRadius: '50%',
+                          top: '50%',
                           transform: 'translate(-50%, -50%)',
-                          filter: 'blur(2px)',
-                          zIndex: 1,
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: '#fff',
+                          border: `4px solid ${lineColor}`,
+                          zIndex: 100,
                           pointerEvents: 'none',
-                        }} />
-                        <img
-                          src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
-                          alt="電車"
-                          className="train-icon-hover"
-                          style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2, animation: 'train-hover 2s ease-in-out infinite' }}
-                          onClick={() => handleTrainIconClick(station.name)}
-                        />
-                        {/* 野球ベース（三角形） */}
-                        <svg width="28" height="20" viewBox="0 0 28 20" style={{ 
-                          position: 'absolute',
-                          top: currentDirection === '下り' ? -20 : 50,
-                          left: currentDirection === '下り' ? 'calc(50% + 0px)' : 'calc(50% - 14px)',
-                          transform: `translateX(-50%) ${currentDirection === '下り' ? 'rotate(180deg)' : 'none'}`,
-                          zIndex: 3
-                        }}>
-                          <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
-                        </svg>
-                      </Box>
+                        }}
+                      />
+                      {/* 電車マーク（駅ドットの左側） */}
+                      {currentStations.includes(normalizeStationName(station.name)) && (
+                        <Box sx={{ 
+                          position: 'absolute', 
+                          left: currentDirection === '下り' ? 'calc(50% + 56px)' : 'calc(50% - 56px)', 
+                          top: currentDirection === '下り' ? 'calc(50% + 20px)' : 'calc(50% - 0px)', 
+                          transform: 'translate(-50%, -50%)', 
+                          width: 48, 
+                          height: 68, 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          alignItems: 'center', 
+                          justifyContent: 'flex-start', 
+                          zIndex: 3 
+                        }}
+                        onClick={() => {
+                          console.log('電車マーククリック - 駅:', station.name, '方向:', currentDirection, '路線:', lineName);
+                        }}
+                        >
+                          {/* Googleマップ風の白い半透明円エフェクト */}
+                          <span style={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: 24,
+                            width: 56,
+                            height: 56,
+                            background: 'rgba(200,200,200,0.5)',
+                            borderRadius: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            filter: 'blur(2px)',
+                            zIndex: 1,
+                            pointerEvents: 'none',
+                          }} />
+                          <img
+                            src={STATION_TRAIN_ICON_URLS[lineName] || DEFAULT_STATION_TRAIN_ICON_URL}
+                            alt="電車"
+                            className="train-icon-hover"
+                            style={{ width: 48, height: 48, cursor: 'pointer', position: 'relative', zIndex: 2, animation: 'train-hover 2s ease-in-out infinite' }}
+                            onClick={() => handleTrainIconClick(station.name)}
+                          />
+                          {/* 野球ベース（三角形） */}
+                          <svg width="28" height="20" viewBox="0 0 28 20" style={{ 
+                            position: 'absolute',
+                            top: currentDirection === '下り' ? -20 : 50,
+                            left: currentDirection === '下り' ? 'calc(50% + 0px)' : 'calc(50% - 14px)',
+                            transform: `translateX(-50%) ${currentDirection === '下り' ? 'rotate(180deg)' : 'none'}`,
+                            zIndex: 3
+                          }}>
+                            <polygon points="14,20 0,0 28,0" fill="#e0e0e0" stroke="#222" strokeWidth="2" />
+                          </svg>
+                        </Box>
+                      )}
+                    </Box>
+                    {/* 駅間（白背景） ※最後の駅の後ろには表示しない */}
+                    {index < stations.length - 1 && (
+                      <Box sx={{ width: '100%', height: `${ROW_HEIGHT}px`, background: '#fff' }} />
                     )}
-                  </Box>
-                  {/* 駅間（白背景） ※最後の駅の後ろには表示しない */}
-                  {index < stations.length - 1 && (
-                    <Box sx={{ width: '100%', height: `${ROW_HEIGHT}px`, background: '#fff' }} />
-                  )}
-                </React.Fragment>
-              );
-            })}
+                  </React.Fragment>
+                );
+              })}
+            </Box>
           </Box>
         </Box>
       </Box>

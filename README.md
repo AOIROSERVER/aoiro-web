@@ -1,6 +1,36 @@
-# AOIROSERVER Web
+# あおいろおく Web
 
-鉄道運行情報アプリのWeb版
+鉄道運行状況と道路状況を確認できるPWA（Progressive Web App）
+
+## PWA機能
+
+このアプリはPWA（Progressive Web App）として設計されており、以下の機能を提供します：
+
+### iPhone/Androidでのネイティブアプリ体験
+- ホーム画面に追加可能
+- Safari/ChromeのURLバーを非表示
+- フルスクリーンモードで動作
+- オフライン対応
+
+### インストール方法
+1. iPhoneの場合：
+   - Safariでサイトを開く
+   - 共有ボタン（□↑）をタップ
+   - 「ホーム画面に追加」を選択
+   - アプリ名を確認して「追加」をタップ
+
+2. Androidの場合：
+   - Chromeでサイトを開く
+   - メニュー（⋮）をタップ
+   - 「アプリをインストール」を選択
+   - 「インストール」をタップ
+
+### 主な機能
+- 鉄道運行状況の確認
+- 道路状況の確認
+- プッシュ通知
+- オフライン対応
+- レスポンシブデザイン
 
 ## セットアップ
 
@@ -68,6 +98,8 @@ NEXT_PUBLIC_SITE_URL=your_site_url
 
 ### 6. データベースマイグレーション
 
+#### ログインボーナス機能
+
 ログインボーナス機能を使用するには、必要なテーブルを作成する必要があります：
 
 ```bash
@@ -87,6 +119,64 @@ npm run migrate-login-bonus
 cat supabase/migrations/create_login_bonus_tables.sql
 ```
 
+#### リリースノート機能
+
+リリースノート機能を使用するには、以下のSQLを実行してください：
+
+1. Supabaseダッシュボードにアクセス
+2. SQL Editorを開く
+3. 以下のSQLをコピー&ペーストして実行：
+
+```sql
+-- リリースノートテーブルの作成
+CREATE TABLE IF NOT EXISTS release_notes (
+  id SERIAL PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  version TEXT NOT NULL,
+  date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  author TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- RLS（Row Level Security）の設定
+ALTER TABLE release_notes ENABLE ROW LEVEL SECURITY;
+
+-- 全ユーザーがリリースノートを閲覧できるポリシー
+CREATE POLICY "Anyone can view release notes" ON release_notes
+  FOR SELECT USING (true);
+
+-- 管理者のみがリリースノートを作成・更新・削除できるポリシー
+CREATE POLICY "Admin can manage release notes" ON release_notes
+  FOR ALL USING (auth.jwt() ->> 'email' = 'aoiroserver.m@gmail.com');
+
+-- インデックスの作成
+CREATE INDEX IF NOT EXISTS idx_release_notes_created_at ON release_notes(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_release_notes_version ON release_notes(version);
+CREATE INDEX IF NOT EXISTS idx_release_notes_author ON release_notes(author);
+
+-- updated_atを自動更新するトリガー関数
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- updated_atを自動更新するトリガー
+CREATE TRIGGER update_release_notes_updated_at
+    BEFORE UPDATE ON release_notes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+```
+
+または、以下のコマンドでSQLファイルの内容を表示：
+```bash
+cat supabase/migrations/create_release_notes_table.sql
+```
+
 ### 7. 開発サーバーの起動
 
 ```bash
@@ -98,6 +188,9 @@ npm run dev
 - 鉄道運行情報の表示
 - 道路状況の表示
 - 乗換案内
+- リリースノート管理（管理者専用）
+  - 管理者アカウントでログインすると、リリースノートページで新しいリリースノートを作成できます
+  - リリースノートはデータベースに保存され、全ユーザーが閲覧できます
 - 駅情報
 - お問い合わせフォーム（hCaptcha保護）
 - ユーザー認証
