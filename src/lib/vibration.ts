@@ -34,11 +34,81 @@ export const VIBRATION_PATTERNS = {
 } as const;
 
 /**
+ * iOS Safariでバイブレーションを実行するための裏ワザ
+ * 隠しcheckbox switchを使用して触覚フィードバックを発生させる
+ */
+function vibrateOnIOS(): void {
+  try {
+    // 既存の隠し要素があるかチェック
+    let hiddenCheckbox = document.getElementById('vibration-hack-checkbox') as HTMLInputElement;
+    
+    if (!hiddenCheckbox) {
+      // 隠しcheckbox switchを作成
+      hiddenCheckbox = document.createElement('input');
+      hiddenCheckbox.type = 'checkbox';
+      hiddenCheckbox.id = 'vibration-hack-checkbox';
+      hiddenCheckbox.style.position = 'absolute';
+      hiddenCheckbox.style.left = '-9999px';
+      hiddenCheckbox.style.opacity = '0';
+      hiddenCheckbox.style.pointerEvents = 'none';
+      hiddenCheckbox.setAttribute('switch', ''); // iOS 18のswitch属性
+      
+      // body に追加
+      document.body.appendChild(hiddenCheckbox);
+    }
+    
+    // チェックボックスの状態を切り替えて触覚フィードバックを発生
+    hiddenCheckbox.checked = !hiddenCheckbox.checked;
+    hiddenCheckbox.click();
+  } catch (error) {
+    console.warn('Failed to vibrate on iOS:', error);
+  }
+}
+
+/**
+ * デバイスがiOSかどうかを判定
+ */
+function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+/**
+ * パターンに応じてiOSでバイブレーションを実行
+ * @param pattern - バイブレーションパターン
+ */
+function vibratePatternOnIOS(pattern: number | readonly number[]): void {
+  if (typeof pattern === 'number') {
+    // 単発のバイブレーション
+    vibrateOnIOS();
+  } else if (Array.isArray(pattern)) {
+    // パターンバイブレーション（簡易実装）
+    let delay = 0;
+    for (let i = 0; i < pattern.length; i += 2) {
+      const vibrationDuration = pattern[i];
+      if (vibrationDuration > 0) {
+        setTimeout(() => {
+          vibrateOnIOS();
+        }, delay);
+      }
+      
+      delay += vibrationDuration + (pattern[i + 1] || 0);
+    }
+  }
+}
+
+/**
  * バイブレーションを実行する
  * @param pattern - バイブレーションパターン（数値または数値配列）
  */
 export function vibrate(pattern: number | readonly number[] = VIBRATION_PATTERNS.BUTTON): void {
-  // ブラウザがVibration APIをサポートしているかチェック
+  // iOSの場合は裏ワザを使用
+  if (isIOS()) {
+    vibratePatternOnIOS(pattern);
+    return;
+  }
+
+  // 標準のVibration APIをチェック
   if (!('navigator' in globalThis) || !navigator.vibrate) {
     console.warn('Vibration API is not supported in this browser');
     return;
@@ -57,6 +127,12 @@ export function vibrate(pattern: number | readonly number[] = VIBRATION_PATTERNS
  * バイブレーションが利用可能かチェック
  */
 export function isVibrationSupported(): boolean {
+  // iOSの場合は裏ワザでサポート
+  if (isIOS()) {
+    return true;
+  }
+  
+  // 標準のVibration APIをチェック
   return 'navigator' in globalThis && 'vibrate' in navigator;
 }
 
