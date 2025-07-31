@@ -73,7 +73,7 @@ export default function HelpPage() {
             <ArrowBack />
           </IconButton>
           <HelpOutline sx={{ color: 'white', fontSize: 32, mr: 2 }} />
-          <Typography variant="h4" fontWeight="bold" sx={{ color: 'white' }}>
+          <Typography variant="h4" fontWeight="bold" className="long-page-title" sx={{ color: 'white', margin: 0 }}>
             ヘルプ・よくある質問
           </Typography>
         </Box>

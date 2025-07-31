@@ -34,7 +34,7 @@ export default function PrivacyPage() {
 
       {/* プライバシーポリシーコンテンツ */}
       <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-        <Typography variant="h4" fontWeight="bold" sx={{ color: '#222', mb: 3 }}>
+        <Typography variant="h4" fontWeight="bold" className="long-page-title" sx={{ color: '#222', mb: 3, margin: '0 0 24px 0' }}>
           プライバシーポリシー
         </Typography>
         

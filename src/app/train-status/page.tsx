@@ -540,10 +540,10 @@ export default function TrainStatusPage() {
               >
                 {(line.id === 'JY1' || line.id === 'JY2') ? 'JY' : line.id}
               </Box>
-              <Typography variant="h6" sx={{ color: '#1a237e', fontWeight: 700, fontSize: 18, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1, minWidth: 0 }}>{line.name}</Typography>
+              <Typography variant="h6" sx={{ color: '#1a237e', fontWeight: 700, fontSize: 18, whiteSpace: 'normal', overflow: 'visible', textOverflow: 'unset', flex: 1, minWidth: 0, lineHeight: 1.3, wordBreak: 'break-word' }}>{line.name}</Typography>
               <Box display="flex" alignItems="center" gap={1}>
                 <StatusIcon status={line.status} />
-                <Typography sx={{ color: line.status === '平常運転' ? '#43a047' : line.status === '遅延' ? '#ffa000' : '#e53935', fontWeight: 700, fontSize: 17, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{line.status}</Typography>
+                <Typography sx={{ color: line.status === '平常運転' ? '#43a047' : line.status === '遅延' ? '#ffa000' : '#e53935', fontWeight: 700, fontSize: 17, whiteSpace: 'normal', overflow: 'visible', textOverflow: 'unset', minWidth: 0, lineHeight: 1.3, wordBreak: 'break-word', textAlign: { xs: 'center', sm: 'left' } }}>{line.status}</Typography>
               </Box>
             </Box>
           </Box>

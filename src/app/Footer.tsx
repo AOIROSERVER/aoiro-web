@@ -32,9 +32,11 @@ export default function Footer() {
           }} />
           <Typography component="span" sx={{ 
             fontWeight: 600, 
-            fontSize: 13, 
+            fontSize: 14, 
             color: serverStatus.online ? '#388e3c' : '#c62828',
-            whiteSpace: 'nowrap'
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            lineHeight: 1.3
           }}>
             AOIROSERVER{serverStatus.online ? '稼働中' : '停止中'}
           </Typography>
@@ -172,7 +174,8 @@ export default function Footer() {
                     fontSize: 14, 
                     color: '#555', 
                     fontWeight: 600,
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'normal',
+                    lineHeight: 1.3
                   }}>
                     {serverStatus.playerCount || 0}/{serverStatus.maxPlayers || 0}
                   </Typography>
@@ -183,17 +186,19 @@ export default function Footer() {
                     fontSize: 14, 
                     color: '#555', 
                     fontWeight: 600,
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'normal',
+                    lineHeight: 1.3
                   }}>
                     {serverStatus.version || '-'}
                   </Typography>
                 </Box>
                 {serverStatus.online && serverStatus.responseTime && (
                   <Typography component="span" sx={{ 
-                    fontSize: 12, 
+                    fontSize: 13, 
                     color: '#888', 
                     fontWeight: 500, 
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'normal',
+                    lineHeight: 1.3
                   }}>
                     応答: {serverStatus.responseTime}ms
                   </Typography>

@@ -65,7 +65,7 @@ export default function AboutPage() {
             <ArrowBack />
           </IconButton>
           <Info sx={{ color: 'white', fontSize: 32, mr: 2 }} />
-          <Typography variant="h4" fontWeight="bold" sx={{ color: 'white' }}>
+          <Typography variant="h4" fontWeight="bold" sx={{ color: 'white', wordBreak: 'break-word', whiteSpace: 'normal', margin: 0 }}>
             アプリについて
           </Typography>
         </Box>

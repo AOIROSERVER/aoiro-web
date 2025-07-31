@@ -177,8 +177,122 @@
   color: #1a237e;
 }
 
+/* 小さなスマホ用デザイン (480px以下) */
+@media (max-width: 480px) {
+  .page-title-text {
+    font-size: 18px !important;
+  }
+  
+  .mobile-nav-link {
+    font-size: 11px !important;
+    min-width: 50px !important;
+  }
+  
+  .mobile-nav-label {
+    font-size: 11px !important;
+  }
+  
+  /* より小さなヘッダーロゴ */
+  .header-logo {
+    font-size: 16px !important;
+  }
+  
+  .header-logo img {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  /* ページタイトル（h4）のスマホ対応 */
+  .MuiTypography-h4 {
+    font-size: 18px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+  
+  /* 列車位置情報ページの路線名調整 */
+  .train-position-page .train-position-title {
+    font-size: 20px !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+  }
+  
+  /* 列車位置情報ページの路線アイコン調整 */
+  .train-position-page .line-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 12px !important;
+    margin-right: 8px !important;
+  }
+  
+  /* タイトルコンテナの垂直配置調整 */
+  .train-position-page .title-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* その他のタイトルサイズ調整 */
+  .MuiTypography-h5 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* 長いタイトル専用クラス */
+  .long-page-title {
+    font-size: 16px !important;
+    text-align: center !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+  }
+}
+
 /* スマホ用デザイン (768px以下) */
 @media (max-width: 768px) {
+  /* ページタイトル（h4）のスマホ用調整 */
+  .MuiTypography-h4 {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    text-align: center !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* 列車位置情報ページのタイトルは margin を 0 に */
+  .train-position-page .train-position-title {
+    margin: 0 !important;
+  }
+  
+  /* ページヘッダーのアイコンとタイトル配置調整 */
+  .page-header-title {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  /* スマホサイズでアイコンサイズを調整 */
+  .MuiSvgIcon-root[style*="fontSize: 32"] {
+    font-size: 28px !important;
+  }
+  
+  .MuiTypography-h5 {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    word-break: break-word !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    word-break: break-word !important;
+  }
+
   .header {
     padding: 0 16px;
     height: 56px;
@@ -236,7 +350,7 @@
     padding: 8px 4px;
     min-width: 60px;
     text-align: center;
-    font-size: 10px;
+    font-size: 12px;
     transition: color 0.2s ease;
   }
 
@@ -250,8 +364,8 @@
   }
 
   .mobile-nav-label {
-    font-size: 10px;
-    line-height: 1;
+    font-size: 12px;
+    line-height: 1.2;
   }
 
   /* メインコンテンツの下部マージンを追加 */
@@ -572,7 +686,8 @@
   }
 
   .page-title-text {
-    font-size: 18px;
+    font-size: 20px;
+    line-height: 1.3;
   }
 
   /* スマホ版稼働状況表示 */
@@ -595,9 +710,10 @@
   }
 
   .mobile-server-status .MuiTypography-root {
-    white-space: nowrap !important;
-    font-size: 13px !important;
-    line-height: 1 !important;
+    white-space: normal !important;
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
   }
 
   /* スマホ版で路線図の下のステータス表示を非表示 */
@@ -668,27 +784,37 @@
   @media (max-width: 768px) {
     /* タイトルテキストの調整 */
     .train-position-page .train-position-title {
-      font-size: 14px !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-      line-height: 1.2 !important;
+      font-size: 24px !important;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+      line-height: 1.4 !important;
+      word-break: break-word !important;
+      margin: 0 !important;
     }
 
-    /* 路線アイコンの横幅維持 */
+    /* 路線アイコンの調整 */
     .train-position-page .line-icon {
-      width: 36px !important;
-      height: 36px !important;
-      min-width: 36px !important;
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
       flex-shrink: 0 !important;
-      margin-right: 6px !important;
-      font-size: 16px !important;
+      margin-right: 8px !important;
+      font-size: 14px !important;
     }
 
     /* タイトルコンテナの調整 */
     .train-position-page .train-position-header {
       gap: 8px !important;
       padding: 0 8px !important;
+      align-items: center !important;
+    }
+    
+    /* タイトルコンテナの配置 */
+    .train-position-page .title-container {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
   }
 
@@ -733,12 +859,61 @@
 
     /* 上り・下りテキストの調整 */
     .train-position-page .MuiTypography-root[style*="fontSize: 16"][style*="letterSpacing: 1"] {
-      font-size: 14px !important;
-      padding: 4px 8px !important;
+      font-size: 16px !important;
+      padding: 6px 12px !important;
+      line-height: 1.3 !important;
     }
   }
 
 
+}
+
+/* 大きなスマホ・小さなタブレット用デザイン (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .page-title-text {
+    font-size: 22px;
+  }
+  
+  .mobile-nav-link {
+    font-size: 13px;
+    min-width: 65px;
+  }
+  
+  /* 路線アイコンを調整 */
+  .train-position-page .line-icon {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 16px !important;
+  }
+  
+  /* ページタイトル（h4）の中間サイズ対応 */
+  .MuiTypography-h4 {
+    font-size: 20px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+  }
+  
+  /* 列車位置情報ページの路線名調整 */
+  .train-position-page .train-position-title {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+  }
+  
+  .MuiTypography-h5 {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* ページヘッダーのアイコンサイズを中間サイズで調整 */
+  .MuiSvgIcon-root[style*="fontSize: 32"] {
+    font-size: 30px !important;
+  }
 }
 
 /* タブレット用デザイン (769px - 1024px) */
@@ -992,6 +1167,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 /* iPhoneのノッチエリア対応 */
@@ -1034,3 +1211,4 @@ body {
     background-color: #ffffff !important;
   }
 }
+

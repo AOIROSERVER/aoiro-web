@@ -36,7 +36,7 @@ export default function TermsPage() {
       {/* メインコンテンツ */}
       <Container maxWidth="md" sx={{ py: 4 }}>
         <Paper sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#222', mb: 3 }}>
+          <Typography variant="h4" component="h1" gutterBottom sx={{ color: '#222', mb: 3, wordBreak: 'break-word', whiteSpace: 'normal', margin: '0 0 24px 0' }}>
             利用規約
           </Typography>
           

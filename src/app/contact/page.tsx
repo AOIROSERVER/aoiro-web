@@ -245,7 +245,7 @@ export default function ContactPage() {
             <ArrowBack />
           </IconButton>
           <ContactSupport sx={{ color: 'white', fontSize: 32, mr: 2 }} />
-          <Typography variant="h4" fontWeight="bold" sx={{ color: 'white' }}>
+          <Typography variant="h4" fontWeight="bold" sx={{ color: 'white', wordBreak: 'break-word', whiteSpace: 'normal', margin: 0 }}>
             お問い合わせ
           </Typography>
         </Box>

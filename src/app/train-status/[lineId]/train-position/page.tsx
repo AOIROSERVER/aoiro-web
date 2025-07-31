@@ -676,8 +676,8 @@ export default function TrainPositionPage() {
              lineCode === 'C' ? 'C' :
              lineCode === 'Z' ? 'Z' : 'JY'}
           </Box>
-          <Box className="title-container">
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', textAlign: 'center', color: 'black' }} className="train-position-title">
+          <Box className="title-container" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', textAlign: 'center', color: 'black', margin: 0 }} className="train-position-title">
               {lineName} 列車位置情報
             </Typography>
           </Box>
