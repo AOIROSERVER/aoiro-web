@@ -318,7 +318,10 @@ export default function TransferPage() {
                 border: 'none',
                 borderRadius: '6px',
                 cursor: 'pointer',
-                fontSize: '14px'
+                fontSize: '14px',
+                alignSelf: 'flex-end',
+                marginBottom: '0px',
+                height: '44px'
               }}
             >
               ⇄
@@ -435,36 +438,7 @@ export default function TransferPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      style={{
-                        flex: 1,
-                        padding: '8px 16px',
-                        background: '#007bff',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      詳細を見る
-                    </button>
-                    <button
-                      style={{
-                        flex: 1,
-                        padding: '8px 16px',
-                        background: '#28a745',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '14px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      地図で見る
-                    </button>
-                  </div>
+
                 </div>
               ))}
             </div>

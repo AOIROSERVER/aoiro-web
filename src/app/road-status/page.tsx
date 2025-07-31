@@ -55,6 +55,8 @@ const RoadListItem = ({ road }: { road: any }) => {
         return { icon: <Build sx={{ fontSize: 32, color: '#1976d2' }} />, text: '工事', color: '#1976d2' };
       case '事故':
         return { icon: <ReportProblem sx={{ fontSize: 32, color: '#e53935' }} />, text: '事故', color: '#e53935' };
+      case '通行止め':
+        return { icon: <ReportProblem sx={{ fontSize: 32, color: '#e53935' }} />, text: '通行止め', color: '#e53935' };
       default:
         return { icon: null, text: status, color: '#000' };
     }
@@ -65,35 +67,125 @@ const RoadListItem = ({ road }: { road: any }) => {
   return (
     <Card 
       sx={{ 
-        mb: 1.5, 
-        borderRadius: 3, 
-        boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+        mb: 2, 
+        borderRadius: 4, 
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+        border: '1px solid #f0f0f0',
+        overflow: 'hidden'
       }}
     >
-      <Box sx={{ display: 'flex', p: 1.5, alignItems: 'center' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        p: 2, 
+        alignItems: 'flex-start',
+        background: road.status !== '通常' ? 'linear-gradient(135deg, #fff 0%, #fafafa 100%)' : '#fff'
+      }}>
         <Box sx={{ flexGrow: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: road.details ? 0.5 : 0 }}>
+          {/* 道路名とアイコン */}
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: (road.note || road.congestion) ? 1 : 0 }}>
             <Box sx={{
-              width: 36, height: 36,
+              width: 44, height: 44,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              mr: 1.5, flexShrink: 0
+              mr: 2, flexShrink: 0,
+              background: '#f8f9fa',
+              borderRadius: 2,
+              border: '1px solid #e9ecef'
             }}>
-              <img src={roadIcons[road.id]} alt={road.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <img src={roadIcons[road.id]} alt={road.name} style={{ width: '85%', height: '85%', objectFit: 'contain' }} />
             </Box>
-            <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1rem' }}>{road.name}</Typography>
+            <Typography variant="h6" sx={{ 
+              fontWeight: 700, 
+              fontSize: '1.1rem', 
+              color: '#2c3e50',
+              lineHeight: 1.2
+            }}>
+              {road.name}
+            </Typography>
           </Box>
-          {road.details && <Typography variant="body2" sx={{ color: '#e53935', pl: '52px', fontSize: '0.8rem', fontWeight: 'bold' }}>{road.details}</Typography>}
+          
+          {/* 詳細情報を横並びで表示 */}
+          {(road.note || road.congestion) && (
+            <Box sx={{ 
+              pl: 6, 
+              mt: 0.5,
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1,
+              alignItems: 'center'
+            }}>
+              {/* 備考情報（区間情報） */}
+              {road.note && (
+                <Box sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: 2,
+                  background: road.status === '渋滞' ? '#fff8e1' : 
+                             road.status === '工事' ? '#e8f4fd' : 
+                             road.status === '事故' || road.status === '通行止め' ? '#ffebee' : '#f8f9fa',
+                  border: `1px solid ${road.status === '渋滞' ? '#ffcc02' : 
+                             road.status === '工事' ? '#2196f3' : 
+                             road.status === '事故' || road.status === '通行止め' ? '#f44336' : '#dee2e6'}`,
+                  maxWidth: '100%'
+                }}>
+                  <Typography variant="body2" sx={{ 
+                    color: road.status === '渋滞' ? '#e65100' : 
+                           road.status === '工事' ? '#1565c0' : 
+                           road.status === '事故' || road.status === '通行止め' ? '#c62828' : '#495057',
+                    fontSize: '0.85rem', 
+                    fontWeight: 500,
+                    lineHeight: 1.2
+                  }}>
+                    {road.note}
+                  </Typography>
+                </Box>
+              )}
+              
+              {/* 渋滞状況（通常以外の場合） */}
+              {road.congestion && road.status !== '通常' && (
+                <Box sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  px: 1,
+                  py: 0.3,
+                  borderRadius: 1,
+                  background: road.congestion === '重度' ? '#ffebee' : 
+                             road.congestion === '中程度' ? '#fff3e0' : '#f5f5f5',
+                  border: `1px solid ${road.congestion === '重度' ? '#ffcdd2' : 
+                             road.congestion === '中程度' ? '#ffcc80' : '#e0e0e0'}`
+                }}>
+                  <Typography variant="body2" sx={{ 
+                    color: road.congestion === '重度' ? '#d32f2f' : 
+                           road.congestion === '中程度' ? '#f57c00' : '#666',
+                    fontSize: '0.75rem', 
+                    fontWeight: 600
+                  }}>
+                    {road.congestion}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
         </Box>
+        
+        {/* ステータス表示を右側に配置 */}
         <Box sx={{ 
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          width: 100,
-          ml: 1, 
+          minWidth: 100,
+          ml: 2,
           color: statusInfo.color,
         }}>
           {statusInfo.icon}
-          <Typography variant="body2" sx={{ fontWeight: 'bold', ml: 1 }}>
+          <Typography variant="body2" sx={{ 
+            fontWeight: 'bold', 
+            mt: 0.5,
+            fontSize: '0.9rem',
+            textAlign: 'center'
+          }}>
             {statusInfo.text}
           </Typography>
         </Box>
