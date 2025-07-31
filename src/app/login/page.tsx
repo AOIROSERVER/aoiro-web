@@ -17,6 +17,7 @@ import { Email, Lock, LockOpen, Login as LoginIcon, Visibility, VisibilityOff, C
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { setAuthCookie } from "@/lib/supabase";
+import { vibrateActions, createVibrateOnClick, VIBRATION_PATTERNS } from "@/lib/vibration";
 
 // 仮のソーシャルアイコン
 const GoogleIcon = () => (
@@ -507,7 +508,7 @@ function LoginContent() {
                   type="submit"
                   fullWidth
                   variant="contained"
-                  onClick={handleLogin}
+                  onClick={createVibrateOnClick(handleLogin, VIBRATION_PATTERNS.BUTTON)}
                   disabled={loading}
                   startIcon={<LoginIcon />}
                   sx={{ 
@@ -551,7 +552,7 @@ function LoginContent() {
                     <Button
                       fullWidth
                       variant="outlined"
-                      onClick={handleDiscordLink}
+                      onClick={createVibrateOnClick(handleDiscordLink, VIBRATION_PATTERNS.BUTTON)}
                       disabled={loading}
                       startIcon={<DiscordIcon />}
                       sx={{ 

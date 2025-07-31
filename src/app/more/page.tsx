@@ -32,6 +32,7 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
+import { vibrateActions, createVibrateOnClick, VIBRATION_PATTERNS } from "@/lib/vibration";
 
 // ニュース記事型
 type NewsItem = {
@@ -277,6 +278,64 @@ export default function MorePage() {
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ログインボーナス処理関数
+  const handleLoginBonus = async () => {
+    setBonusLoading(true);
+    try {
+      const res = await fetch("/api/login-bonus-fallback", { 
+        method: "POST", 
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        console.error('❌ Login bonus API error:', data);
+        const errorMessage = data.error || 'ログインボーナスの取得に失敗しました';
+        const details = data.details ? ` (${data.details})` : '';
+        const suggestion = data.suggestion ? `\n\n対処法: ${data.suggestion}` : '';
+        setBonusMessage(`エラー: ${errorMessage}${details}${suggestion}`);
+        return;
+      }
+      
+      if (data.received) {
+        setBonusMessage(data.message || "本日のログインボーナスはすでに受け取り済みです (+100P)");
+        setBonusReceivedToday(true);
+        // プロフィールを再取得してポイントを更新
+        const profileRes = await fetch("/api/user-profile-secure");
+        const profileData = await profileRes.json();
+        if (profileData.profile && typeof profileData.profile.points === 'number') {
+          setUserPoints(profileData.profile.points);
+        }
+      } else if (data.message) {
+        setBonusMessage(data.message);
+        setBonusReceivedToday(true);
+        // プロフィールを再取得してポイントを更新
+        console.log('🔄 Refreshing user profile after bonus...');
+        const profileRes = await fetch("/api/user-profile-secure");
+        const profileData = await profileRes.json();
+        console.log('📋 Profile refresh result:', profileData);
+        if (profileData.profile && typeof profileData.profile.points === 'number') {
+          setUserPoints(profileData.profile.points);
+          console.log('✅ Points updated after bonus:', profileData.profile.points);
+        } else {
+          console.log('⚠️ No points found in refreshed profile');
+        }
+      } else {
+        setBonusMessage("ログインボーナスの取得に失敗しました");
+      }
+    } catch (error) {
+      console.error('❌ Login bonus fetch error:', error);
+      setBonusMessage("ログインボーナスの取得中にエラーが発生しました");
+    } finally {
+      setBonusLoading(false);
     }
   };
 
@@ -538,7 +597,7 @@ export default function MorePage() {
               )}
             </Box>
             {(user || isLocalAdmin) && !loading && (
-              <IconButton onClick={signOut}>
+              <IconButton onClick={createVibrateOnClick(signOut, VIBRATION_PATTERNS.TAP)}>
                 <Logout />
               </IconButton>
             )}
@@ -585,62 +644,7 @@ export default function MorePage() {
                 <Button
                   variant="contained"
                   disabled={bonusReceivedToday || bonusLoading}
-                  onClick={async () => {
-                    setBonusLoading(true);
-                    try {
-                      const res = await fetch("/api/login-bonus-fallback", { 
-                        method: "POST", 
-                        credentials: "include",
-                        headers: {
-                          'Content-Type': 'application/json',
-                          'Cache-Control': 'no-cache',
-                          'Pragma': 'no-cache'
-                        }
-                      });
-                      const data = await res.json();
-                      
-                      if (!res.ok) {
-                        console.error('❌ Login bonus API error:', data);
-                        const errorMessage = data.error || 'ログインボーナスの取得に失敗しました';
-                        const details = data.details ? ` (${data.details})` : '';
-                        const suggestion = data.suggestion ? `\n\n対処法: ${data.suggestion}` : '';
-                        setBonusMessage(`エラー: ${errorMessage}${details}${suggestion}`);
-                        return;
-                      }
-                      
-                      if (data.received) {
-                        setBonusMessage(data.message || "本日のログインボーナスはすでに受け取り済みです (+100P)");
-                        setBonusReceivedToday(true);
-                        // プロフィールを再取得してポイントを更新
-                        const profileRes = await fetch("/api/user-profile-secure");
-                        const profileData = await profileRes.json();
-                        if (profileData.profile && typeof profileData.profile.points === 'number') {
-                          setUserPoints(profileData.profile.points);
-                        }
-                      } else if (data.message) {
-                        setBonusMessage(data.message);
-                        setBonusReceivedToday(true);
-                        // プロフィールを再取得してポイントを更新
-                        console.log('🔄 Refreshing user profile after bonus...');
-                        const profileRes = await fetch("/api/user-profile-secure");
-                        const profileData = await profileRes.json();
-                        console.log('📋 Profile refresh result:', profileData);
-                        if (profileData.profile && typeof profileData.profile.points === 'number') {
-                          setUserPoints(profileData.profile.points);
-                          console.log('✅ Points updated after bonus:', profileData.profile.points);
-                        } else {
-                          console.log('⚠️ No points found in refreshed profile');
-                        }
-                      } else {
-                        setBonusMessage("ログインボーナスの取得に失敗しました");
-                      }
-                    } catch (error) {
-                      console.error('❌ Login bonus fetch error:', error);
-                      setBonusMessage("ログインボーナスの取得中にエラーが発生しました");
-                    } finally {
-                      setBonusLoading(false);
-                    }
-                  }}
+                  onClick={createVibrateOnClick(handleLoginBonus, VIBRATION_PATTERNS.SUCCESS)}
                   sx={{
                     fontWeight: 600,
                     fontSize: { xs: '0.9rem', sm: '1rem' },

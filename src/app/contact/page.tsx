@@ -33,6 +33,7 @@ import {
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { vibrateActions, createVibrateOnClick, VIBRATION_PATTERNS } from "@/lib/vibration";
 
 export default function ContactPage() {
   const [contactType, setContactType] = useState("");
@@ -239,7 +240,7 @@ export default function ContactPage() {
         {/* ヘッダー */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
           <IconButton 
-            onClick={() => router.back()}
+            onClick={createVibrateOnClick(() => router.back(), VIBRATION_PATTERNS.TAP)}
             sx={{ color: 'white', mr: 2 }}
           >
             <ArrowBack />
@@ -635,7 +636,7 @@ export default function ContactPage() {
                 <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
                   <Button
                     variant="outlined"
-                    onClick={() => router.back()}
+                    onClick={createVibrateOnClick(() => router.back(), VIBRATION_PATTERNS.TAP)}
                     sx={{ 
                       minWidth: 120,
                       borderRadius: 2,
@@ -648,7 +649,7 @@ export default function ContactPage() {
                   </Button>
                   <Button
                     variant="contained"
-                    onClick={handleSend}
+                    onClick={createVibrateOnClick(handleSend, VIBRATION_PATTERNS.HEAVY)}
                     disabled={loading || !agreement || !captchaToken}
                     startIcon={loading ? null : <Send />}
                     sx={{ 

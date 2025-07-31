@@ -28,6 +28,7 @@ import {
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { vibrateActions, createVibrateOnClick, VIBRATION_PATTERNS } from "@/lib/vibration";
 
 interface UserProfile {
   id: string;
@@ -321,7 +322,7 @@ function ProfileContent() {
           <Button
             fullWidth
             variant="outlined"
-            onClick={handleSignOut}
+            onClick={createVibrateOnClick(handleSignOut, VIBRATION_PATTERNS.TAP)}
             sx={{ 
               mt: 2,
               color: 'white',

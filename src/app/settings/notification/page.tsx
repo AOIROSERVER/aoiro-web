@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { vibrateActions, createVibrateOnClick, VIBRATION_PATTERNS } from "@/lib/vibration";
 import { 
   Email, 
   Train, 
@@ -561,7 +562,7 @@ export default function NotificationSettingsPage() {
                     variant="contained"
                     size="large"
                     fullWidth
-                    onClick={saveEmail}
+                    onClick={createVibrateOnClick(saveEmail, VIBRATION_PATTERNS.BUTTON)}
                     disabled={!email || saving}
                     sx={{ 
                       py: 2, 
