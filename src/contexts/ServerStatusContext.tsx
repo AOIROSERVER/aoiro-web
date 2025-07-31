@@ -59,6 +59,11 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
         const data = await response.json();
         console.log('✅ ServerStatusContext: サーバーステータス更新完了', new Date().toLocaleString('ja-JP'), 'online:', data.online);
         
+        // デバッグ情報がある場合はログに出力
+        if (data.debug) {
+          console.log('🔍 ServerStatusContext: デバッグ情報:', data.debug);
+        }
+        
         setServerStatus({
           online: !!data.online,
           responseTime,
@@ -69,7 +74,12 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
           loading: false
         });
       } else {
-        console.log('❌ ServerStatusContext: サーバーステータス更新失敗', new Date().toLocaleString('ja-JP'));
+        const errorText = await response.text();
+        console.log('❌ ServerStatusContext: サーバーステータス更新失敗', new Date().toLocaleString('ja-JP'), {
+          status: response.status,
+          statusText: response.statusText,
+          errorText
+        });
         setServerStatus({
           online: false,
           responseTime: null,
@@ -81,7 +91,10 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
         });
       }
     } catch (error) {
-      console.log('❌ ServerStatusContext: サーバーステータス更新エラー', new Date().toLocaleString('ja-JP'), error);
+      console.log('❌ ServerStatusContext: サーバーステータス更新エラー', new Date().toLocaleString('ja-JP'), {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setServerStatus({
         online: false,
         responseTime: null,

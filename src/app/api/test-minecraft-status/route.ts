@@ -2,11 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
-    const host = process.env.MINECRAFT_SERVER_HOST;
-    const port = process.env.MINECRAFT_SERVER_PORT;
+    const host = process.env.MINECRAFT_SERVER_HOST || '115.36.215.137';
+    const port = process.env.MINECRAFT_SERVER_PORT || '19138';
     
-    if (!host || !port) {
-      throw new Error('Minecraftサーバー設定が環境変数に設定されていません');
+    console.log('🧪 テスト用環境変数確認:');
+    console.log(`  - MINECRAFT_SERVER_HOST: ${process.env.MINECRAFT_SERVER_HOST || '未設定（デフォルト値使用）'}`);
+    console.log(`  - MINECRAFT_SERVER_PORT: ${process.env.MINECRAFT_SERVER_PORT || '未設定（デフォルト値使用）'}`);
+    console.log(`  - 使用するホスト: ${host}`);
+    console.log(`  - 使用するポート: ${port}`);
+    
+    if (!process.env.MINECRAFT_SERVER_HOST || !process.env.MINECRAFT_SERVER_PORT) {
+      console.log('⚠️ 環境変数が設定されていないため、デフォルト値を使用します');
     }
     
     console.log(`🧪 Minecraftサーバーテスト開始: ${host}:${port}`);

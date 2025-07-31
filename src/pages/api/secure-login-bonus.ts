@@ -136,11 +136,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.log('📋 GET request: Checking bonus eligibility');
       
       try {
+        // 今日の日付を取得（日本時間）
+        const today = new Date().toLocaleDateString('ja-JP', { 
+          timeZone: 'Asia/Tokyo',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).replace(/\//g, '-');
+        
         // 新しい関数を使用してボーナス資格をチェック
         const { data: eligibility, error: eligibilityError } = await supabase
           .rpc('check_bonus_eligibility', {
             user_uuid: user.id,
-            check_date: new Date().toISOString().slice(0, 10)
+            check_date: today
           });
 
         if (eligibilityError) {

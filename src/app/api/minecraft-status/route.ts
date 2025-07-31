@@ -10,6 +10,9 @@ export async function GET(request: NextRequest) {
     console.log(`  - MINECRAFT_SERVER_PORT: ${process.env.MINECRAFT_SERVER_PORT || '未設定（デフォルト値使用）'}`);
     console.log(`  - 使用するホスト: ${host}`);
     console.log(`  - 使用するポート: ${port}`);
+    console.log(`  - NODE_ENV: ${process.env.NODE_ENV}`);
+    console.log(`  - VERCEL_ENV: ${process.env.VERCEL_ENV}`);
+    console.log(`  - NETLIFY: ${process.env.NETLIFY}`);
     
     const apiUrl = `https://api.mcsrvstat.us/bedrock/3/${host}:${port}`;
     
@@ -28,6 +31,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
+      console.error(`❌ API request failed: ${response.status} ${response.statusText}`);
       throw new Error(`API request failed: ${response.status}`);
     }
 
@@ -55,6 +59,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('MinecraftサーバーAPIエラー:', error);
+    
+    // エラーの詳細をログに出力
+    if (error instanceof Error) {
+      console.error('エラー詳細:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
+    }
+    
     return NextResponse.json(
       { 
         online: false, 
@@ -63,7 +77,18 @@ export async function GET(request: NextRequest) {
         version: null,
         motd: null,
         gamemode: null,
-        map: null
+        map: null,
+        debug: {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          timestamp: new Date().toISOString(),
+          environment: {
+            NODE_ENV: process.env.NODE_ENV,
+            VERCEL_ENV: process.env.VERCEL_ENV,
+            NETLIFY: process.env.NETLIFY,
+            MINECRAFT_SERVER_HOST: process.env.MINECRAFT_SERVER_HOST || '未設定',
+            MINECRAFT_SERVER_PORT: process.env.MINECRAFT_SERVER_PORT || '未設定'
+          }
+        }
       },
       { status: 500 }
     );

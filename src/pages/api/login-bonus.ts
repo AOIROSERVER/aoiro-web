@@ -156,7 +156,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('✅ User authenticated:', user.id, user.email);
 
-    const today = new Date().toISOString().slice(0, 10);
+    // 今日の日付を取得（日本時間）
+    const today = new Date().toLocaleDateString('ja-JP', { 
+      timeZone: 'Asia/Tokyo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\//g, '-');
     console.log('📅 Checking bonus for date:', today);
 
     // GETリクエスト: ボーナス状態の確認のみ

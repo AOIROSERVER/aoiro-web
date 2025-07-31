@@ -17,7 +17,8 @@ import {
   CardContent,
   Grid,
   Chip,
-  IconButton
+  IconButton,
+  Tooltip
 } from "@mui/material";
 import { 
   ArrowBack, 
@@ -45,43 +46,115 @@ export default function ContactPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [discordInfo, setDiscordInfo] = useState({ memberCount: 700, onlineCount: 100, serverName: 'AOIROSERVER' });
+  const [fieldErrors, setFieldErrors] = useState({
+    contactType: false,
+    name: false,
+    email: false,
+    device: false,
+    subject: false,
+    message: false,
+    agreement: false
+  });
+
   const captchaRef = useRef<HCaptcha>(null);
   const router = useRouter();
 
-  // Discordサーバー情報を取得
-  useEffect(() => {
-    const fetchDiscordInfo = async () => {
-      try {
-        const response = await fetch('/api/discord-server-info');
-        
-        if (response.ok) {
-          const data = await response.json();
-          setDiscordInfo(data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch Discord info:', error);
-      }
+
+
+  // バリデーション関数
+  const validateFields = () => {
+    const errors = {
+      contactType: !contactType,
+      name: !name,
+      email: !email,
+      device: !device,
+      subject: !subject,
+      message: !message,
+      agreement: !agreement
     };
 
-    fetchDiscordInfo();
-  }, []);
+    // メールアドレスの形式チェック
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      errors.email = !emailRegex.test(email);
+    }
+
+    setFieldErrors(errors);
+    return !Object.values(errors).some(error => error);
+  };
+
+  // 個別フィールドのバリデーション関数
+  const validateField = (fieldName: string, value: string | boolean) => {
+    let isValid = true;
+    
+    switch (fieldName) {
+      case 'contactType':
+        isValid = !!value;
+        break;
+      case 'name':
+        isValid = !!value;
+        break;
+      case 'email':
+        if (value) {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          isValid = emailRegex.test(value as string);
+        } else {
+          isValid = false;
+        }
+        break;
+      case 'device':
+        isValid = !!value;
+        break;
+      case 'subject':
+        isValid = !!value;
+        break;
+      case 'message':
+        isValid = !!value;
+        break;
+      case 'agreement':
+        isValid = !!value;
+        break;
+    }
+
+    // 値が空でない場合のみエラーを表示（フォーカスが外れた時のみ）
+    if (!value) {
+      setFieldErrors(prev => ({ ...prev, [fieldName]: true }));
+    } else {
+      setFieldErrors(prev => ({ ...prev, [fieldName]: !isValid }));
+    }
+  };
+
+  // エラーメッセージを取得する関数
+  const getErrorMessage = (fieldName: string) => {
+    switch (fieldName) {
+      case 'contactType':
+        return '⚠️ お問い合わせ種類を選択してください';
+      case 'name':
+        return '⚠️ お名前を入力してください';
+      case 'email':
+        return '⚠️ 正しいメールアドレスを入力してください';
+      case 'device':
+        return '⚠️ 使用端末を入力してください';
+      case 'subject':
+        return '⚠️ 件名を入力してください';
+      case 'message':
+        return '⚠️ お問い合わせ内容を入力してください';
+      case 'agreement':
+        return '⚠️ 利用規約・同意事項に同意してください';
+      default:
+        return '⚠️ 入力してください';
+    }
+  };
 
   const handleSend = async () => {
-    if (!contactType || !name || !email || !device || !subject || !message || !agreement) {
-      setError("全ての必須項目を入力し、同意事項にチェックしてください");
+    // フィールドバリデーション
+    if (!validateFields()) {
+      setError("入力していない箇所があります。赤枠で囲まれた項目を確認してください。");
       return;
     }
 
     if (!captchaToken) {
       setError("hCaptchaの認証を完了してください");
-      return;
-    }
-
-    // メールアドレスの形式チェック
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("正しいメールアドレスを入力してください");
       return;
     }
 
@@ -217,81 +290,264 @@ export default function ContactPage() {
                 {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
                 {/* お問い合わせ種類 */}
-                <FormControl fullWidth sx={{ mb: 3 }}>
-                  <InputLabel>お問い合わせ種類 *</InputLabel>
-                  <Select
-                    value={contactType}
-                    label="お問い合わせ種類 *"
-                    onChange={(e) => setContactType(e.target.value)}
-                    required
-                    sx={{ borderRadius: 2 }}
-                  >
-                    <MenuItem value="運行情報について">運行情報について</MenuItem>
-                    <MenuItem value="道路状況について">道路状況について</MenuItem>
-                    <MenuItem value="アプリの不具合">アプリの不具合</MenuItem>
-                    <MenuItem value="機能の要望">機能の要望</MenuItem>
-                    <MenuItem value="その他">その他</MenuItem>
-                  </Select>
-                </FormControl>
+                <Tooltip
+                  title={getErrorMessage('contactType')}
+                  open={fieldErrors.contactType}
+                  placement="top"
+                  arrow
+                  disableFocusListener
+                  disableHoverListener
+                  disableTouchListener
+                >
+                  <FormControl fullWidth sx={{ mb: 3 }}>
+                    <InputLabel>お問い合わせ種類 *</InputLabel>
+                    <Select
+                      value={contactType}
+                      label="お問い合わせ種類 *"
+                      onChange={(e) => {
+                        setContactType(e.target.value);
+                        if (fieldErrors.contactType) {
+                          setFieldErrors(prev => ({ ...prev, contactType: false }));
+                        }
+                      }}
+                      onBlur={() => {
+                        console.log('🔍 ContactType onBlur:', contactType);
+                        validateField('contactType', contactType);
+                      }}
+                      required
+                      error={fieldErrors.contactType}
+                      sx={{ 
+                        borderRadius: 2,
+                        '& .MuiOutlinedInput-root': {
+                          '&.Mui-error': {
+                            borderColor: '#d32f2f',
+                            '&:hover': {
+                              borderColor: '#d32f2f'
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      <MenuItem value="運行情報について">運行情報について</MenuItem>
+                      <MenuItem value="道路状況について">道路状況について</MenuItem>
+                      <MenuItem value="アプリの不具合">アプリの不具合</MenuItem>
+                      <MenuItem value="機能の要望">機能の要望</MenuItem>
+                      <MenuItem value="その他">その他</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Tooltip>
 
                 {/* 基本情報 */}
                 <Grid container spacing={3} sx={{ mb: 3 }}>
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="お名前 *"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      fullWidth
-                      required
-                      sx={{ borderRadius: 2 }}
-                    />
+                    <Tooltip
+                      title={getErrorMessage('name')}
+                      open={fieldErrors.name}
+                      placement="top"
+                      arrow
+                      disableFocusListener
+                      disableHoverListener
+                      disableTouchListener
+                    >
+                      <TextField
+                        label="お名前 *"
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value);
+                          if (fieldErrors.name) {
+                            setFieldErrors(prev => ({ ...prev, name: false }));
+                          }
+                        }}
+                        onBlur={() => {
+                          validateField('name', name);
+                        }}
+                        fullWidth
+                        required
+                        error={fieldErrors.name}
+
+                        sx={{ 
+                          borderRadius: 2,
+                          '& .MuiOutlinedInput-root': {
+                            '&.Mui-error': {
+                              borderColor: '#d32f2f',
+                              '&:hover': {
+                                borderColor: '#d32f2f'
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </Tooltip>
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <TextField
-                      label="メールアドレス *"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      fullWidth
-                      required
-                      sx={{ borderRadius: 2 }}
-                    />
+                    <Tooltip
+                      title={getErrorMessage('email')}
+                      open={fieldErrors.email}
+                      placement="top"
+                      arrow
+                      disableFocusListener
+                      disableHoverListener
+                      disableTouchListener
+                    >
+                      <TextField
+                        label="メールアドレス *"
+                        type="email"
+                        value={email}
+                        onChange={(e) => {
+                          setEmail(e.target.value);
+                          if (fieldErrors.email) {
+                            setFieldErrors(prev => ({ ...prev, email: false }));
+                          }
+                        }}
+                        onBlur={() => {
+                          validateField('email', email);
+                        }}
+                        fullWidth
+                        required
+                        error={fieldErrors.email}
+
+                        sx={{ 
+                          borderRadius: 2,
+                          '& .MuiOutlinedInput-root': {
+                            '&.Mui-error': {
+                              borderColor: '#d32f2f',
+                              '&:hover': {
+                                borderColor: '#d32f2f'
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    </Tooltip>
                   </Grid>
                 </Grid>
 
                 {/* 使用端末 */}
-                <TextField
-                  label="使用端末 *"
-                  value={device}
-                  onChange={(e) => setDevice(e.target.value)}
-                  fullWidth
-                  required
-                  placeholder="例：PC、スマートフォン、タブレットなど"
-                  sx={{ mb: 3, borderRadius: 2 }}
+                <Tooltip
+                  title={getErrorMessage('device')}
+                  open={fieldErrors.device}
+                  placement="top"
+                  arrow
+                  disableFocusListener
+                  disableHoverListener
+                  disableTouchListener
+                >
+                  <TextField
+                    label="使用端末 *"
+                                        value={device}
+                      onChange={(e) => {
+                        setDevice(e.target.value);
+                        if (fieldErrors.device) {
+                          setFieldErrors(prev => ({ ...prev, device: false }));
+                        }
+                      }}
+                      onBlur={() => {
+                        validateField('device', device);
+                      }}
+                      fullWidth
+                      required
+                      placeholder="例：PC、スマートフォン、タブレットなど"
+                      error={fieldErrors.device}
+                  
+                  sx={{ 
+                    mb: 3, 
+                    borderRadius: 2,
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-error': {
+                        borderColor: '#d32f2f',
+                        '&:hover': {
+                          borderColor: '#d32f2f'
+                        }
+                      }
+                    }
+                  }}
                 />
+                </Tooltip>
 
                 {/* 件名 */}
-                <TextField
-                  label="件名 *"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  fullWidth
-                  required
-                  sx={{ mb: 3, borderRadius: 2 }}
+                <Tooltip
+                  title={getErrorMessage('subject')}
+                  open={fieldErrors.subject}
+                  placement="top"
+                  arrow
+                  disableFocusListener
+                  disableHoverListener
+                  disableTouchListener
+                >
+                  <TextField
+                    label="件名 *"
+                                        value={subject}
+                      onChange={(e) => {
+                        setSubject(e.target.value);
+                        if (fieldErrors.subject) {
+                          setFieldErrors(prev => ({ ...prev, subject: false }));
+                        }
+                      }}
+                      onBlur={() => {
+                        validateField('subject', subject);
+                      }}
+                      fullWidth
+                      required
+                      error={fieldErrors.subject}
+                  
+                  sx={{ 
+                    mb: 3, 
+                    borderRadius: 2,
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-error': {
+                        borderColor: '#d32f2f',
+                        '&:hover': {
+                          borderColor: '#d32f2f'
+                        }
+                      }
+                    }
+                  }}
                 />
+                </Tooltip>
 
                 {/* お問い合わせ内容 */}
-                <TextField
-                  label="お問い合わせ内容 *"
-                  multiline
-                  rows={6}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  fullWidth
-                  required
-                  sx={{ mb: 4, borderRadius: 2 }}
+                <Tooltip
+                  title={getErrorMessage('message')}
+                  open={fieldErrors.message}
+                  placement="top"
+                  arrow
+                  disableFocusListener
+                  disableHoverListener
+                  disableTouchListener
+                >
+                  <TextField
+                    label="お問い合わせ内容 *"
+                    multiline
+                    rows={6}
+                                        value={message}
+                      onChange={(e) => {
+                        setMessage(e.target.value);
+                        if (fieldErrors.message) {
+                          setFieldErrors(prev => ({ ...prev, message: false }));
+                        }
+                      }}
+                      onBlur={() => {
+                        validateField('message', message);
+                      }}
+                      fullWidth
+                      required
+                      error={fieldErrors.message}
+                  
+                  sx={{ 
+                    mb: 4, 
+                    borderRadius: 2,
+                    '& .MuiOutlinedInput-root': {
+                      '&.Mui-error': {
+                        borderColor: '#d32f2f',
+                        '&:hover': {
+                          borderColor: '#d32f2f'
+                        }
+                      }
+                    }
+                  }}
                   placeholder="ご質問やご要望を詳しくお聞かせください..."
                 />
+                </Tooltip>
 
                 {/* 同意事項 */}
                 <Paper sx={{ 
@@ -318,16 +574,49 @@ export default function ContactPage() {
                   </Box>
                   <FormControlLabel
                     control={
-                      <Checkbox
-                        checked={agreement}
-                        onChange={(e) => setAgreement(e.target.checked)}
-                        required
-                        sx={{ color: '#f57c00' }}
-                      />
+                      <Tooltip
+                        title={getErrorMessage('agreement')}
+                        open={fieldErrors.agreement}
+                        placement="top"
+                        arrow
+                        disableFocusListener
+                        disableHoverListener
+                        disableTouchListener
+                      >
+                        <Checkbox
+                          checked={agreement}
+                          onChange={(e) => {
+                            setAgreement(e.target.checked);
+                            if (fieldErrors.agreement) {
+                              setFieldErrors(prev => ({ ...prev, agreement: false }));
+                            }
+                          }}
+                          onBlur={(e) => {
+                            validateField('agreement', agreement);
+                            if (!agreement) {
+                              // showTooltip('agreement', e.currentTarget); // This line is removed
+                            }
+                          }}
+                          required
+                          sx={{ 
+                            color: fieldErrors.agreement ? '#d32f2f' : '#f57c00',
+                            '&.Mui-checked': {
+                              color: fieldErrors.agreement ? '#d32f2f' : '#f57c00'
+                            }
+                          }}
+                        />
+                      </Tooltip>
                     }
                     label="私は上記の利用規約・同意事項を読み、すべてに同意します。"
-                    sx={{ color: '#666' }}
+                    sx={{ 
+                      color: fieldErrors.agreement ? '#d32f2f' : '#666',
+                      border: fieldErrors.agreement ? '1px solid #d32f2f' : 'none',
+                      borderRadius: fieldErrors.agreement ? 1 : 0,
+                      p: fieldErrors.agreement ? 1 : 0,
+                      backgroundColor: fieldErrors.agreement ? 'rgba(211, 47, 47, 0.1)' : 'transparent'
+                    }}
                   />
+
                 </Paper>
 
                 {/* hCaptcha */}
@@ -392,9 +681,7 @@ export default function ContactPage() {
             
                          <Box sx={{ 
               display: 'flex', 
-              alignItems: 'center', 
-              gap: { xs: 2, sm: 4 },
-              flexDirection: { xs: 'column', sm: 'row' }
+              justifyContent: 'center'
             }}>
                {/* Discordカード */}
                <Card sx={{ 
@@ -402,8 +689,8 @@ export default function ContactPage() {
                  color: 'white',
                  borderRadius: 4,
                  cursor: 'pointer',
-                 flex: { xs: 'none', sm: 1 },
-                 width: { xs: '100%', sm: 'auto' },
+                 width: { xs: '100%', sm: 400 },
+                 maxWidth: 500,
                  position: 'relative',
                  overflow: 'hidden',
                  '&:hover': { 
@@ -514,85 +801,7 @@ export default function ContactPage() {
                  </CardContent>
                </Card>
 
-               {/* サーバー情報 */}
-               <Card sx={{ 
-                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                 color: 'white',
-                 borderRadius: 4,
-                 minWidth: { xs: '100%', sm: 200 },
-                 width: { xs: '100%', sm: 'auto' },
-                 position: 'relative',
-                 overflow: 'hidden',
-                 '&:hover': {
-                   transform: 'translateY(-2px)',
-                   boxShadow: '0 8px 30px rgba(103, 126, 234, 0.3)'
-                 },
-                 transition: 'all 0.3s ease'
-               }}>
-                 {/* 装飾的な背景要素 */}
-                 <Box sx={{
-                   position: 'absolute',
-                   top: -30,
-                   right: -30,
-                   width: 80,
-                   height: 80,
-                   background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
-                   borderRadius: '50%'
-                 }} />
-                 
-                 <CardContent sx={{ 
-                   p: { xs: 3, sm: 4 }, 
-                   textAlign: 'center', 
-                   position: 'relative', 
-                   zIndex: 1 
-                 }}>
-                   <Typography variant="h6" fontWeight="bold" sx={{ 
-                     color: 'white', 
-                     mb: { xs: 2, sm: 3 },
-                     fontSize: { xs: '1rem', sm: '1.1rem' }
-                   }}>
-                     サーバー情報
-                   </Typography>
-                   <Box sx={{ mb: { xs: 3, sm: 4 } }}>
-                     <Typography variant="h3" sx={{ 
-                       color: 'white', 
-                       fontWeight: 'bold', 
-                       fontSize: { xs: '1.8rem', sm: '2.2rem' },
-                       textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                       mb: 1
-                     }}>
-                       {discordInfo.memberCount ? discordInfo.memberCount.toLocaleString() : '---'}
-                     </Typography>
-                     <Typography variant="body2" sx={{ 
-                       color: 'rgba(255,255,255,0.9)',
-                       fontWeight: 500,
-                       fontSize: { xs: '0.8rem', sm: '0.9rem' }
-                     }}>
-                       参加人数
-                     </Typography>
-                   </Box>
-                   <Box>
-                     <Typography variant="h3" sx={{ 
-                       color: '#4CAF50', 
-                       fontWeight: 'bold', 
-                       fontSize: { xs: '1.8rem', sm: '2.2rem' },
-                       textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                       mb: 1
-                     }}>
-                       {discordInfo.onlineCount ? discordInfo.onlineCount.toLocaleString() : '---'}
-                     </Typography>
-                     <Typography variant="body2" sx={{ 
-                       color: 'rgba(255,255,255,0.9)',
-                       fontWeight: 500,
-                       fontSize: { xs: '0.8rem', sm: '0.9rem' }
-                     }}>
-                       オンライン
-                     </Typography>
-                   </Box>
-                   
 
-                 </CardContent>
-               </Card>
              </Box>
           </CardContent>
         </Card>
