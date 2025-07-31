@@ -37,7 +37,7 @@ export const VIBRATION_PATTERNS = {
  * バイブレーションを実行する
  * @param pattern - バイブレーションパターン（数値または数値配列）
  */
-export function vibrate(pattern: number | number[] = VIBRATION_PATTERNS.BUTTON): void {
+export function vibrate(pattern: number | readonly number[] = VIBRATION_PATTERNS.BUTTON): void {
   // ブラウザがVibration APIをサポートしているかチェック
   if (!('navigator' in globalThis) || !navigator.vibrate) {
     console.warn('Vibration API is not supported in this browser');
@@ -46,7 +46,8 @@ export function vibrate(pattern: number | number[] = VIBRATION_PATTERNS.BUTTON):
 
   // ユーザーがバイブレーションを無効にしている可能性をチェック
   try {
-    navigator.vibrate(pattern);
+    // readonly配列をmutable配列として扱うため型アサーション
+    navigator.vibrate(pattern as number | number[]);
   } catch (error) {
     console.warn('Failed to vibrate:', error);
   }
@@ -66,7 +67,7 @@ export function isVibrationSupported(): boolean {
  */
 export function createVibrateOnClick(
   onClick?: (event?: any) => void | Promise<void>,
-  pattern: number | number[] = VIBRATION_PATTERNS.BUTTON
+  pattern: number | readonly number[] = VIBRATION_PATTERNS.BUTTON
 ) {
   return async (event?: any) => {
     // バイブレーションを実行
