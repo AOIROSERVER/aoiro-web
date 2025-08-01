@@ -63,7 +63,7 @@ type QuestFormData = {
   endDate: Date | null;
   tasks: TaskItem[];
   icon: string;
-  backgroundImage: string | null;
+  backgroundImage: string | undefined;
 };
 
 const iconOptions = [
@@ -90,7 +90,7 @@ export default function QuestCreatePage() {
     endDate: null,
     tasks: [],
     icon: 'assignment',
-    backgroundImage: null,
+    backgroundImage: undefined,
   });
   
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -203,7 +203,7 @@ export default function QuestCreatePage() {
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    updateFormData('backgroundImage', null);
+    updateFormData('backgroundImage', undefined);
   };
 
   // データベース状況をチェック
