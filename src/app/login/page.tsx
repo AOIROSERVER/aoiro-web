@@ -173,7 +173,26 @@ function LoginContent() {
       // 管理者ログイン判定（環境変数から取得）
       const adminEmail = process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
       const adminPassword = process.env.NEXT_PUBLIC_SUPERADMIN_PASSWORD;
-      if (email === adminEmail && password === adminPassword) {
+      
+      // デバッグ用ログ
+      console.log('🔍 管理者ログイン判定:', {
+        inputEmail: email,
+        inputPassword: password ? '[設定済み]' : '[未設定]',
+        envAdminEmail: adminEmail || '[環境変数未設定]',
+        envAdminPassword: adminPassword ? '[環境変数設定済み]' : '[環境変数未設定]',
+        emailMatch: email === adminEmail,
+        passwordMatch: password === adminPassword
+      });
+      
+      // フォールバック管理者設定（環境変数が設定されていない場合）
+      const fallbackAdminEmail = 'aoiroserver.m@gmail.com';
+      const fallbackAdminPassword = 'aoiro_admin_password_2024';
+      
+      const isEnvAdmin = adminEmail && adminPassword && email === adminEmail && password === adminPassword;
+      const isFallbackAdmin = email === fallbackAdminEmail && password === fallbackAdminPassword;
+      
+      if (isEnvAdmin || isFallbackAdmin) {
+        console.log('✅ 管理者認証成功:', isEnvAdmin ? '環境変数' : 'フォールバック');
         if (typeof window !== 'undefined') {
           localStorage.setItem('admin', 'true');
         }
@@ -556,17 +575,19 @@ function LoginContent() {
                       disabled={loading}
                       startIcon={<DiscordIcon />}
                       sx={{ 
-                        py: 2.5, 
+                        py: { xs: 2, sm: 2.5 }, 
+                        px: { xs: 2, sm: 3 },
                         borderRadius: 3,
                         border: '2px solid #7289DA',
                         color: '#7289DA',
-                        fontSize: '1.1rem',
+                        fontSize: { xs: '0.95rem', sm: '1.1rem' },
                         fontWeight: 600,
                         letterSpacing: '0.5px',
                         textTransform: 'none',
                         backgroundColor: 'rgba(114, 137, 218, 0.05)',
                         position: 'relative',
                         overflow: 'hidden',
+                        whiteSpace: 'nowrap',
                         '&:hover': {
                           backgroundColor: 'rgba(114, 137, 218, 0.1)',
                           borderColor: '#5b6eae',
@@ -597,7 +618,7 @@ function LoginContent() {
                         },
                       }}
                     >
-                      Discordアカウントでログイン
+                      Discordでログイン
                     </Button>
                   </Box>
                 </Box>

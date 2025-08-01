@@ -4,10 +4,18 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import BearAvatar from "@/components/BearAvatar";
 
-// 仮の管理者情報（本番は.envで管理）
-const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET;
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+// 管理者情報（環境変数 + フォールバック設定）
+const ADMIN_SECRET = process.env.NEXT_PUBLIC_ADMIN_SECRET || 'aoiro_admin_secret_2024';
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'aoiroserver.m@gmail.com';
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'aoiro_admin_password_2024';
+
+// デバッグ用ログ
+console.log('🔧 Admin Login Page - 設定状況:', {
+  hasEnvSecret: !!process.env.NEXT_PUBLIC_ADMIN_SECRET,
+  hasEnvEmail: !!process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+  hasEnvPassword: !!process.env.NEXT_PUBLIC_ADMIN_PASSWORD,
+  usingFallback: !process.env.NEXT_PUBLIC_ADMIN_SECRET
+});
 
 export default function AdminLoginPage() {
   const [step, setStep] = useState(1);

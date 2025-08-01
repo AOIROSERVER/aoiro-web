@@ -63,10 +63,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
         const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
-        setIsAdmin(isSupabaseAdmin || isLocalAdmin);
+        const finalIsAdmin = isSupabaseAdmin || isLocalAdmin;
+        
+        console.log('🔍 AuthContext - 管理者権限判定:', {
+          userEmail: session?.user?.email || 'null',
+          isSupabaseAdmin,
+          isLocalAdmin,
+          localStorageAdmin: typeof window !== 'undefined' ? localStorage.getItem('admin') : 'undefined',
+          finalIsAdmin
+        });
+        
+        setIsAdmin(finalIsAdmin);
         
         if (session?.user) {
-          localStorage.removeItem('admin');
+          // 管理者メールでログインした場合はadminフラグを保持
+          if (session.user.email !== 'aoiroserver.m@gmail.com') {
+            localStorage.removeItem('admin');
+          }
           console.log('✅ User authenticated on initial load:', session.user.email);
         } else {
           console.log('❌ No user found on initial load');
@@ -112,10 +125,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         const isSupabaseAdmin = session?.user?.email === 'aoiroserver.m@gmail.com';
         const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
-        setIsAdmin(isSupabaseAdmin || isLocalAdmin);
+        const finalIsAdmin = isSupabaseAdmin || isLocalAdmin;
+        
+        console.log('🔍 AuthContext - 管理者権限判定:', {
+          userEmail: session?.user?.email || 'null',
+          isSupabaseAdmin,
+          isLocalAdmin,
+          localStorageAdmin: typeof window !== 'undefined' ? localStorage.getItem('admin') : 'undefined',
+          finalIsAdmin
+        });
+        
+        setIsAdmin(finalIsAdmin);
         
         if (event === "SIGNED_IN" && session) {
-          localStorage.removeItem('admin');
+          // 管理者メールでログインした場合はadminフラグを保持
+          if (session.user.email !== 'aoiroserver.m@gmail.com') {
+            localStorage.removeItem('admin');
+          }
           console.log('✅ User signed in successfully:', session.user.email);
           
           // セッションをローカルストレージに保存
@@ -210,7 +236,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleStorage = () => {
       const isSupabaseAdmin = user?.email === 'aoiroserver.m@gmail.com';
       const isLocalAdmin = typeof window !== 'undefined' && localStorage.getItem('admin') === 'true';
-      setIsAdmin(isSupabaseAdmin || isLocalAdmin);
+      const finalIsAdmin = isSupabaseAdmin || isLocalAdmin;
+      
+      console.log('🔍 AuthContext localStorage監視 - 管理者権限判定:', {
+        userEmail: user?.email || 'null',
+        isSupabaseAdmin,
+        isLocalAdmin,
+        localStorageAdmin: typeof window !== 'undefined' ? localStorage.getItem('admin') : 'undefined',
+        finalIsAdmin
+      });
+      
+      setIsAdmin(finalIsAdmin);
     };
     window.addEventListener('storage', handleStorage);
     handleStorage();

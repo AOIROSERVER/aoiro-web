@@ -147,15 +147,13 @@ export default function StationDetailPage() {
           <Typography variant="h5" fontWeight="bold" sx={{ color: '#222', mb: 0.5 }}>{station.name}駅</Typography>
           <Typography variant="subtitle1" color="text.secondary">{station.line}</Typography>
         </Box>
-        {/* 主要機能アイコン */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mb: 3 }}>
-          <Button startIcon={<AccessTime />} color="success" variant="outlined">時刻表</Button>
-          <Button startIcon={<Map />} color="success" variant="outlined">構内図</Button>
-          <Button startIcon={<Accessible />} color="success" variant="outlined">バリアフリー</Button>
-        </Box>
+
         {/* 駅情報 */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><Info sx={{ mr: 1, color: 'success.main' }} />駅情報</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Info sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">駅情報</Typography>
+          </Box>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <Box display="flex" alignItems="center" gap={1} mb={1}>
@@ -189,7 +187,10 @@ export default function StationDetailPage() {
         </Paper>
         {/* のりば案内 */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><DirectionsSubway sx={{ mr: 1, color: 'success.main' }} />のりば案内</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <DirectionsSubway sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">のりば案内</Typography>
+          </Box>
           {station.platforms && station.platforms.length > 0 ? (
             station.platforms.map(p => (
               <Typography key={p.number}>{p.number}番線：{p.info}</Typography>
@@ -200,17 +201,26 @@ export default function StationDetailPage() {
         </Paper>
         {/* 指定席券売機 */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><CreditCard sx={{ mr: 1, color: 'success.main' }} />指定席券売機</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <CreditCard sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">指定席券売機</Typography>
+          </Box>
           <Typography>みどりの窓口横・中央改札付近</Typography>
         </Paper>
         {/* 多機能券売機 */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><CreditCard sx={{ mr: 1, color: 'success.main' }} />多機能券売機</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <CreditCard sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">多機能券売機</Typography>
+          </Box>
           <Typography>中央改札付近</Typography>
         </Paper>
         {/* Suica関連 */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><CreditCard sx={{ mr: 1, color: 'success.main' }} />Suica関連</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <CreditCard sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">Suica関連</Typography>
+          </Box>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}><Typography>Suicaチャージ機：あり</Typography></Grid>
             <Grid item xs={12} sm={6}><Typography>モバイルSuica：対応</Typography></Grid>
@@ -218,17 +228,26 @@ export default function StationDetailPage() {
         </Paper>
         {/* ATM */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><LocalAtm sx={{ mr: 1, color: 'success.main' }} />ATM</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <LocalAtm sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">ATM</Typography>
+          </Box>
           <Typography>ビューアルッテ：中央改札付近</Typography>
         </Paper>
         {/* コインロッカー */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><Lock sx={{ mr: 1, color: 'success.main' }} />コインロッカー</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Lock sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">コインロッカー</Typography>
+          </Box>
           <Typography>中央改札付近・東口付近</Typography>
         </Paper>
         {/* 駅レンタカー */}
         <Paper sx={{ maxWidth: 700, mx: 'auto', p: 3, mb: 3 }}>
-          <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}><DirectionsCar sx={{ mr: 1, color: 'success.main' }} />駅レンタカー</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <DirectionsCar sx={{ mr: 1, color: 'success.main' }} />
+            <Typography variant="h6" fontWeight="bold">駅レンタカー</Typography>
+          </Box>
           <Typography>駅前ロータリー</Typography>
         </Paper>
       </Box>

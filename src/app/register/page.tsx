@@ -380,17 +380,19 @@ function RegisterContent() {
                       disabled={loading}
                       startIcon={<DiscordIcon />}
                       sx={{ 
-                        py: 2.5, 
+                        py: { xs: 2, sm: 2.5 }, 
+                        px: { xs: 2, sm: 3 },
                         borderRadius: 3,
                         border: '2px solid #7289DA',
                         color: '#7289DA',
-                        fontSize: '1.1rem',
+                        fontSize: { xs: '0.95rem', sm: '1.1rem' },
                         fontWeight: 600,
                         letterSpacing: '0.5px',
                         textTransform: 'none',
                         backgroundColor: 'rgba(114, 137, 218, 0.05)',
                         position: 'relative',
                         overflow: 'hidden',
+                        whiteSpace: 'nowrap',
                         '&:hover': {
                           backgroundColor: 'rgba(114, 137, 218, 0.1)',
                           borderColor: '#5b6eae',
@@ -438,7 +440,7 @@ function RegisterContent() {
                           認証中...
                         </Box>
                       ) : (
-                        'Discordアカウントを連携'
+                        'Discordで連携'
                       )}
                     </Button>
                   )}
