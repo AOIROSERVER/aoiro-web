@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API テスト</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .result { background: #f0f0f0; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+        button { background: #007cba; color: white; padding: 10px 20px; border: none; cursor: pointer; margin: 5px; }
+        button:hover { background: #005a87; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>ポイント送信API テスト</h1>
+    
+    <div class="test-section">
+        <h2>1. 基本API接続テスト</h2>
+        <button onclick="testBasicAPI()">テストAPI実行</button>
+        <div id="basicResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. ポイント送信API テスト</h2>
+        <input type="email" id="testEmail" placeholder="test@test.com" value="test@test.com">
+        <input type="number" id="testPoints" placeholder="100" value="100">
+        <input type="text" id="testReason" placeholder="テスト送信" value="テスト送信">
+        <br><br>
+        <button onclick="testPointSendAPI()">ポイント送信API実行</button>
+        <div id="pointResult" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 管理者権限テスト</h2>
+        <p>管理者メール: <strong>aoiroserver.m@gmail.com</strong></p>
+        <p>現在のログイン状態を確認してからテストしてください。</p>
+    </div>
+
+    <script>
+        async function testBasicAPI() {
+            const resultDiv = document.getElementById('basicResult');
+            resultDiv.innerHTML = '🔄 テスト実行中...';
+            
+            try {
+                const response = await fetch('/api/test/', {
+                    method: 'GET'
+                });
+                
+                console.log('📡 Basic API Response:', response);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `✅ 成功:\n${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    resultDiv.innerHTML = `❌ エラー (${response.status}):\n${errorText}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ ネットワークエラー:\n${error.message}`;
+                resultDiv.className = 'result error';
+                console.error('Basic API Error:', error);
+            }
+        }
+
+        async function testPointSendAPI() {
+            const resultDiv = document.getElementById('pointResult');
+            resultDiv.innerHTML = '🔄 ポイント送信テスト実行中...';
+            
+            const email = document.getElementById('testEmail').value;
+            const points = parseInt(document.getElementById('testPoints').value);
+            const reason = document.getElementById('testReason').value;
+            
+            const requestData = {
+                targetEmail: email,
+                points: points,
+                reason: reason,
+                adminEmail: 'aoiroserver.m@gmail.com'
+            };
+            
+            console.log('🚀 Point Send Request:', requestData);
+            
+            try {
+                const response = await fetch('/api/send-points/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                console.log('📡 Point Send Response:', response);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultDiv.innerHTML = `✅ 成功:\n${JSON.stringify(data, null, 2)}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    const errorText = await response.text();
+                    try {
+                        const errorData = JSON.parse(errorText);
+                        resultDiv.innerHTML = `⚠️ API エラー (${response.status}):\n${JSON.stringify(errorData, null, 2)}`;
+                    } catch {
+                        resultDiv.innerHTML = `❌ レスポンスエラー (${response.status}):\n${errorText}`;
+                    }
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ ネットワークエラー:\n${error.message}`;
+                resultDiv.className = 'result error';
+                console.error('Point Send Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -12,6 +12,13 @@ const stations = [
   { id: "S04", name: "渋谷", line: "山手線" },
   { id: "S05", name: "池袋", line: "山手線" },
   { id: "S06", name: "秋葉原", line: "総武線" },
+  // あおうみ線の駅
+  { id: "AU01", name: "夢洲", line: "あおうみ線" },
+  { id: "AU02", name: "若宮道", line: "あおうみ線" },
+  { id: "AU03", name: "あおうみ空港", line: "あおうみ線" },
+  { id: "AU04", name: "淡路大路", line: "あおうみ線" },
+  { id: "AU05", name: "美馬島通り", line: "あおうみ線" },
+  { id: "AU06", name: "磯町海岸", line: "あおうみ線" },
 ];
 
 export default function StationInfoPage() {
@@ -72,7 +79,7 @@ export default function StationInfoPage() {
                   boxShadow: 2,
                   cursor: 'pointer',
                 }}
-                // 詳細画面への遷移はonClickでrouter.push(`/station-info/${station.id}`)などで実装可能
+                onClick={() => router.push(`/station-info/${station.id}`)}
               >
                 <Avatar sx={{ bgcolor: '#2196F3', color: '#fff', fontWeight: 'bold' }}>{station.name[0]}</Avatar>
                 <Box>

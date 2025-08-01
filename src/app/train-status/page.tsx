@@ -450,7 +450,7 @@ export default function TrainStatusPage() {
             p: 1
           }}>
             <img
-              src="https://i.imgur.com/lXFbsaE.jpg"
+              src="https://i.imgur.com/wfJtm8g.jpg"
               alt="路線図"
               style={{
                 width: '100%',

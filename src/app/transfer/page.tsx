@@ -26,7 +26,9 @@ export default function TransferPage() {
   const stations = [
     '東京', '新宿', '渋谷', '武蔵小杉', '大崎', '大井町', '有楽町', '浜松',
     '御茶ノ水', '秋葉原', '神田', '浅草橋', '三浦南', '古志路', 'みどり公園',
-    '浮ヶ谷', '清田川', '夢洲', '秋島町', '虎ノ門'
+    '浮ヶ谷', '清田川', '夢洲', '秋島町', '虎ノ門',
+    // あおうみ線の駅
+    '若宮道', 'あおうみ空港', '淡路大路', '美馬島通り', '磯町海岸'
   ];
 
   const handleSearch = async () => {
@@ -58,7 +60,13 @@ export default function TransferPage() {
       'Kiyotagawa': '清田川',
       'Yumeshima': '夢洲',
       'Akishimacho': '秋島町',
-      'Toranomon': '虎ノ門'
+      'Toranomon': '虎ノ門',
+      // あおうみ線の駅
+      'Wakamiyado': '若宮道',
+      'AoumiAirport': 'あおうみ空港',
+      'Awajioji': '淡路大路',
+      'Mimajimadori': '美馬島通り',
+      'Isomachikaigan': '磯町海岸'
     };
 
     // 漢字 → ローマ字の逆マッピング
@@ -116,6 +124,12 @@ export default function TransferPage() {
         nameEn: 'Umigaeru Line',
         color: '#28A745',
         stations: ['秋島町', '虎ノ門']
+      },
+      'AU': { 
+        name: 'あおうみ線', 
+        nameEn: 'Aoumi Line',
+        color: '#15206b',
+        stations: ['夢洲', '若宮道', 'あおうみ空港', '淡路大路', '美馬島通り', '磯町海岸']
       }
     };
 
@@ -151,7 +165,15 @@ export default function TransferPage() {
       
       // 海蛙線
       '秋島町': { '虎ノ門': 6 },
-      '虎ノ門': { '秋島町': 6 }
+      '虎ノ門': { '秋島町': 6 },
+      
+      // あおうみ線
+      '夢洲': { '若宮道': 3 },
+      '若宮道': { '夢洲': 3, 'あおうみ空港': 4 },
+      'あおうみ空港': { '若宮道': 4, '淡路大路': 3 },
+      '淡路大路': { 'あおうみ空港': 3, '美馬島通り': 3 },
+      '美馬島通り': { '淡路大路': 3, '磯町海岸': 3 },
+      '磯町海岸': { '美馬島通り': 3 }
     };
 
     // 経路を生成する関数

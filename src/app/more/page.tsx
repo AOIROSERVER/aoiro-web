@@ -11,6 +11,12 @@ import {
   Divider,
   IconButton,
   Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
 } from "@mui/material";
 import {
   Settings,
@@ -29,6 +35,8 @@ import {
   MonetizationOn,
   Star,
   Launch,
+  Send,
+  Close,
   LocalActivity,
   Schedule,
   EmojiEvents,
@@ -64,8 +72,93 @@ export default function MorePage() {
   const [imageLoadingStates, setImageLoadingStates] = useState<{[key: string]: boolean}>({});
   const [quests, setQuests] = useState<QuestItem[]>([]);
   const [isSupremeAdmin, setIsSupremeAdmin] = useState(false);
+  const [showPointSendDialog, setShowPointSendDialog] = useState(false);
+  const [pointSendForm, setPointSendForm] = useState({
+    email: '',
+    points: '',
+    reason: ''
+  });
+  const [isSendingPoints, setIsSendingPoints] = useState(false);
   const router = useRouter();
   const { user, signOut, loading: authLoading, isAdmin } = useAuth();
+
+  // ポイント送信処理
+  const handleSendPoints = async () => {
+    if (!pointSendForm.email.trim() || !pointSendForm.points.trim()) {
+      alert('メールアドレスとポイント数を入力してください');
+      return;
+    }
+
+    const points = parseInt(pointSendForm.points);
+    if (isNaN(points) || points <= 0) {
+      alert('有効なポイント数を入力してください');
+      return;
+    }
+
+    if (points > 10000) {
+      alert('一度に送信できるポイントは10,000ポイントまでです');
+      return;
+    }
+
+    setIsSendingPoints(true);
+
+    try {
+      console.log('🚀 ポイント送信開始:', {
+        targetEmail: pointSendForm.email.trim(),
+        points: points,
+        reason: pointSendForm.reason.trim() || '管理者からのポイント送信',
+        adminEmail: user?.email || 'unknown',
+      });
+
+      const response = await fetch('/api/send-points-unified/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targetEmail: pointSendForm.email.trim(),
+          points: points,
+          reason: pointSendForm.reason.trim() || '管理者からのポイント送信',
+          adminEmail: user?.email || 'unknown',
+        }),
+      });
+
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', response.headers);
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ 送信成功:', result);
+        alert(`${pointSendForm.email} に ${points} ポイントを送信しました！`);
+        setShowPointSendDialog(false);
+        setPointSendForm({ email: '', points: '', reason: '' });
+      } else {
+        const errorText = await response.text();
+        console.error('❌ HTTP エラー:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        
+        try {
+          const errorData = JSON.parse(errorText);
+          alert(`送信に失敗しました: ${errorData.error || '不明なエラー'}`);
+        } catch {
+          alert(`送信に失敗しました: HTTP ${response.status} - ${response.statusText}`);
+        }
+      }
+    } catch (error) {
+      console.error('❌ ネットワークエラー:', error);
+      console.error('❌ エラー詳細:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      alert(`送信に失敗しました: ${error.message}`);
+    } finally {
+      setIsSendingPoints(false);
+    }
+  };
 
   // 最高権限者チェック（クライアントサイドでのみ実行）
   useEffect(() => {
@@ -1369,34 +1462,55 @@ export default function MorePage() {
               クエスト
             </Typography>
             {(isAdmin || isSupremeAdmin) && (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Star />}
-                sx={{
-                  borderColor: '#4A90E2',
-                  color: '#4A90E2',
-                  '&:hover': {
-                    backgroundColor: '#4A90E2',
-                    color: 'white',
-                  },
-                  borderRadius: 2,
-                  fontSize: 12,
-                  fontWeight: 'bold',
-                }}
-                onClick={() => {
-                  console.log('🔍 クエスト作成ボタンクリック時 (最高権限者):', {
-                    isAdmin,
-                    localStorage_admin: localStorage.getItem('admin'),
-                    user: user?.email || 'null',
-                    isSupabaseAdmin: user?.email === 'aoiroserver.m@gmail.com',
-                    showingAsSupremeAdmin: true
-                  });
-                  router.push('/quest/create');
-                }}
-              >
-                クエスト作成
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<Star />}
+                  sx={{
+                    borderColor: '#4A90E2',
+                    color: '#4A90E2',
+                    '&:hover': {
+                      backgroundColor: '#4A90E2',
+                      color: 'white',
+                    },
+                    borderRadius: 2,
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                  }}
+                  onClick={() => {
+                    console.log('🔍 クエスト作成ボタンクリック時 (最高権限者):', {
+                      isAdmin,
+                      localStorage_admin: localStorage.getItem('admin'),
+                      user: user?.email || 'null',
+                      isSupabaseAdmin: user?.email === 'aoiroserver.m@gmail.com',
+                      showingAsSupremeAdmin: true
+                    });
+                    router.push('/quest/create');
+                  }}
+                >
+                  クエスト作成
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<MonetizationOn />}
+                  sx={{
+                    borderColor: '#FFA726',
+                    color: '#FFA726',
+                    '&:hover': {
+                      backgroundColor: '#FFA726',
+                      color: 'white',
+                    },
+                    borderRadius: 2,
+                    fontSize: 12,
+                    fontWeight: 'bold',
+                  }}
+                  onClick={() => setShowPointSendDialog(true)}
+                >
+                  ポイント送信
+                </Button>
+              </Box>
             )}
           </Box>
         <Box 
@@ -2131,6 +2245,103 @@ export default function MorePage() {
           </Box>
         </Card>
       </Box>
+
+      {/* ポイント送信ダイアログ */}
+      <Dialog
+        open={showPointSendDialog}
+        onClose={() => setShowPointSendDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <MonetizationOn sx={{ mr: 1, color: '#FFA726' }} />
+              <Typography variant="h6" fontWeight="bold">
+                ポイント送信
+              </Typography>
+            </Box>
+            <IconButton
+              onClick={() => setShowPointSendDialog(false)}
+              sx={{ p: 1 }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 2 }}>
+            <TextField
+              label="送信先メールアドレス"
+              type="email"
+              value={pointSendForm.email}
+              onChange={(e) => setPointSendForm(prev => ({ ...prev, email: e.target.value }))}
+              placeholder="user@example.com"
+              required
+              fullWidth
+              variant="outlined"
+            />
+
+            <TextField
+              label="送信ポイント数"
+              type="number"
+              value={pointSendForm.points}
+              onChange={(e) => setPointSendForm(prev => ({ ...prev, points: e.target.value }))}
+              placeholder="100"
+              required
+              fullWidth
+              variant="outlined"
+              inputProps={{ min: 1, max: 10000 }}
+            />
+
+            <TextField
+              label="送信理由（任意）"
+              multiline
+              rows={3}
+              value={pointSendForm.reason}
+              onChange={(e) => setPointSendForm(prev => ({ ...prev, reason: e.target.value }))}
+              placeholder="ポイント送信の理由を入力してください"
+              fullWidth
+              variant="outlined"
+            />
+
+            <Alert severity="info">
+              指定したメールアドレスのユーザーにポイントが送信されます。<br />
+              送信後はキャンセルできませんので、内容をよく確認してください。
+            </Alert>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => setShowPointSendDialog(false)}
+            disabled={isSendingPoints}
+          >
+            キャンセル
+          </Button>
+          <Button
+            onClick={handleSendPoints}
+            variant="contained"
+            disabled={isSendingPoints || !pointSendForm.email.trim() || !pointSendForm.points.trim()}
+            sx={{
+              backgroundColor: '#FFA726',
+              '&:hover': {
+                backgroundColor: '#FF9800',
+              },
+            }}
+            startIcon={
+              isSendingPoints ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <Send />
+              )
+            }
+          >
+            {isSendingPoints ? '送信中...' : 'ポイント送信'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 } 

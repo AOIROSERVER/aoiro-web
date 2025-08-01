@@ -77,6 +77,43 @@ const stations = [
       { number: 2, info: "あきが丘線（下り）" }
     ]
   },
+  // あおうみ線の駅データ
+  { id: "AU01", name: "夢洲", line: "あおうみ線", address: "大阪府大阪市此花区夢洲", tel: "06-0000-0001", facilities: ["Wifi", "Wc", "Elevator"], map: "https://maps.google.com/?q=夢洲駅",
+    platforms: [
+      { number: 1, info: "あおうみ線（空港方面）" },
+      { number: 2, info: "あおうみ線（市内方面）" }
+    ]
+  },
+  { id: "AU02", name: "若宮道", line: "あおうみ線", address: "大阪府大阪市此花区若宮道", tel: "06-0000-0002", facilities: ["Wifi", "Wc"], map: "https://maps.google.com/?q=若宮道駅",
+    platforms: [
+      { number: 1, info: "あおうみ線（空港方面）" },
+      { number: 2, info: "あおうみ線（市内方面）" }
+    ]
+  },
+  { id: "AU03", name: "あおうみ空港", line: "あおうみ線", address: "大阪府泉南郡田尻町泉州空港中", tel: "072-000-0001", facilities: ["Wifi", "Restaurant", "Wc", "Elevator"], map: "https://maps.google.com/?q=あおうみ空港駅",
+    platforms: [
+      { number: 1, info: "あおうみ線（市内方面）" },
+      { number: 2, info: "あおうみ線（空港方面）" }
+    ]
+  },
+  { id: "AU04", name: "淡路大路", line: "あおうみ線", address: "大阪府大阪市北区淡路町", tel: "06-0000-0003", facilities: ["Wifi", "Wc"], map: "https://maps.google.com/?q=淡路大路駅",
+    platforms: [
+      { number: 1, info: "あおうみ線（空港方面）" },
+      { number: 2, info: "あおうみ線（市内方面）" }
+    ]
+  },
+  { id: "AU05", name: "美馬島通り", line: "あおうみ線", address: "大阪府大阪市北区美馬島町", tel: "06-0000-0004", facilities: ["Wifi", "Wc"], map: "https://maps.google.com/?q=美馬島通り駅",
+    platforms: [
+      { number: 1, info: "あおうみ線（空港方面）" },
+      { number: 2, info: "あおうみ線（市内方面）" }
+    ]
+  },
+  { id: "AU06", name: "磯町海岸", line: "あおうみ線", address: "大阪府大阪市北区磯町", tel: "06-0000-0005", facilities: ["Wifi", "Wc"], map: "https://maps.google.com/?q=磯町海岸駅",
+    platforms: [
+      { number: 1, info: "あおうみ線（空港方面）" },
+      { number: 2, info: "あおうみ線（市内方面）" }
+    ]
+  },
 ];
 
 const facilityIcons: Record<string, JSX.Element> = {
@@ -88,6 +125,18 @@ const facilityIcons: Record<string, JSX.Element> = {
 
 const normalize = (str: string) => str.replace(/\s+/g, '').replace(/　/g, '').toLowerCase();
 
+// 駅名のマッピング（エンコーディング問題の解決）
+const stationNameMapping: Record<string, string> = {
+  '舞洲': '夢洲',
+  'ゆめしま': '夢洲',
+  'yumeshima': '夢洲',
+  'wakamiyado': '若宮道',
+  'aoumi-airport': 'あおうみ空港',
+  'awajioji': '淡路大路',
+  'mimajimadori': '美馬島通り',
+  'isomachikaigan': '磯町海岸'
+};
+
 const stationSignImages: Record<string, string> = {
   "東京": "https://i.imgur.com/mTX9J6e.png",
   "秋葉原": "https://i.imgur.com/PFt5F1c.png",
@@ -98,6 +147,13 @@ const stationSignImages: Record<string, string> = {
   "浜松": "https://i.imgur.com/0wKSID6.png",
   "有楽町": "https://i.imgur.com/Svyjl7f.png",
   "大出碧大前": "https://i.imgur.com/UE0Pyr6.jpeg",
+  // あおうみ線の駅名標
+  "夢洲": "https://i.imgur.com/t1LslkQ.jpeg",
+  "若宮道": "https://i.imgur.com/igTBOEn.png",
+  "あおうみ空港": "https://i.imgur.com/D0Eka5I.png",
+  "淡路大路": "https://i.imgur.com/69RhViu.png",
+  "美馬島通り": "https://i.imgur.com/yGvXMAT.png",
+  "磯町海岸": "https://i.imgur.com/DysqlK3.png",
 };
 
 export default function StationDetailPage() {
@@ -108,13 +164,62 @@ export default function StationDetailPage() {
   const rawStationId = params.stationId;
   const stationId = Array.isArray(rawStationId) ? rawStationId[0] : rawStationId;
   const decodedId = decodeURIComponent(stationId);
-  const station = stations.find(s =>
-    (s.id === decodedId) ||
-    (normalize(s.name) === normalize(decodedId))
-  );
+  
+  // デバッグ情報
+  console.log('Station search debug:', {
+    stationId,
+    decodedId,
+    availableStations: stations.map(s => ({ id: s.id, name: s.name }))
+  });
+  
+  // まずIDで検索（駅情報ページからのリンク）
+  let station = stations.find(s => s.id === stationId || s.id === decodedId);
+  
+  console.log('ID search result:', station ? station.name : 'Not found');
+  
+  // IDで見つからない場合は駅名で検索
+  if (!station) {
+    console.log('ID search failed, trying name search...');
+    
+    // 駅名マッピングを適用
+    const mappedName = stationNameMapping[decodedId] || stationNameMapping[stationId] || decodedId;
+    console.log('Mapped name:', mappedName);
+    
+    station = stations.find(s => {
+      const matchByName = (normalize(s.name) === normalize(decodedId)) || (normalize(s.name) === normalize(stationId));
+      const matchByExactName = (s.name === decodedId) || (s.name === stationId);
+      const matchByMappedName = (s.name === mappedName);
+      
+      console.log(`Checking station ${s.name} (${s.id}):`, {
+        matchByName,
+        matchByExactName,
+        matchByMappedName,
+        stationName: s.name,
+        searchedId: stationId,
+        searchedDecoded: decodedId,
+        mappedName: mappedName,
+        normalizedStationName: normalize(s.name),
+        normalizedSearched: normalize(decodedId)
+      });
+      
+      return matchByName || matchByExactName || matchByMappedName;
+    });
+  }
+  
+  console.log('Final station:', station ? station.name : 'No station found');
 
   if (!station) {
-    return <Box sx={{ p: 3 }}><Typography>駅情報が見つかりません</Typography></Box>;
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h5" color="error">駅情報が見つかりません</Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          検索されたID: {stationId} / デコード後: {decodedId}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          利用可能な駅: {stations.map(s => `${s.name}(${s.id})`).join(', ')}
+        </Typography>
+      </Box>
+    );
   }
 
   return (

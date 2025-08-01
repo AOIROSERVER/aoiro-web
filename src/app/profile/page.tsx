@@ -23,7 +23,10 @@ import {
   Tag,
   CheckCircle,
   Info,
-  Chat
+  Chat,
+  MonetizationOn,
+  History,
+  ChevronRight
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -311,6 +314,26 @@ function ProfileContent() {
                       </Typography>
                     } 
                   />
+                </ListItem>
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+                <ListItem 
+                  button 
+                  onClick={() => router.push('/profile/point-history')}
+                  sx={{ 
+                    '&:hover': { 
+                      bgcolor: 'rgba(255,255,255,0.1)' 
+                    },
+                    cursor: 'pointer'
+                  }}
+                >
+                  <ListItemIcon>
+                    <History sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>ポイント履歴</Typography>}
+                    secondary={<Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>取得履歴を確認</Typography>}
+                  />
+                  <ChevronRight sx={{ color: 'rgba(255,255,255,0.8)' }} />
                 </ListItem>
               </List>
             </Card>
