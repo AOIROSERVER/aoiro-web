@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // output: 'export', // API routesがあるため一時的に無効化
+  trailingSlash: true,
+  // distDir: 'out', // 標準の.nextディレクトリを使用
   images: {
     unoptimized: true,
   },

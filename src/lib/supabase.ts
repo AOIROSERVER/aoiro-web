@@ -160,7 +160,7 @@ export const getActiveQuests = async (): Promise<QuestWithTasks[]> => {
 
   return data?.map(quest => ({
     ...quest,
-    tasks: quest.quest_tasks?.sort((a, b) => a.display_order - b.display_order) || []
+    tasks: quest.quest_tasks?.sort((a: any, b: any) => a.display_order - b.display_order) || []
   })) || [];
 };
 
@@ -211,7 +211,7 @@ export const getQuestById = async (questId: string): Promise<QuestWithTasks | nu
 
   return {
     ...data,
-    tasks: data.quest_tasks?.sort((a, b) => a.display_order - b.display_order) || []
+    tasks: data.quest_tasks?.sort((a: any, b: any) => a.display_order - b.display_order) || []
   };
 };
 
