@@ -48,7 +48,18 @@ export async function GET(request: NextRequest) {
     }
 
     // 履歴データを統一形式に変換
-    const history = [];
+    interface HistoryItem {
+      id: string;
+      type: string;
+      typeName: string;
+      points: number;
+      description: string;
+      date: string;
+      created_at: string;
+      icon: string;
+    }
+
+    const history: HistoryItem[] = [];
 
     // ログインボーナス履歴を追加
     if (loginBonusHistory) {
