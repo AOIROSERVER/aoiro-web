@@ -700,11 +700,14 @@ export default function MorePage() {
               completed: true,
               category: 'special',
               icon: 'assignment',
-              estimatedTime: '即座に',
+              estimated_time: '即座に',
               difficulty: 'easy',
               tasks: [],
               start_date: yesterday.toISOString().split('T')[0],
-              end_date: tomorrow.toISOString().split('T')[0]
+              end_date: tomorrow.toISOString().split('T')[0],
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             },
             {
               id: 'admin-2',
@@ -717,11 +720,14 @@ export default function MorePage() {
               completed: false,
               category: 'daily',
               icon: 'star',
-              estimatedTime: '5分',
+              estimated_time: '5分',
               difficulty: 'easy',
               tasks: [],
               start_date: today.toISOString().split('T')[0],
-              end_date: tomorrow.toISOString().split('T')[0]
+              end_date: tomorrow.toISOString().split('T')[0],
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             },
             {
               id: 'admin-3',
@@ -734,11 +740,14 @@ export default function MorePage() {
               completed: false,
               category: 'special',
               icon: 'emoji_events',
-              estimatedTime: '30分',
+              estimated_time: '30分',
               difficulty: 'medium',
               tasks: [],
               start_date: today.toISOString().split('T')[0],
-              end_date: nextMonth.toISOString().split('T')[0]
+              end_date: nextMonth.toISOString().split('T')[0],
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             },
             {
               id: 'admin-4',
@@ -751,11 +760,14 @@ export default function MorePage() {
               completed: false,
               category: 'weekly',
               icon: 'star',
-              estimatedTime: '2時間',
+              estimated_time: '2時間',
               difficulty: 'hard',
               tasks: [],
               start_date: today.toISOString().split('T')[0],
-              end_date: nextWeek.toISOString().split('T')[0]
+              end_date: nextWeek.toISOString().split('T')[0],
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }
           ];
           setQuests(mockQuests);
@@ -785,11 +797,14 @@ export default function MorePage() {
               completed: false,
               category: 'special',
               icon: 'assignment',
-              estimatedTime: '即座に',
+              estimated_time: '即座に',
               difficulty: 'easy',
               tasks: [],
               start_date: today.toISOString().split('T')[0],
-              end_date: tomorrow.toISOString().split('T')[0]
+              end_date: tomorrow.toISOString().split('T')[0],
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             },
             {
               id: 'emergency-2',
@@ -802,11 +817,14 @@ export default function MorePage() {
               completed: false,
               category: 'weekly',
               icon: 'star',
-              estimatedTime: '30分',
+              estimated_time: '30分',
               difficulty: 'medium',
               tasks: [],
               start_date: today.toISOString().split('T')[0],
-              end_date: nextWeek.toISOString().split('T')[0]
+              end_date: nextWeek.toISOString().split('T')[0],
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }
           ];
           
