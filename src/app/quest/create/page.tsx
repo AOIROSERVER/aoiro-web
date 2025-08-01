@@ -257,8 +257,8 @@ export default function QuestCreatePage() {
         estimated_time: formData.estimatedTime,
         icon: formData.icon,
         background_image: formData.backgroundImage,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
+        start_date: formData.startDate ? formData.startDate.toISOString().split('T')[0] : null,
+        end_date: formData.endDate ? formData.endDate.toISOString().split('T')[0] : null,
         tasks: formData.tasks.map(task => ({ title: task.title }))
       };
 
