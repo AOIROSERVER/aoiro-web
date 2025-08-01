@@ -74,7 +74,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ profile })
   } catch (error) {
     console.error('❌ Server error:', error);
-    return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'サーバーエラーが発生しました',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 }
 
@@ -133,6 +136,9 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ profile })
   } catch (error) {
-    return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 })
+    return NextResponse.json({ 
+      error: 'サーバーエラーが発生しました',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
   }
 } 

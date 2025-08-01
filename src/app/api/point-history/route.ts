@@ -115,7 +115,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ ポイント履歴API エラー:', error);
     return NextResponse.json(
-      { error: 'サーバーエラーが発生しました' },
+      { 
+        error: 'サーバーエラーが発生しました',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
