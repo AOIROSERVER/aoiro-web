@@ -120,8 +120,8 @@ export interface QuestWithTasks extends Quest {
 }
 
 export interface QuestWithProgress extends QuestWithTasks {
-  user_progress?: UserQuestProgress;
-  user_task_completions?: UserTaskCompletion[];
+  user_progress?: UserQuestProgress | undefined;
+  user_task_completions?: UserTaskCompletion[] | undefined;
 }
 
 // クエスト関連の関数

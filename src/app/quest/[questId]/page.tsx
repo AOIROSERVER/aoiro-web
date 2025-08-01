@@ -65,7 +65,7 @@ type QuestItem = {
 export default function QuestDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const questId = params.questId as string;
+  const questId = params?.questId as string;
   const [quest, setQuest] = useState<QuestItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [showReportDialog, setShowReportDialog] = useState(false);
@@ -1009,7 +1009,7 @@ export default function QuestDetailPage() {
                       }}
                     />
                   </ListItem>
-                  {index < quest.tasks.length - 1 && (
+                  {quest.tasks && index < quest.tasks.length - 1 && (
                     <Divider sx={{ ml: 4 }} />
                   )}
                 </React.Fragment>
@@ -1082,7 +1082,7 @@ export default function QuestDetailPage() {
               }
             }}
           >
-            {user ? 'クエストを報告' : 'ログインして報告'}
+            {user ? 'クエスト完了報告' : 'ログインして完了報告'}
           </Button>
         )}
       </Box>

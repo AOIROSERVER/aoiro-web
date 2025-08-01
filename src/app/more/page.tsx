@@ -598,7 +598,7 @@ export default function MorePage() {
       
       try {
         console.log('📊 Supabaseからクエストデータを取得中...');
-        let questsData;
+        let questsData: any[]; // 一時的に any 型を使用して型エラーを回避
         
         if (user) {
           // ログイン済み: 進行状況付きでクエスト取得
@@ -647,13 +647,18 @@ export default function MorePage() {
           return !expired;
         });
 
-        // QuestItemに変換
-        const questItems: QuestItem[] = activeQuestsData.map(quest => ({
-          ...quest,
-          progress: quest.user_progress?.progress || 0,
-          maxProgress: quest.user_progress?.max_progress || quest.tasks?.length || 1,
-          completed: quest.user_progress?.completed || false
-        }));
+        // QuestItemに変換（安全なプロパティアクセス）
+        const questItems: QuestItem[] = activeQuestsData.map((quest: any) => {
+          // user_progress プロパティの存在を安全にチェック
+          const userProgress = quest.user_progress || null;
+          
+          return {
+            ...quest,
+            progress: userProgress?.progress || 0,
+            maxProgress: userProgress?.max_progress || quest.tasks?.length || 1,
+            completed: userProgress?.completed || false
+          };
+        });
 
         console.log('🎯 期限切れ除外後のクエスト:', questItems.length, '件');
         console.log('📝 クエスト詳細:', questItems.map(q => ({ 
