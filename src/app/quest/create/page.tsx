@@ -275,10 +275,14 @@ export default function QuestCreatePage() {
         
         // 成功メッセージを表示
         setSaveSuccess(true);
+        
+        // クエストリストを更新するためのフラグを設定
+        localStorage.setItem('quest-updated', 'true');
+        
+        // 少し待ってからその他のページに遷移
         setTimeout(() => {
-          setSaveSuccess(false);
           router.push('/more');
-        }, 2000);
+        }, 500);
       }
     } catch (error) {
       console.error('❌ クエスト作成エラー:', error);

@@ -1466,6 +1466,7 @@ export default function MorePage() {
                     backgroundPosition: 'center',
                     backgroundRepeat: 'no-repeat',
                     backgroundColor: '#f0f0f0', // フォールバック色
+                    backgroundClip: 'border-box', // 背景をボーダーボックス内に制限
                   } : {
                     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
                   }),
@@ -1493,7 +1494,8 @@ export default function MorePage() {
                   sx={{
                     height: 4,
                     background: getCategoryDesign(quest.category, quest.difficulty || 'easy').background,
-                    borderRadius: '3px 3px 0 0',
+                    borderTopLeftRadius: 'inherit', // 親要素の角丸を継承
+                    borderTopRightRadius: 'inherit', // 親要素の角丸を継承
                   }}
                 />
 
@@ -1529,7 +1531,7 @@ export default function MorePage() {
                       right: 0,
                       bottom: 0,
                       background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.3) 100%)',
-                      borderRadius: 3,
+                      borderRadius: 'inherit', // 親要素のborderRadiusを継承
                     }}
                   />
                 )}

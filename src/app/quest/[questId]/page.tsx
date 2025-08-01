@@ -73,6 +73,7 @@ export default function QuestDetailPage() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReported, setIsReported] = useState(false); // 報告完了状態を管理
   const { user } = useAuth();
 
   // 画像選択処理
@@ -160,6 +161,9 @@ export default function QuestDetailPage() {
         setReportMessage('');
         setSelectedImage(null);
         setImagePreview(null);
+        setIsReported(true); // 報告完了状態を設定
+        // ローカルストレージにも保存（ページリロード時に状態を保持）
+        localStorage.setItem(`quest-reported-${questId}`, 'true');
       } else {
         const errorData = await response.json();
         alert(`送信に失敗しました: ${errorData.error || '不明なエラー'}`);
@@ -313,6 +317,14 @@ export default function QuestDetailPage() {
         setQuest(foundQuest || null);
       } finally {
         setLoading(false);
+        
+        // ローカルストレージから報告済み状態を復元
+        if (typeof window !== 'undefined') {
+          const reportedStatus = localStorage.getItem(`quest-reported-${questId}`);
+          if (reportedStatus === 'true') {
+            setIsReported(true);
+          }
+        }
       }
     };
 
@@ -635,13 +647,14 @@ export default function QuestDetailPage() {
             </Box>
             
             <Typography
-              variant="h3"
+              variant="h4"
               fontWeight="bold"
               color="white"
               sx={{
                 textShadow: '0px 0px 8px rgba(0,0,0,0.8), 0px 2px 4px rgba(0,0,0,0.6)',
                 mb: 1,
-                lineHeight: 1.2,
+                lineHeight: 1.3,
+                fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' }, // レスポンシブ対応
               }}
             >
               {quest.title}
@@ -653,6 +666,8 @@ export default function QuestDetailPage() {
               sx={{
                 textShadow: '0px 0px 6px rgba(0,0,0,0.7), 0px 1px 3px rgba(0,0,0,0.5)',
                 mb: 2,
+                fontSize: { xs: '1.1rem', sm: '1.2rem', md: '1.25rem' }, // 読みやすいサイズに調整
+                lineHeight: 1.4,
               }}
             >
               {quest.description}
@@ -764,7 +779,10 @@ export default function QuestDetailPage() {
                     variant="h4"
                     fontWeight="bold"
                     color="#1f2937"
-                    sx={{ lineHeight: 1.2 }}
+                    sx={{ 
+                      lineHeight: 1.3,
+                      fontSize: { xs: '1.75rem', sm: '2rem', md: '2.25rem' }, // レスポンシブ対応
+                    }}
                   >
                     {quest.title}
                   </Typography>
@@ -774,7 +792,11 @@ export default function QuestDetailPage() {
               <Typography
                 variant="h6"
                 color="text.secondary"
-                sx={{ mb: 2 }}
+                sx={{ 
+                  mb: 2,
+                  fontSize: { xs: '1.1rem', sm: '1.2rem', md: '1.25rem' }, // 読みやすいサイズに調整
+                  lineHeight: 1.4,
+                }}
               >
                 {quest.description}
               </Typography>
@@ -822,7 +844,7 @@ export default function QuestDetailPage() {
               sx={{
                 mb: 3,
                 lineHeight: 1.6,
-                fontSize: 16,
+                fontSize: { xs: '0.95rem', sm: '1rem', md: '1.1rem' }, // レスポンシブな読みやすいサイズ
               }}
             >
               {quest.detailedDescription || quest.description}
@@ -1042,6 +1064,30 @@ export default function QuestDetailPage() {
             }}
           >
             完了済み
+          </Button>
+        ) : isReported ? (
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<Send />}
+            disabled
+            sx={{
+              mt: 3,
+              py: 1.5,
+              borderRadius: 2,
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              '&:disabled': {
+                backgroundColor: '#4CAF50',
+                color: 'white',
+                opacity: 0.8,
+                cursor: 'not-allowed',
+              },
+            }}
+          >
+            報告済み
           </Button>
         ) : (
           <Button
