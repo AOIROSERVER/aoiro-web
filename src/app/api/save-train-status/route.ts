@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
+
+// Supabaseクライアントを直接初期化
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -105,8 +111,11 @@ export async function POST(request: NextRequest) {
       currentStatus: data.status
     });
   } catch (error) {
-    console.error('Error saving train status:', error);
-    return NextResponse.json({ message: '保存失敗', error: String(error) }, { status: 500 });
+    console.error('❌ 運行状況保存エラー:', error);
+    return NextResponse.json({ 
+      message: '保存失敗', 
+      error: error instanceof Error ? error.message : String(error)
+    }, { status: 500 });
   }
 }
 

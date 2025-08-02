@@ -159,13 +159,26 @@ export default function TrainStatusManagement() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ 保存APIエラー:', errorData);
-        throw new Error(`保存失敗: ${errorData.message || 'Unknown error'}`);
+        let errorMessage = 'Unknown error';
+        try {
+          const errorData = await response.json();
+          console.error('❌ 保存APIエラー:', errorData);
+          errorMessage = errorData.message || errorData.error || 'Unknown error';
+        } catch (parseError) {
+          console.error('❌ レスポンスパースエラー:', parseError);
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(`保存失敗: ${errorMessage}`);
       }
       
-      const result = await response.json();
-      console.log('✅ 保存成功:', result);
+      let result;
+      try {
+        result = await response.json();
+        console.log('✅ 保存成功:', result);
+      } catch (parseError) {
+        console.error('❌ 成功レスポンスパースエラー:', parseError);
+        throw new Error('レスポンスの解析に失敗しました');
+      }
       
       // ローカルのlinesも更新（ソートを維持）
       const newLines = lines.map((l) => l.id === editId ? { ...editValues } : l);
