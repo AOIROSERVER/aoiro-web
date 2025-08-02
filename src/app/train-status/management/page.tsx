@@ -141,9 +141,9 @@ export default function TrainStatusManagement() {
       // Supabase保存用にlineIdを明示的に付与
       const saveData = { ...editValues, lineId: editValues.id };
       
-      // 本番環境では管理者用APIを使用
+      // 開発環境では管理者用API、本番環境では通常のAPIを使用（環境変数設定前の暫定対応）
       const apiEndpoint = process.env.NODE_ENV === 'production' 
-        ? "/api/save-train-status-admin" 
+        ? "/api/save-train-status" 
         : "/api/save-train-status";
         
       console.log('💾 保存API呼び出し:', {
