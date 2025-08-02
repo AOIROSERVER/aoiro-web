@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 // 管理者用のSupabaseクライアント（サービスロールキー使用）
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,43 +16,26 @@ export async function POST(request: NextRequest) {
       status: data.status,
       environment: process.env.NODE_ENV,
       hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
     });
 
-    // 管理者権限チェック（簡易的な実装）
-    const adminEmail = data.adminEmail || 'aoiroserver.m@gmail.com';
-    const isAdmin = adminEmail === 'aoiroserver.m@gmail.com' || 
-                   adminEmail === process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
-    
-    if (!isAdmin) {
-      console.error('❌ 管理者権限なし:', adminEmail);
-      return NextResponse.json({ 
-        message: '管理者権限が必要です',
-        error: 'Unauthorized'
-      }, { status: 403 });
-    }
-
     // 現在のステータスを取得して変更を検知
-    const { data: currentData, error: fetchError } = await supabase
+    const { data: currentData } = await supabaseAdmin
       .from('train_status')
-      .select('*')
+      .select('status, detail')
       .eq('line_id', data.lineId)
       .single();
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      console.error('現在のステータス取得エラー:', fetchError);
-    }
-
-    const previousStatus = currentData?.status || '平常運転';
+    const previousStatus = currentData?.status || '不明';
     const hasChanged = previousStatus !== data.status;
 
-    console.log('📊 ステータス変更チェック:', {
+    console.log('📊 ステータス比較:', {
       previous: previousStatus,
       current: data.status,
       hasChanged
     });
 
-    // Supabaseにデータを保存（サービスロールキー使用）
+    // Supabaseにデータを保存（管理者権限）
     console.log('💾 管理者用Supabase保存開始:', {
       table: 'train_status',
       data: {
@@ -64,7 +48,7 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    const { data: savedData, error } = await supabase
+    const { data: savedData, error } = await supabaseAdmin
       .from('train_status')
       .upsert({
         line_id: data.lineId,
@@ -87,7 +71,7 @@ export async function POST(request: NextRequest) {
         hint: error.hint
       });
       return NextResponse.json({ 
-        message: '保存失敗', 
+        message: '管理者用保存失敗', 
         error: error.message,
         code: error.code,
         details: error.details
@@ -97,16 +81,17 @@ export async function POST(request: NextRequest) {
     console.log('✅ 管理者用Supabase保存成功:', savedData);
 
     return NextResponse.json({ 
-      message: '保存成功（管理者用）',
+      message: '管理者用保存成功',
       hasChanged,
       previousStatus,
       currentStatus: data.status,
       savedData
     });
+
   } catch (error) {
     console.error('❌ 管理者用運行状況保存エラー:', error);
     return NextResponse.json({ 
-      message: '保存失敗', 
+      message: '管理者用保存失敗', 
       error: error instanceof Error ? error.message : String(error)
     }, { status: 500 });
   }

@@ -140,14 +140,33 @@ export default function TrainStatusManagement() {
     try {
       // Supabase保存用にlineIdを明示的に付与
       const saveData = { ...editValues, lineId: editValues.id };
-      const response = await fetch("/api/save-train-status", {
+      
+      // 本番環境では管理者用APIを使用
+      const apiEndpoint = process.env.NODE_ENV === 'production' 
+        ? "/api/save-train-status-admin" 
+        : "/api/save-train-status";
+        
+      console.log('💾 保存API呼び出し:', {
+        endpoint: apiEndpoint,
+        environment: process.env.NODE_ENV,
+        data: saveData
+      });
+      
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(saveData)
       });
+      
       if (!response.ok) {
-        throw new Error('Failed to save train status');
+        const errorData = await response.json();
+        console.error('❌ 保存APIエラー:', errorData);
+        throw new Error(`保存失敗: ${errorData.message || 'Unknown error'}`);
       }
+      
+      const result = await response.json();
+      console.log('✅ 保存成功:', result);
+      
       // ローカルのlinesも更新（ソートを維持）
       const newLines = lines.map((l) => l.id === editId ? { ...editValues } : l);
       setLines(sortLines(newLines));
@@ -158,7 +177,7 @@ export default function TrainStatusManagement() {
       setMessage({ type: 'success', text: '運行情報を保存しました' });
     } catch (e) {
       console.error('Error saving train status:', e);
-      setMessage({ type: 'error', text: '運行情報の保存に失敗しました' });
+      setMessage({ type: 'error', text: `運行情報の保存に失敗しました: ${e instanceof Error ? e.message : String(e)}` });
     } finally {
       // setLoading(false); // この行は削除
     }
