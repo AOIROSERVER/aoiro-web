@@ -2,23 +2,6 @@
   command = "npm run build"
   publish = ".next"
 
-[dev]
-  command = "npm run dev"
-  port = 8888
-  targetPort = 3000
-  publish = ".next"
-
-[[redirects]]
-  from = "/api/*"
-  to = "http://localhost:3000/api/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
 [[headers]]
   for = "/*"
   [headers.values]
