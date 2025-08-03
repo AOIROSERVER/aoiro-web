@@ -1,0 +1,1214 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ヘッダーのレスポンシブデザイン */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 0 32px;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.header-logo {
+  font-weight: bold;
+  font-size: 20px;
+  color: #050045;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.5px;
+}
+
+.header-logo img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.header-logo .MuiSvgIcon-root {
+  font-size: 24px;
+  color: #050045;
+}
+
+.header-nav {
+  display: flex;
+  gap: 24px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #222;
+  font-weight: normal;
+  font-size: 16px;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border-bottom: none;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background: #f5f5f5;
+  color: #1976d2;
+}
+
+.nav-link.active {
+  color: #1976d2;
+  font-weight: bold;
+  border-bottom: 2px solid #1976d2;
+  background: #f0f6ff;
+}
+
+.nav-icon {
+  font-size: 16px;
+}
+
+.nav-label {
+  display: inline;
+}
+
+/* PCでは下部ナビゲーションを非表示 */
+.mobile-nav {
+  display: none;
+}
+
+/* フッターのレスポンシブ対応 */
+.footer {
+  background: #f0f0f0;
+  color: #00001C;
+  padding: 16px 0;
+}
+
+/* ホームページのレスポンシブデザイン */
+.home-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-title {
+  font-weight: bold;
+  font-size: 24px;
+  color: #050045;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.home-card {
+  border-radius: 12px;
+  padding: 16px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.home-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* 運行情報ページのレスポンシブデザイン */
+.train-status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.train-status-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 統一されたページタイトルデザイン */
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title-icon {
+  font-size: 28px;
+  color: #1a237e;
+}
+
+.page-title-text {
+  font-weight: bold;
+  font-size: 20px;
+  color: #1a237e;
+}
+
+.page-header-action {
+  color: #1a237e;
+}
+
+/* 小さなスマホ用デザイン (480px以下) */
+@media (max-width: 480px) {
+  .page-title-text {
+    font-size: 18px !important;
+  }
+  
+  .mobile-nav-link {
+    font-size: 11px !important;
+    min-width: 50px !important;
+  }
+  
+  .mobile-nav-label {
+    font-size: 11px !important;
+  }
+  
+  /* より小さなヘッダーロゴ */
+  .header-logo {
+    font-size: 16px !important;
+  }
+  
+  .header-logo img {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  
+  /* ページタイトル（h4）のスマホ対応 */
+  .MuiTypography-h4 {
+    font-size: 18px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+  
+  /* 列車位置情報ページの路線名調整 */
+  .train-position-page .train-position-title {
+    font-size: 20px !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+  }
+  
+  /* 列車位置情報ページの路線アイコン調整 */
+  .train-position-page .line-icon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 12px !important;
+    margin-right: 8px !important;
+  }
+  
+  /* タイトルコンテナの垂直配置調整 */
+  .train-position-page .title-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  /* その他のタイトルサイズ調整 */
+  .MuiTypography-h5 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* 長いタイトル専用クラス */
+  .long-page-title {
+    font-size: 16px !important;
+    text-align: center !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+  }
+}
+
+/* スマホ用デザイン (768px以下) */
+@media (max-width: 768px) {
+  /* ページタイトル（h4）のスマホ用調整 */
+  .MuiTypography-h4 {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+    text-align: center !important;
+    margin-bottom: 16px !important;
+  }
+  
+  /* 列車位置情報ページのタイトルは margin を 0 に */
+  .train-position-page .train-position-title {
+    margin: 0 !important;
+  }
+  
+  /* ページヘッダーのアイコンとタイトル配置調整 */
+  .page-header-title {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  /* スマホサイズでアイコンサイズを調整 */
+  .MuiSvgIcon-root[style*="fontSize: 32"] {
+    font-size: 28px !important;
+  }
+  
+  .MuiTypography-h5 {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    word-break: break-word !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+    word-break: break-word !important;
+  }
+
+  .header {
+    padding: 0 16px;
+    height: 56px;
+    flex-direction: row;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .header-logo {
+    font-size: 18px;
+    order: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.3px;
+  }
+  
+  .header-logo img {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+  }
+
+  .header-logo .MuiSvgIcon-root {
+    font-size: 20px;
+    color: #050045;
+  }
+
+  .header-nav {
+    display: none;
+  }
+
+  /* スマホ用の下部ナビゲーション */
+  .mobile-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+    padding: 8px 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .mobile-nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #666;
+    text-decoration: none;
+    padding: 8px 4px;
+    min-width: 60px;
+    text-align: center;
+    font-size: 12px;
+    transition: color 0.2s ease;
+  }
+
+  .mobile-nav-link.active {
+    color: #1976d2;
+  }
+
+  .mobile-nav-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+  }
+
+  .mobile-nav-label {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+
+  /* メインコンテンツの下部マージンを追加 */
+  main {
+    padding-bottom: 80px;
+  }
+
+  /* フッターのスマホ対応 */
+  .footer {
+    margin-bottom: 80px;
+    padding: 8px 0;
+  }
+
+  /* フッター内の要素のスマホ対応 */
+  .footer .MuiBox-root {
+    flex-direction: column !important;
+    gap: 12px !important;
+    text-align: center !important;
+  }
+
+  .footer .MuiBox-root > div {
+    width: 100% !important;
+    text-align: center !important;
+  }
+
+  .footer .MuiBox-root > div > div {
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
+  /* サーバー状況表示のスマホ対応 - より具体的なセレクター */
+  .footer .MuiBox-root > div:last-child {
+    flex-direction: row !important;
+    gap: 8px !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div {
+    flex-direction: row !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+    align-items: center !important;
+  }
+
+  /* サーバー状況の各要素を小さく */
+  .footer .MuiBox-root > div:last-child > div > div {
+    font-size: 10px !important;
+    gap: 3px !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-direction: row !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > span {
+    font-size: 10px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    width: 8px !important;
+    height: 8px !important;
+    margin-right: 3px !important;
+  }
+
+  /* 稼働状況の表示を強制的に横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div:first-child {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div:first-child > div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  /* 稼働状況の文字が縦に分かれないように */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  /* 稼働中テキストの強制横並び */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    word-break: keep-all !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 稼働状況のコンテナを強制的に横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-right: 4px !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+  }
+
+  /* 文字間隔を調整して重なりを防ぐ */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 要素間のギャップを増やす */
+  .footer .MuiBox-root > div:last-child > div > div {
+    gap: 8px !important;
+  }
+
+  /* スマホ版で稼働状況をより小さく横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    font-size: 8px !important;
+    gap: 2px !important;
+    margin-right: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    font-size: 8px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    font-size: 8px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    width: 6px !important;
+    height: 6px !important;
+    margin-right: 2px !important;
+  }
+
+  /* アイコンも小さく */
+  .footer .MuiBox-root > div:last-child > div > div > div svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  /* 強制的に横並びにする */
+  .footer .MuiBox-root > div:last-child {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-right: 8px !important;
+  }
+
+  /* 稼働状況の文字が縦に分かれないように */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  /* 稼働中テキストの強制横並び */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+    line-height: 1 !important;
+    word-break: keep-all !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    min-width: 0 !important;
+    flex-shrink: 0 !important;
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 稼働状況のコンテナを強制的に横並びに */
+  .footer .MuiBox-root > div:last-child > div > div > div {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 4px !important;
+    margin-right: 4px !important;
+    flex-wrap: nowrap !important;
+    min-width: 0 !important;
+  }
+
+  /* 文字間隔を調整して重なりを防ぐ */
+  .footer .MuiBox-root > div:last-child > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  .footer .MuiBox-root > div:last-child > div > div > div > div > span {
+    letter-spacing: 0.5px !important;
+    margin-right: 4px !important;
+  }
+
+  /* 要素間のギャップを増やす */
+  .footer .MuiBox-root > div:last-child > div > div {
+    gap: 8px !important;
+  }
+
+  .home-header {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .home-title {
+    font-size: 20px;
+  }
+
+  .card-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .home-card {
+    height: 120px;
+    padding: 12px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .home-card .MuiAvatar-root {
+    width: 50px !important;
+    height: 50px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .home-card .MuiAvatar-root .MuiSvgIcon-root {
+    font-size: 24px !important;
+  }
+
+  .home-card .MuiTypography-root {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+    text-align: center !important;
+  }
+
+  .train-status-header {
+    padding: 12px;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .train-status-title {
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .page-header {
+    padding: 12px;
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .page-title {
+    flex-direction: row;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .page-title-icon {
+    font-size: 24px;
+  }
+
+  .page-title-text {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  /* スマホ版稼働状況表示 */
+  .mobile-server-status {
+    background: #f8f9fa !important;
+    border-top: 1px solid #e9ecef !important;
+    border-bottom: 1px solid #e9ecef !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 13px !important;
+  }
+
+  .mobile-server-status .MuiBox-root {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .mobile-server-status .MuiTypography-root {
+    white-space: normal !important;
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+  }
+
+  /* スマホ版で路線図の下のステータス表示を非表示 */
+  @media (max-width: 768px) {
+    .MuiBox-root[style*="display: flex"][style*="justifyContent: center"][style*="alignItems: center"][style*="gap: 3"] {
+      display: none !important;
+    }
+  }
+
+  /* スマホ版で列車位置情報ページの駅名を小さく */
+  @media (max-width: 768px) {
+    /* 駅名ボックスのサイズ調整 */
+    .train-position-page .station-name-box {
+      width: 60px !important;
+      min-width: 50px !important;
+      height: 40px !important;
+      padding: 8px 4px !important;
+      margin-right: 8px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    /* 駅名テキストのサイズ調整 */
+    .train-position-page .station-name-box .MuiTypography-root {
+      font-size: 9px !important;
+      line-height: 1.1 !important;
+      white-space: normal !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      text-align: center !important;
+      word-break: break-all !important;
+      hyphens: auto !important;
+    }
+
+    /* 路線記号バッジを非表示 */
+    .train-position-page .station-name-box .MuiBox-root[style*="width: 32px"][style*="height: 32px"] {
+      display: none !important;
+    }
+
+    /* より具体的なセレクターで路線記号を非表示 */
+    .train-position-page .station-name-box .MuiBox-root[style*="borderRadius: 8px"] {
+      display: none !important;
+    }
+
+    /* 路線記号のspan要素も非表示 */
+    .train-position-page .station-name-box span {
+      display: none !important;
+    }
+
+    /* 路線記号のボックス全体を非表示 */
+    .train-position-page .station-name-box .MuiBox-root[style*="display: flex"][style*="flexDirection: column"] {
+      display: none !important;
+    }
+
+    /* 駅名ボックス内の最初の子要素（路線記号ボックス）を非表示 */
+    .train-position-page .station-name-box > .MuiBox-root:first-child {
+      display: none !important;
+    }
+
+    /* 駅名テキストのマージン調整（路線記号が消えたので左寄せ） */
+    .train-position-page .station-name-box .MuiTypography-root {
+      margin-left: 0 !important;
+    }
+  }
+
+  /* スマホ版で列車位置情報ページのタイトルを調整 */
+  @media (max-width: 768px) {
+    /* タイトルテキストの調整 */
+    .train-position-page .train-position-title {
+      font-size: 24px !important;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+      line-height: 1.4 !important;
+      word-break: break-word !important;
+      margin: 0 !important;
+    }
+
+    /* 路線アイコンの調整 */
+    .train-position-page .line-icon {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      flex-shrink: 0 !important;
+      margin-right: 8px !important;
+      font-size: 14px !important;
+    }
+
+    /* タイトルコンテナの調整 */
+    .train-position-page .train-position-header {
+      gap: 8px !important;
+      padding: 0 8px !important;
+      align-items: center !important;
+    }
+    
+    /* タイトルコンテナの配置 */
+    .train-position-page .title-container {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+  }
+
+  /* スマホ版で列車位置情報ページの上り・下りボックスを調整 */
+  @media (max-width: 768px) {
+    /* 上り・下りボックスの調整 */
+    .train-position-page .MuiBox-root[style*="position: absolute"][style*="left: 50%"][style*="transform: translateX(-50%)"] {
+      position: relative !important;
+      left: auto !important;
+      transform: none !important;
+      display: flex !important;
+      justify-content: center !important;
+      margin-bottom: 16px !important;
+      gap: 8px !important;
+    }
+
+    /* より具体的なセレクターで上り・下りボックスを調整 */
+    .train-position-page .MuiBox-root[style*="position: absolute"][style*="zIndex: 200"] {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      transform: none !important;
+      display: flex !important;
+      justify-content: center !important;
+      margin-bottom: 16px !important;
+      gap: 8px !important;
+      z-index: auto !important;
+    }
+
+    /* クラスを使った上り・下りボックスの調整 */
+    .train-position-page .direction-buttons {
+      position: relative !important;
+      left: auto !important;
+      top: auto !important;
+      transform: none !important;
+      display: flex !important;
+      justify-content: center !important;
+      margin-bottom: 16px !important;
+      gap: 8px !important;
+      z-index: auto !important;
+    }
+
+    /* 上り・下りテキストの調整 */
+    .train-position-page .MuiTypography-root[style*="fontSize: 16"][style*="letterSpacing: 1"] {
+      font-size: 16px !important;
+      padding: 6px 12px !important;
+      line-height: 1.3 !important;
+    }
+  }
+
+
+}
+
+/* 大きなスマホ・小さなタブレット用デザイン (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+  .page-title-text {
+    font-size: 22px;
+  }
+  
+  .mobile-nav-link {
+    font-size: 13px;
+    min-width: 65px;
+  }
+  
+  /* 路線アイコンを調整 */
+  .train-position-page .line-icon {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 16px !important;
+  }
+  
+  /* ページタイトル（h4）の中間サイズ対応 */
+  .MuiTypography-h4 {
+    font-size: 20px !important;
+    line-height: 1.3 !important;
+    word-break: break-word !important;
+  }
+  
+  /* 列車位置情報ページの路線名調整 */
+  .train-position-page .train-position-title {
+    font-size: 22px !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+  }
+  
+  .MuiTypography-h5 {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+  }
+  
+  .MuiTypography-h6 {
+    font-size: 16px !important;
+    line-height: 1.4 !important;
+  }
+  
+  /* ページヘッダーのアイコンサイズを中間サイズで調整 */
+  .MuiSvgIcon-root[style*="fontSize: 32"] {
+    font-size: 30px !important;
+  }
+}
+
+/* タブレット用デザイン (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header {
+    padding: 0 24px;
+  }
+
+  .header-nav {
+    gap: 16px;
+  }
+
+  .nav-link {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+
+  .nav-icon {
+    font-size: 14px;
+  }
+
+  .home-title {
+    font-size: 22px;
+  }
+
+  .card-grid {
+    gap: 20px;
+  }
+
+  .home-card {
+    height: 140px;
+  }
+}
+
+/* デスクトップ用デザイン (1025px以上) */
+@media (min-width: 1025px) {
+  .header {
+    padding: 0 48px;
+    height: 64px;
+  }
+
+  .header-logo {
+    font-size: 22px;
+  }
+
+  .header-nav {
+    gap: 32px;
+  }
+
+  .nav-link {
+    padding: 12px 16px;
+    font-size: 16px;
+  }
+
+  .nav-icon {
+    font-size: 18px;
+  }
+
+  .home-title {
+    font-size: 28px;
+  }
+
+  .card-grid {
+    gap: 24px;
+  }
+
+  .home-card {
+    height: 180px;
+    padding: 20px;
+  }
+
+  .train-status-header {
+    padding: 20px 24px;
+  }
+
+  .train-status-title {
+    gap: 12px;
+  }
+
+  .page-header {
+    padding: 20px 24px;
+  }
+
+  .page-title {
+    gap: 16px;
+  }
+
+  .page-title-icon {
+    font-size: 32px;
+  }
+
+  .page-title-text {
+    font-size: 24px;
+  }
+}
+
+/* 超大画面用デザイン (1440px以上) */
+@media (min-width: 1440px) {
+  .header {
+    padding: 0 64px;
+    height: 72px;
+  }
+
+  .header-logo {
+    font-size: 24px;
+  }
+
+  .header-nav {
+    gap: 40px;
+  }
+
+  .nav-link {
+    padding: 14px 20px;
+    font-size: 18px;
+  }
+
+  .nav-icon {
+    font-size: 20px;
+  }
+
+  .home-title {
+    font-size: 32px;
+  }
+
+  .card-grid {
+    gap: 32px;
+  }
+
+  .home-card {
+    height: 200px;
+    padding: 24px;
+  }
+
+  .train-status-header {
+    padding: 24px 32px;
+  }
+
+  .train-status-title {
+    gap: 16px;
+  }
+
+  .page-header {
+    padding: 24px 32px;
+  }
+
+  .page-title {
+    gap: 20px;
+  }
+
+  .page-title-icon {
+    font-size: 36px;
+  }
+
+  .page-title-text {
+    font-size: 28px;
+  }
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* 表示設定の機能実装 */
+
+/* ダークテーマ */
+[data-theme="dark"] {
+  --background: #121212;
+  --foreground: #ffffff;
+  --card-background: #1e1e1e;
+  --border-color: #333333;
+}
+
+[data-theme="dark"] body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+[data-theme="dark"] .home-card,
+[data-theme="dark"] .page-header,
+[data-theme="dark"] .mobile-nav {
+  background: var(--card-background);
+  border-color: var(--border-color);
+}
+
+/* フォントサイズ設定 */
+[data-font-size="small"] {
+  font-size: 14px;
+}
+
+[data-font-size="medium"] {
+  font-size: 16px;
+}
+
+[data-font-size="large"] {
+  font-size: 18px;
+}
+
+/* 高コントラストモード */
+[data-high-contrast="true"] {
+  --text-color: #000000;
+  --background-color: #ffffff;
+  --border-color: #000000;
+}
+
+[data-high-contrast="true"] body {
+  color: var(--text-color);
+  background: var(--background-color);
+}
+
+[data-high-contrast="true"] .home-card,
+[data-high-contrast="true"] .page-header,
+[data-high-contrast="true"] .mobile-nav {
+  border: 2px solid var(--border-color);
+}
+
+/* アニメーション軽減 */
+[data-reduced-motion="true"] * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+[data-reduced-motion="true"] .home-card:hover {
+  transform: none !important;
+}
+
+/* システムテーマ検出 */
+@media (prefers-color-scheme: dark) {
+  [data-auto-theme="true"] {
+    --background: #121212;
+    --foreground: #ffffff;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  [data-auto-theme="true"] {
+    --background: #ffffff;
+    --foreground: #000000;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* iPhoneのノッチエリア対応 */
+@supports (padding: max(0px)) {
+  body {
+    padding-top: max(0px, env(safe-area-inset-top));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* スタンドアロンモードでのヘッダー調整 */
+@media (display-mode: standalone) {
+  .header {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  main {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* PWAアプリの背景色を白に設定 */
+html {
+  background-color: #ffffff;
+}
+
+body {
+  background-color: #ffffff;
+}
+
+/* スタンドアロンモードでの背景色 */
+@media (display-mode: standalone) {
+  html {
+    background-color: #ffffff !important;
+  }
+  
+  body {
+    background-color: #ffffff !important;
+  }
+}
+

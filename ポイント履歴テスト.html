@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ポイント履歴APIテスト</title>
+    <style>
+        body { 
+            font-family: 'Arial', sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container { 
+            background: rgba(255,255,255,0.1); 
+            padding: 30px; 
+            border-radius: 15px; 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            color: #fff; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        button { 
+            background: linear-gradient(45deg, #4CAF50, #45a049); 
+            color: white; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            margin: 10px; 
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        button:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        .result { 
+            background: rgba(0,0,0,0.3); 
+            padding: 20px; 
+            border-radius: 8px; 
+            margin: 20px 0; 
+            border-left: 4px solid #4CAF50;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .error { 
+            border-left-color: #f44336; 
+            background: rgba(244, 67, 54, 0.1);
+        }
+        .success { 
+            border-left-color: #4CAF50; 
+            background: rgba(76, 175, 80, 0.1);
+        }
+        .info { 
+            background: rgba(33, 150, 243, 0.1); 
+            border-left-color: #2196F3; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin: 15px 0;
+        }
+        .step { 
+            background: rgba(255, 193, 7, 0.1); 
+            border-left: 4px solid #FFC107; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 ポイント履歴APIテスト</h1>
+        
+        <div class="info">
+            <h3>🔍 テスト手順</h3>
+            <div class="step">
+                <strong>1️⃣ ログイン確認:</strong> まずアプリにログインしてください<br>
+                <code>http://localhost:3000/login</code>
+            </div>
+            <div class="step">
+                <strong>2️⃣ APIテスト:</strong> 下のボタンでAPIをテスト<br>
+                認証が正常に働いているか確認します
+            </div>
+            <div class="step">
+                <strong>3️⃣ ページテスト:</strong> ポイント履歴ページをテスト<br>
+                <code>http://localhost:3000/profile/point-history</code>
+            </div>
+        </div>
+        
+        <button onclick="testPointHistory()">📊 ポイント履歴API テスト</button>
+        <button onclick="testProfile()">👤 プロフィールページを開く</button>
+        <button onclick="testPointHistoryPage()">📈 ポイント履歴ページを開く</button>
+        <button onclick="clearResults()">🗑️ 結果をクリア</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            const timestamp = new Date().toLocaleString('ja-JP');
+            resultDiv.innerHTML += `<div class="result ${type}">[${timestamp}] ${message}</div>`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+
+        async function testPointHistory() {
+            showResult('📊 ポイント履歴APIテスト開始...', 'info');
+            
+            try {
+                const response = await fetch('/api/point-history/', {
+                    method: 'GET',
+                    credentials: 'include', // 重要: クッキーを含める
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                showResult(`📡 レスポンス受信: ${response.status} ${response.statusText}`, 'info');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult(`✅ 成功: ポイント履歴取得完了\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    showResult(`❌ エラー [${response.status}]: ${JSON.stringify(errorData, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ ネットワークエラー: ${error.message}`, 'error');
+            }
+        }
+
+        function testProfile() {
+            showResult('👤 プロフィールページを開きます...', 'info');
+            window.open('/profile', '_blank');
+        }
+
+        function testPointHistoryPage() {
+            showResult('📈 ポイント履歴ページを開きます...', 'info');
+            window.open('/profile/point-history', '_blank');
+        }
+
+        function clearResults() {
+            document.getElementById('result').innerHTML = '';
+            showResult('🗑️ 結果をクリアしました', 'info');
+        }
+
+        // ページ読み込み時の初期メッセージ
+        window.onload = function() {
+            showResult('🚀 ポイント履歴APIテストページが読み込まれました', 'info');
+            showResult('💡 テスト前に http://localhost:3000/login でログインしてください', 'info');
+        };
+    </script>
+</body>
+</html>
