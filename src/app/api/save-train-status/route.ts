@@ -6,13 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
     
-    console.log('🚨 運行情報保存開始:', { 
-      lineId: data.lineId, 
-      status: data.status,
-      environment: process.env.NODE_ENV,
-      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasSupabaseKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    });
+    console.log('🚨 運行情報保存開始:', { lineId: data.lineId, status: data.status });
 
     // 現在のステータスを取得して変更を検知
     const { data: currentData, error: fetchError } = await supabase
@@ -35,19 +29,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Supabaseにデータを保存
-    console.log('💾 Supabase保存開始:', {
-      table: 'train_status',
-      data: {
-        line_id: data.lineId,
-        name: data.name,
-        status: data.status,
-        section: data.section || '',
-        detail: data.detail || '',
-        color: data.color || '#000000'
-      }
-    });
-
-    const { data: savedData, error } = await supabase
+    const { error } = await supabase
       .from('train_status')
       .upsert({
         line_id: data.lineId,
@@ -59,25 +41,12 @@ export async function POST(request: NextRequest) {
         updated_at: new Date().toISOString()
       }, {
         onConflict: 'line_id'
-      })
-      .select();
+      });
 
     if (error) {
-      console.error('❌ Supabase保存エラー:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
-      return NextResponse.json({ 
-        message: '保存失敗', 
-        error: error.message,
-        code: error.code,
-        details: error.details
-      }, { status: 500 });
+      console.error('Supabase error:', error);
+      return NextResponse.json({ message: '保存失敗', error: error.message }, { status: 500 });
     }
-
-    console.log('✅ Supabase保存成功:', savedData);
 
     // ステータスが変更された場合のみメール通知を送信
     if (hasChanged) {
@@ -105,11 +74,8 @@ export async function POST(request: NextRequest) {
       currentStatus: data.status
     });
   } catch (error) {
-    console.error('❌ 運行状況保存エラー:', error);
-    return NextResponse.json({ 
-      message: '保存失敗', 
-      error: error instanceof Error ? error.message : String(error)
-    }, { status: 500 });
+    console.error('Error saving train status:', error);
+    return NextResponse.json({ message: '保存失敗', error: String(error) }, { status: 500 });
   }
 }
 

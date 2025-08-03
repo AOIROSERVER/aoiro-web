@@ -166,12 +166,7 @@ export async function GET() {
   } catch (error) {
     console.error('❌ Unexpected error in train status API:', error);
     console.log('🔄 Using fallback data due to unexpected error');
-    return NextResponse.json({
-      error: 'サーバーエラーが発生しました',
-      details: error instanceof Error ? error.message : String(error),
-      fallback: true,
-      data: fallbackData
-    });
+    return NextResponse.json(fallbackData);
   }
 }
 

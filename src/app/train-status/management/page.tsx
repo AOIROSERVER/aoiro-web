@@ -140,44 +140,14 @@ export default function TrainStatusManagement() {
     try {
       // Supabase保存用にlineIdを明示的に付与
       const saveData = { ...editValues, lineId: editValues.id };
-      
-      // 通常のAPIを使用
-      const apiEndpoint = "/api/save-train-status";
-        
-      console.log('💾 保存API呼び出し:', {
-        endpoint: apiEndpoint,
-        environment: process.env.NODE_ENV,
-        data: saveData
-      });
-      
-      const response = await fetch(apiEndpoint, {
+      const response = await fetch("/api/save-train-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(saveData)
       });
-      
       if (!response.ok) {
-        let errorMessage = 'Unknown error';
-        try {
-          const errorData = await response.json();
-          console.error('❌ 保存APIエラー:', errorData);
-          errorMessage = errorData.message || errorData.error || 'Unknown error';
-        } catch (parseError) {
-          console.error('❌ レスポンスパースエラー:', parseError);
-          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-        }
-        throw new Error(`保存失敗: ${errorMessage}`);
+        throw new Error('Failed to save train status');
       }
-      
-      let result;
-      try {
-        result = await response.json();
-        console.log('✅ 保存成功:', result);
-      } catch (parseError) {
-        console.error('❌ 成功レスポンスパースエラー:', parseError);
-        throw new Error('レスポンスの解析に失敗しました');
-      }
-      
       // ローカルのlinesも更新（ソートを維持）
       const newLines = lines.map((l) => l.id === editId ? { ...editValues } : l);
       setLines(sortLines(newLines));
@@ -188,7 +158,7 @@ export default function TrainStatusManagement() {
       setMessage({ type: 'success', text: '運行情報を保存しました' });
     } catch (e) {
       console.error('Error saving train status:', e);
-      setMessage({ type: 'error', text: `運行情報の保存に失敗しました: ${e instanceof Error ? e.message : String(e)}` });
+      setMessage({ type: 'error', text: '運行情報の保存に失敗しました' });
     } finally {
       // setLoading(false); // この行は削除
     }
