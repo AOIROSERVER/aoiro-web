@@ -150,11 +150,11 @@ export default function MorePage() {
     } catch (error) {
       console.error('❌ ネットワークエラー:', error);
       console.error('❌ エラー詳細:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'No stack trace'
       });
-      alert(`送信に失敗しました: ${error.message}`);
+      alert(`送信に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsSendingPoints(false);
     }
@@ -479,7 +479,7 @@ export default function MorePage() {
                 console.log('個別取得した画像URL:', imageUrl);
               }
             } catch (error) {
-              console.error('個別メディア取得エラー:', error);
+              console.error('個別メディア取得エラー:', error instanceof Error ? error.message : String(error));
             }
           }
           
@@ -517,7 +517,7 @@ export default function MorePage() {
                 imageUrl = "https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png";
               }
             } catch (error) {
-              console.log('画像URLチェックエラー。デフォルト画像を使用:', error);
+              console.log('画像URLチェックエラー。デフォルト画像を使用:', error instanceof Error ? error.message : String(error));
               imageUrl = "https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png";
             }
           } else if (!imageUrl) {
@@ -565,7 +565,7 @@ export default function MorePage() {
         ]);
       }
     } catch (error) {
-      console.error('❌ Error fetching latest news:', error);
+      console.error('❌ Error fetching latest news:', error instanceof Error ? error.message : String(error));
       // エラー時もフォールバックデータを表示
       setNews([
         {
@@ -646,7 +646,7 @@ export default function MorePage() {
         setBonusMessage("ログインボーナスの取得に失敗しました");
       }
     } catch (error) {
-      console.error('❌ Login bonus fetch error:', error);
+      console.error('❌ Login bonus fetch error:', error instanceof Error ? error.message : String(error));
       setBonusMessage("ログインボーナスの取得中にエラーが発生しました");
     } finally {
       setBonusLoading(false);
@@ -866,7 +866,7 @@ export default function MorePage() {
           setQuests(mockQuests);
         }
       } catch (error) {
-        console.error('❌ クエスト取得エラー:', error);
+        console.error('❌ クエスト取得エラー:', error instanceof Error ? error.message : String(error));
         console.error('🔍 エラー詳細:', error instanceof Error ? error.message : 'Unknown error');
         
         // 管理者の場合はエラー時でもモックデータを表示
@@ -1026,7 +1026,7 @@ export default function MorePage() {
           message: data.message
         });
       } catch (error) {
-        console.error('❌ Initial bonus check fetch error:', error);
+        console.error('❌ Initial bonus check fetch error:', error instanceof Error ? error.message : String(error));
       }
     };
     checkBonus();
@@ -1073,7 +1073,7 @@ export default function MorePage() {
               }
             }
           } catch (error) {
-            console.error('❌ Error rechecking bonus status:', error);
+            console.error('❌ Error rechecking bonus status:', error instanceof Error ? error.message : String(error));
           }
         };
         checkBonus();
@@ -1125,7 +1125,7 @@ export default function MorePage() {
           setUserPoints(null);
         }
       } catch (error) {
-        console.error('❌ Profile fetch error:', error);
+        console.error('❌ Profile fetch error:', error instanceof Error ? error.message : String(error));
         setUserPoints(null);
       }
     };
