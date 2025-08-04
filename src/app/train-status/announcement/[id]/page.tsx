@@ -28,7 +28,7 @@ export default function AnnouncementDetailPage() {
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        const response = await fetch(`/api/announcements/${params.id}`);
+        const response = await fetch(`/api/announcements/${params?.id}`);
         if (!response.ok) throw new Error('お知らせの取得に失敗しました');
         const data = await response.json();
         setAnnouncement(data);
@@ -40,7 +40,7 @@ export default function AnnouncementDetailPage() {
       }
     };
 
-    if (params.id) {
+    if (params?.id) {
       fetchAnnouncement();
     }
   }, [params.id]);
