@@ -5,7 +5,7 @@ import { Box, Typography, IconButton, CircularProgress, Accordion, AccordionSumm
 import { Train, Settings, ExpandMore, Edit, Save, Cancel, Add, Announcement, Delete } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useServerStatus } from '../../contexts/ServerStatusContext';
-import { detectAndConvertLinks } from '../../lib/linkDetector';
+import { detectAndConvertLinks } from '../../lib/linkDetector.tsx';
 
 // スマホ版かどうかを判定する関数
 const isMobile = () => {
@@ -97,13 +97,7 @@ export default function TrainStatusPage() {
     map?: string | null;
   }>({ online: false, responseTime: null });
   const [expanded, setExpanded] = useState<string | false>(false);
-  const [announcements, setAnnouncements] = useState<{
-    id: number;
-    title: string;
-    content: string;
-    date: string;
-    tags: string[];
-  }[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const [editingAnnouncement, setEditingAnnouncement] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
@@ -725,9 +719,9 @@ export default function TrainStatusPage() {
                       }}>
                         {detectAndConvertLinks(announcement.content)}
                       </Typography>
-                      {announcement.tags && Array.isArray(announcement.tags) && announcement.tags.length > 0 && (
+                      {announcement.tags && announcement.tags.length > 0 && (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {announcement.tags.map((tag: string, index: number) => (
+                          {announcement.tags.map((tag, index) => (
                             <Box
                               key={index}
                               sx={{

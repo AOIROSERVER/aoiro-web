@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Box, Typography, IconButton, Card, Chip } from '@mui/material';
 import { ArrowBack, Edit, Save, Cancel, Delete } from '@mui/icons-material';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { detectAndConvertLinks } from '../../../../lib/linkDetector';
+import { detectAndConvertLinks } from '../../../../lib/linkDetector.tsx';
 
 // お知らせの型定義
 interface Announcement {
@@ -28,7 +28,7 @@ export default function AnnouncementDetailPage() {
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        const response = await fetch(`/api/announcements/${params?.id}`);
+        const response = await fetch(`/api/announcements/${params.id}`);
         if (!response.ok) throw new Error('お知らせの取得に失敗しました');
         const data = await response.json();
         setAnnouncement(data);
@@ -40,36 +40,21 @@ export default function AnnouncementDetailPage() {
       }
     };
 
-    if (params?.id) {
+    if (params.id) {
       fetchAnnouncement();
     }
-  }, [params?.id]);
+  }, [params.id]);
 
-  const handleSave = async () => {
-    if (!announcement) return;
-    
-    try {
+  const handleSave = () => {
+    if (announcement) {
       const tags = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      const response = await fetch(`/api/announcements/${announcement.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: editTitle,
-          content: editContent,
-          date: announcement.date,
-          tags
-        }),
+      setAnnouncement({
+        ...announcement,
+        title: editTitle,
+        content: editContent,
+        tags
       });
-
-      if (!response.ok) throw new Error('お知らせの更新に失敗しました');
-
-      const updatedData = await response.json();
-      setAnnouncement(updatedData);
       setIsEditing(false);
-    } catch (error) {
-      console.error('お知らせの更新エラー:', error);
     }
   };
 
