@@ -4,7 +4,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Box, Typography, IconButton, Card, Chip } from '@mui/material';
 import { ArrowBack, Edit, Save, Cancel, Delete } from '@mui/icons-material';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { detectAndConvertLinks } from '../../../../lib/linkDetector.tsx';
+import { detectAndConvertLinks } from '../../../../lib/linkDetector';
 
 // お知らせの型定義
 interface Announcement {
