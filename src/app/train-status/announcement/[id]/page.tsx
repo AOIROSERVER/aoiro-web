@@ -43,18 +43,33 @@ export default function AnnouncementDetailPage() {
     if (params?.id) {
       fetchAnnouncement();
     }
-  }, [params.id]);
+  }, [params?.id]);
 
-  const handleSave = () => {
-    if (announcement) {
+  const handleSave = async () => {
+    if (!announcement) return;
+    
+    try {
       const tags = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      setAnnouncement({
-        ...announcement,
-        title: editTitle,
-        content: editContent,
-        tags
+      const response = await fetch(`/api/announcements/${announcement.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          date: announcement.date,
+          tags
+        }),
       });
+
+      if (!response.ok) throw new Error('お知らせの更新に失敗しました');
+
+      const updatedData = await response.json();
+      setAnnouncement(updatedData);
       setIsEditing(false);
+    } catch (error) {
+      console.error('お知らせの更新エラー:', error);
     }
   };
 
