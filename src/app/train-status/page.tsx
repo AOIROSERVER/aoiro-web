@@ -721,7 +721,7 @@ export default function TrainStatusPage() {
                       </Typography>
                       {announcement.tags && announcement.tags.length > 0 && (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                          {announcement.tags.map((tag, index) => (
+                          {announcement.tags.map((tag: string, index: number) => (
                             <Box
                               key={index}
                               sx={{
