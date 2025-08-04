@@ -97,7 +97,13 @@ export default function TrainStatusPage() {
     map?: string | null;
   }>({ online: false, responseTime: null });
   const [expanded, setExpanded] = useState<string | false>(false);
-  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<{
+    id: number;
+    title: string;
+    content: string;
+    date: string;
+    tags: string[];
+  }[]>([]);
   const [editingAnnouncement, setEditingAnnouncement] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editContent, setEditContent] = useState('');
@@ -719,7 +725,7 @@ export default function TrainStatusPage() {
                       }}>
                         {detectAndConvertLinks(announcement.content)}
                       </Typography>
-                      {announcement.tags && announcement.tags.length > 0 && (
+                      {announcement.tags && Array.isArray(announcement.tags) && announcement.tags.length > 0 && (
                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                           {announcement.tags.map((tag: string, index: number) => (
                             <Box
