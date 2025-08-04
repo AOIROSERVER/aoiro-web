@@ -1,10 +1,11 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Typography, IconButton, CircularProgress } from '@mui/material';
-import { Train, Settings } from '@mui/icons-material';
+import { Box, Typography, IconButton, CircularProgress, Accordion, AccordionSummary, AccordionDetails, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Chip } from '@mui/material';
+import { Train, Settings, ExpandMore, Edit, Save, Cancel, Add, Announcement, Delete } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useServerStatus } from '../../contexts/ServerStatusContext';
+import { detectAndConvertLinks } from '../../lib/linkDetector.tsx';
 
 // スマホ版かどうかを判定する関数
 const isMobile = () => {
@@ -95,6 +96,19 @@ export default function TrainStatusPage() {
     gamemode?: string | null;
     map?: string | null;
   }>({ online: false, responseTime: null });
+  const [expanded, setExpanded] = useState<string | false>(false);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newAnnouncement, setNewAnnouncement] = useState({
+    title: '',
+    content: '',
+    date: new Date().toISOString().split('T')[0],
+    tags: ''
+  });
   const { loading, isAdmin, user, session } = useAuth();
 
   // サーバー状況をチェックする関数
@@ -403,6 +417,74 @@ export default function TrainStatusPage() {
     fetchLines();
   }, []);
 
+  // お知らせを取得する関数
+  const fetchAnnouncements = async () => {
+    try {
+      const response = await fetch('/api/announcements');
+      if (!response.ok) throw new Error('お知らせの取得に失敗しました');
+      const data = await response.json();
+      setAnnouncements(data);
+    } catch (error) {
+      console.error('お知らせの取得エラー:', error);
+    }
+  };
+
+  // お知らせを取得
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  // 新しいお知らせを追加する関数
+  const handleAddAnnouncement = async () => {
+    try {
+      const tags = newAnnouncement.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      const response = await fetch('/api/announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newAnnouncement.title,
+          content: newAnnouncement.content,
+          date: newAnnouncement.date,
+          tags
+        }),
+      });
+
+      if (!response.ok) throw new Error('お知らせの作成に失敗しました');
+
+      // お知らせを再取得
+      await fetchAnnouncements();
+      setIsAddDialogOpen(false);
+      setNewAnnouncement({
+        title: '',
+        content: '',
+        date: new Date().toISOString().split('T')[0],
+        tags: ''
+      });
+    } catch (error) {
+      console.error('お知らせの作成エラー:', error);
+    }
+  };
+
+  // お知らせを削除する関数
+  const handleDeleteAnnouncement = async (announcementId: number) => {
+    if (!confirm('このお知らせを削除しますか？')) return;
+    
+    try {
+      const response = await fetch(`/api/announcements/${announcementId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('お知らせの削除に失敗しました');
+
+      // お知らせを再取得
+      await fetchAnnouncements();
+    } catch (error) {
+      console.error('お知らせの削除エラー:', error);
+    }
+  };
+
   // サーバー状況を定期的にチェック
   useEffect(() => {
     checkServerStatus();
@@ -430,6 +512,293 @@ export default function TrainStatusPage() {
             <Settings />
           </IconButton>
         )}
+      </Box>
+
+      {/* お知らせアコーディオン */}
+      <Box sx={{ px: 2, mt: 2, mb: 2 }}>
+        <Accordion 
+          expanded={expanded === 'panel1'} 
+          onChange={(event, isExpanded) => setExpanded(isExpanded ? 'panel1' : false)}
+          sx={{
+            background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+            color: '#e65100',
+            borderRadius: 3,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+            border: '1px solid #ffcc02',
+            '&:before': {
+              display: 'none',
+            },
+            '&.Mui-expanded': {
+              margin: 0,
+            }
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMore sx={{ color: '#e65100' }} />}
+            sx={{
+              '& .MuiAccordionSummary-content': {
+                margin: 0,
+              },
+              '&.Mui-expanded': {
+                minHeight: '48px',
+              }
+            }}
+          >
+            <Box sx={{ 
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flex: 1
+            }}>
+              <span style={{ fontSize: '1.1rem' }}>📢</span>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 600,
+                fontSize: '1rem'
+              }}>
+                お知らせ ({announcements.length}件)
+              </Typography>
+              {isAdmin && (
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsAddDialogOpen(true);
+                  }}
+                  sx={{ 
+                    ml: 'auto',
+                    color: '#e65100',
+                    '&:hover': { backgroundColor: 'rgba(230, 81, 0, 0.1)' }
+                  }}
+                >
+                  <Add />
+                </IconButton>
+              )}
+            </Box>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 0, pb: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {announcements.map((announcement) => (
+                <Box key={announcement.id} sx={{
+                  background: 'rgba(255, 255, 255, 0.5)',
+                  borderRadius: 2,
+                  p: 2,
+                  border: '1px solid rgba(255, 193, 7, 0.3)',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
+                  }
+                }}
+                onClick={() => router.push(`/train-status/announcement/${announcement.id}`)}>
+                  {editingAnnouncement === announcement.id ? (
+                    // 編集モード
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={editTitle}
+                        onChange={(e) => setEditTitle(e.target.value)}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            '& fieldset': {
+                              borderColor: 'rgba(255, 193, 7, 0.5)',
+                            },
+                          }
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        size="small"
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            '& fieldset': {
+                              borderColor: 'rgba(255, 193, 7, 0.5)',
+                            },
+                          }
+                        }}
+                      />
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={editTags}
+                        onChange={(e) => setEditTags(e.target.value)}
+                        placeholder="タグをカンマ区切りで入力（例: 重要,工事,運行変更）"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            '& fieldset': {
+                              borderColor: 'rgba(255, 193, 7, 0.5)',
+                            },
+                          }
+                        }}
+                      />
+                      <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        <Button
+                          size="small"
+                          startIcon={<Save />}
+                          onClick={async () => {
+                            try {
+                              const tags = editTags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+                              const response = await fetch(`/api/announcements/${announcement.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                  title: editTitle,
+                                  content: editContent,
+                                  date: announcement.date,
+                                  tags
+                                }),
+                              });
+
+                              if (!response.ok) throw new Error('お知らせの更新に失敗しました');
+
+                              // 更新されたお知らせを再取得
+                              await fetchAnnouncements();
+                              setEditingAnnouncement(null);
+                              setEditTitle('');
+                              setEditContent('');
+                              setEditTags('');
+                            } catch (error) {
+                              console.error('お知らせの更新エラー:', error);
+                            }
+                          }}
+                          sx={{ 
+                            backgroundColor: 'rgba(76, 175, 80, 0.8)',
+                            color: 'white',
+                            '&:hover': { backgroundColor: 'rgba(76, 175, 80, 0.9)' }
+                          }}
+                        >
+                          保存
+                        </Button>
+                        <Button
+                          size="small"
+                          startIcon={<Cancel />}
+                          onClick={() => {
+                            setEditingAnnouncement(null);
+                            setEditTitle('');
+                            setEditContent('');
+                            setEditTags('');
+                          }}
+                          sx={{ 
+                            backgroundColor: 'rgba(244, 67, 54, 0.8)',
+                            color: 'white',
+                            '&:hover': { backgroundColor: 'rgba(244, 67, 54, 0.9)' }
+                          }}
+                        >
+                          キャンセル
+                        </Button>
+                      </Box>
+                    </Box>
+                  ) : (
+                    // 表示モード
+                    <>
+                      <Typography variant="subtitle2" sx={{ 
+                        fontWeight: 600, 
+                        mb: 1,
+                        fontSize: '0.9rem',
+                        color: '#e65100'
+                      }}>
+                        {announcement.title}
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        fontSize: '0.85rem',
+                        lineHeight: 1.5,
+                        opacity: 0.8,
+                        color: '#e65100',
+                        mb: 1
+                      }}>
+                        {detectAndConvertLinks(announcement.content)}
+                      </Typography>
+                      {announcement.tags && announcement.tags.length > 0 && (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {announcement.tags.map((tag, index) => (
+                            <Box
+                              key={index}
+                              sx={{
+                                px: 1,
+                                py: 0.3,
+                                borderRadius: 1,
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                backgroundColor: tag === '重要' ? 'rgba(244, 67, 54, 0.2)' : 
+                                               tag === '工事' ? 'rgba(255, 152, 0, 0.2)' :
+                                               tag === '運行変更' ? 'rgba(156, 39, 176, 0.2)' :
+                                               'rgba(76, 175, 80, 0.2)',
+                                color: tag === '重要' ? '#d32f2f' : 
+                                       tag === '工事' ? '#f57c00' :
+                                       tag === '運行変更' ? '#7b1fa2' :
+                                       '#2e7d32',
+                                border: `1px solid ${tag === '重要' ? 'rgba(244, 67, 54, 0.3)' : 
+                                                   tag === '工事' ? 'rgba(255, 152, 0, 0.3)' :
+                                                   tag === '運行変更' ? 'rgba(156, 39, 176, 0.3)' :
+                                                   'rgba(76, 175, 80, 0.3)'}`
+                              }}
+                            >
+                              {tag}
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                                              {isAdmin && (
+                        <Box sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          display: 'flex',
+                          gap: 0.5
+                        }}>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation(); // 親要素のクリックイベントを停止
+                              setEditingAnnouncement(announcement.id);
+                              setEditTitle(announcement.title);
+                              setEditContent(announcement.content);
+                              setEditTags(announcement.tags ? announcement.tags.join(', ') : '');
+                            }}
+                            sx={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                              '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.9)' }
+                            }}
+                          >
+                            <Edit sx={{ fontSize: 16 }} />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation(); // 親要素のクリックイベントを停止
+                              handleDeleteAnnouncement(announcement.id);
+                            }}
+                            sx={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                              color: '#d32f2f',
+                              '&:hover': { 
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                color: '#b71c1c'
+                              }
+                            }}
+                          >
+                            <Delete sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Box>
+                      )}
+                    </>
+                  )}
+                </Box>
+              ))}
+            </Box>
+          </AccordionDetails>
+        </Accordion>
       </Box>
 
       {/* 路線図カード */}
@@ -478,6 +847,67 @@ export default function TrainStatusPage() {
           )}
         </Box>
       </Box>
+
+      {/* 注意書きカード */}
+      <Box sx={{ px: 2, mt: 2, mb: 2 }}>
+        <Box sx={{
+          background: 'linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 50%, #c8e6c9 100%)',
+          borderRadius: 4,
+          boxShadow: '0 4px 16px rgba(76, 175, 80, 0.15)',
+          p: 3,
+          border: '1px solid rgba(76, 175, 80, 0.3)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* 装飾的な背景要素 */}
+          <Box sx={{
+            position: 'absolute',
+            top: -20,
+            right: -20,
+            width: 60,
+            height: 60,
+            background: 'rgba(76, 175, 80, 0.1)',
+            borderRadius: '50%',
+            zIndex: 0
+          }} />
+          <Box sx={{
+            position: 'absolute',
+            bottom: -15,
+            left: -15,
+            width: 40,
+            height: 40,
+            background: 'rgba(76, 175, 80, 0.08)',
+            borderRadius: '50%',
+            zIndex: 0
+          }} />
+          
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+
+            <Typography variant="body2" sx={{ 
+              color: '#2e7d32', 
+              textAlign: 'center',
+              fontSize: '1rem',
+              lineHeight: 1.6,
+              opacity: 0.9,
+              fontWeight: 500
+            }}>
+              AOIROSERVERはJRと一切関係がありません
+            </Typography>
+            <Typography variant="body2" sx={{ 
+              color: '#2e7d32', 
+              textAlign: 'center',
+              fontSize: '0.9rem',
+              lineHeight: 1.5,
+              opacity: 0.8,
+              fontWeight: 400,
+              mt: 1
+            }}>
+              ここに書かれている路線や駅、列車走行位置などは全てAOIROSERVER内にあるものを表示しています
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
       {/* 路線リスト */}
       <Box sx={{ px: 2, pb: 2, flex: 1 }}>
         {lines.map((line, idx) => {
@@ -488,6 +918,12 @@ export default function TrainStatusPage() {
           if (line.id === 'CA') {
             finalColor = '#0033cb';
             console.log('東海道新幹線の色を強制設定:', finalColor);
+          }
+          
+          // 京浜東北線の場合は強制的に色を設定
+          if (line.id === 'JK') {
+            finalColor = '#00b2e5';
+            console.log('京浜東北線の色を強制設定:', finalColor);
           }
           
           console.log(`路線 ${line.id} (${line.name}):`, {
@@ -550,6 +986,79 @@ export default function TrainStatusPage() {
           );
         })}
       </Box>
+
+      {/* お知らせ追加ダイアログ */}
+      <Dialog 
+        open={isAddDialogOpen} 
+        onClose={() => setIsAddDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          background: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
+          color: '#e65100',
+          fontWeight: 600
+        }}>
+          新しいお知らせを追加
+        </DialogTitle>
+        <DialogContent sx={{ pt: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <TextField
+              label="タイトル"
+              value={newAnnouncement.title}
+              onChange={(e) => setNewAnnouncement({...newAnnouncement, title: e.target.value})}
+              fullWidth
+              required
+            />
+            <TextField
+              label="日付"
+              type="date"
+              value={newAnnouncement.date}
+              onChange={(e) => setNewAnnouncement({...newAnnouncement, date: e.target.value})}
+              fullWidth
+              required
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="タグ（カンマ区切り）"
+              value={newAnnouncement.tags}
+              onChange={(e) => setNewAnnouncement({...newAnnouncement, tags: e.target.value})}
+              fullWidth
+              placeholder="例: 重要, 工事, 運行変更"
+            />
+            <TextField
+              label="内容"
+              value={newAnnouncement.content}
+              onChange={(e) => setNewAnnouncement({...newAnnouncement, content: e.target.value})}
+              fullWidth
+              multiline
+              rows={6}
+              required
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button 
+            onClick={() => setIsAddDialogOpen(false)}
+            variant="outlined"
+          >
+            キャンセル
+          </Button>
+          <Button 
+            onClick={handleAddAnnouncement}
+            variant="contained"
+            disabled={!newAnnouncement.title || !newAnnouncement.content || !newAnnouncement.date}
+            sx={{
+              background: 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #f57c00 0%, #ef6c00 100%)'
+              }
+            }}
+          >
+            追加
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 } 
