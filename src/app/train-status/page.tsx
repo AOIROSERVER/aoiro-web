@@ -5,7 +5,7 @@ import { Box, Typography, IconButton, CircularProgress, Accordion, AccordionSumm
 import { Train, Settings, ExpandMore, Edit, Save, Cancel, Add, Announcement, Delete } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useServerStatus } from '../../contexts/ServerStatusContext';
-import { detectAndConvertLinks } from '../../lib/linkDetector.tsx';
+import { detectAndConvertLinks } from '../../lib/linkDetector';
 
 // スマホ版かどうかを判定する関数
 const isMobile = () => {
