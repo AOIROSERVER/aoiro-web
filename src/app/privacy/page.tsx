@@ -140,7 +140,7 @@ export default function PrivacyPage() {
           </Typography>
           <Box sx={{ color: '#333', pl: 2 }}>
             <Typography sx={{ mb: 1 }}>
-              <strong>メール:</strong> aoiroserver@gmail.com
+              <strong>お問い合わせ:</strong> <a href="https://aoiroserver.site/contact/" target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2' }}>お問い合わせフォーム</a>
             </Typography>
             <Typography>
               <strong>Discord:</strong> <a href="https://discord.com/invite/U9DVtc2y5J" target="_blank" rel="noopener noreferrer" style={{ color: '#1976d2' }}>サーバーに参加</a>

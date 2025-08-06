@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: process.env.EMAIL_USER || 'aoiroserver@gmail.com',
+        user: process.env.EMAIL_USER || 'aoiroserver.m@gmail.com',
         pass: process.env.EMAIL_PASS || '',
       },
     });
@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
 
     // 管理者宛のメール内容
     const adminMailOptions = {
-      from: process.env.EMAIL_USER || 'aoiroserver@gmail.com',
-      to: 'aoiroserver@gmail.com',
+      from: process.env.EMAIL_USER || 'aoiroserver.m@gmail.com',
+      to: 'aoiroserver.m@gmail.com',
       subject: `[クエスト報告] ${questTitle}`,
       html: `
         <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // 報告者宛の自動返信メール内容
     const autoReplyMailOptions = {
-      from: process.env.EMAIL_USER || 'aoiroserver@gmail.com',
+      from: process.env.EMAIL_USER || 'aoiroserver.m@gmail.com',
       to: userEmail,
       subject: '[AOIROSERVER] クエスト報告を受け付けました',
       html: `
