@@ -31,6 +31,13 @@ function RegisterContent() {
   const [discordSuccessMessage, setDiscordSuccessMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Minecraft認証用の状態
+  const [showMinecraftAuth, setShowMinecraftAuth] = useState(false);
+  const [minecraftId, setMinecraftId] = useState("");
+  const [minecraftAuthLoading, setMinecraftAuthLoading] = useState(false);
+  const [minecraftAuthSuccess, setMinecraftAuthSuccess] = useState(false);
+  
   const { supabase } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -218,7 +225,101 @@ function RegisterContent() {
     }
   };
 
+  // Minecraft認証処理
+  const handleMinecraftAuth = async () => {
+    if (!minecraftId.trim()) {
+      setError('Minecraft IDを入力してください');
+      return;
+    }
 
+    setMinecraftAuthLoading(true);
+    setError(null);
+
+    try {
+      console.log('🔄 Starting Minecraft ID verification...');
+      
+      // Minecraft IDの存在確認
+      const verifyResponse = await fetch('/api/verify-minecraft-id', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          minecraftId: minecraftId.trim(),
+          discordUserId: discordId,
+          discordUsername: discordUsername,
+        }),
+      });
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyResponse.ok) {
+        throw new Error(verifyData.error || 'Minecraft ID認証に失敗しました');
+      }
+
+      if (!verifyData.exists) {
+        setError('指定されたMinecraft IDは存在しません。正確なIDを入力してください。');
+        return;
+      }
+
+      console.log('✅ Minecraft ID verified successfully');
+
+      // Discord認定メンバーロール付与
+      const roleResponse = await fetch('/api/assign-discord-role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          discordUserId: discordId,
+          minecraftId: minecraftId.trim(),
+        }),
+      });
+
+      const roleData = await roleResponse.json();
+
+      if (!roleResponse.ok) {
+        throw new Error(roleData.error || 'Discord ロール付与に失敗しました');
+      }
+
+      console.log('✅ Discord role assigned successfully');
+
+      // Googleスプレッドシートに記録（一時無効化）
+      try {
+        const sheetResponse = await fetch('/api/record-minecraft-auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            minecraftId: minecraftId.trim(),
+            discordUserId: discordId,
+            discordUsername: discordUsername,
+            discordGlobalName: discordUsername,
+          }),
+        });
+
+        if (sheetResponse.ok) {
+          const sheetData = await sheetResponse.json();
+          if (sheetData.disabled) {
+            console.log('ℹ️ Google Sheets機能は現在無効化されています');
+          } else {
+            console.log('✅ Record saved to Google Sheets successfully');
+          }
+        }
+      } catch (sheetError) {
+        console.warn('⚠️ Google Sheets記録でエラーが発生しましたが、認証は成功しました:', sheetError);
+      }
+
+      setMinecraftAuthSuccess(true);
+
+    } catch (err: any) {
+      console.error('❌ Minecraft auth error:', err);
+      setError(err.message);
+    } finally {
+      setMinecraftAuthLoading(false);
+    }
+  };
 
   return (
     <Box
@@ -447,7 +548,124 @@ function RegisterContent() {
                 </Box>
               </Fade>
 
+              {/* Minecraft認証セクション（Discord連携後に表示） */}
+              {discordLinked && !minecraftAuthSuccess && (
+                <Fade in={true} timeout={1200}>
+                  <Box sx={{ width: '100%', mb: 3 }}>
+                    <Typography 
+                      variant="h6" 
+                      fontWeight="bold" 
+                      sx={{ color: '#4CAF50', mb: 2 }}
+                    >
+                      🎮 Minecraft ID認証（オプション）
+                    </Typography>
+                    
+                    <Box sx={{ 
+                      p: 3, 
+                      bgcolor: 'rgba(76, 175, 80, 0.05)', 
+                      borderRadius: 2,
+                      border: '2px solid #4CAF50',
+                      mb: 2
+                    }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Minecraft IDを認証すると、AOIROSERVERの認定メンバーロールが付与されます。
+                      </Typography>
+                      
+                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-end', flexDirection: { xs: 'column', sm: 'row' } }}>
+                        <Box sx={{ flexGrow: 1, width: { xs: '100%', sm: 'auto' } }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Minecraft ID
+                          </Typography>
+                          <input
+                            type="text"
+                            value={minecraftId}
+                            onChange={(e) => setMinecraftId(e.target.value)}
+                            placeholder="あなたのMinecraft IDを入力"
+                            style={{
+                              width: '100%',
+                              padding: '12px',
+                              border: '2px solid #e0e0e0',
+                              borderRadius: '8px',
+                              fontSize: '16px',
+                              outline: 'none',
+                              transition: 'border-color 0.2s',
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#4CAF50'}
+                            onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                            disabled={minecraftAuthLoading}
+                          />
+                        </Box>
+                        
+                        <Button
+                          variant="contained"
+                          onClick={handleMinecraftAuth}
+                          disabled={minecraftAuthLoading || !minecraftId.trim()}
+                          sx={{
+                            px: 3,
+                            py: 1.5,
+                            minWidth: '120px',
+                            width: { xs: '100%', sm: 'auto' },
+                            backgroundColor: '#4CAF50',
+                            '&:hover': {
+                              backgroundColor: '#45a049',
+                            },
+                            '&:disabled': {
+                              backgroundColor: '#e0e0e0',
+                            }
+                          }}
+                        >
+                          {minecraftAuthLoading ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ 
+                                width: 16, 
+                                height: 16, 
+                                border: '2px solid #fff', 
+                                borderTop: '2px solid transparent',
+                                borderRadius: '50%',
+                                animation: 'spin 1s linear infinite',
+                                '@keyframes spin': {
+                                  '0%': { transform: 'rotate(0deg)' },
+                                  '100%': { transform: 'rotate(360deg)' },
+                                }
+                              }} />
+                              認証中
+                            </Box>
+                          ) : (
+                            '認証する'
+                          )}
+                        </Button>
+                      </Box>
+                      
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        ※ この手順はスキップしても AOIRO ID の作成は完了します
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Fade>
+              )}
 
+              {/* Minecraft認証完了メッセージ */}
+              {minecraftAuthSuccess && (
+                <Fade in={true} timeout={800}>
+                  <Box sx={{ 
+                    width: '100%', 
+                    mb: 3,
+                    p: 3, 
+                    bgcolor: 'rgba(76, 175, 80, 0.1)', 
+                    borderRadius: 2,
+                    border: '2px solid #4CAF50',
+                    textAlign: 'center'
+                  }}>
+                    <Box sx={{ fontSize: '3rem', mb: 2 }}>🎉</Box>
+                    <Typography variant="h6" color="success.main" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      Minecraft認証完了！
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Minecraft ID「{minecraftId}」が認証され、Discord認定メンバーロールが付与されました。
+                    </Typography>
+                  </Box>
+                </Fade>
+              )}
 
               {/* 注意事項 */}
               <Fade in={true} timeout={2000}>
