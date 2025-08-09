@@ -12,11 +12,12 @@ DISCORD_SERVER_ID=your_discord_server_id
 DISCORD_MEMBER_ROLE_ID=your_member_role_id
 ```
 
-### Google Sheets設定（オプション）
+### Google Sheets設定（現在無効化中）
 ```env
-GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"..."}
-GOOGLE_SPREADSHEET_ID=your_spreadsheet_id
+# GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"..."}
+# GOOGLE_SPREADSHEET_ID=your_spreadsheet_id
 ```
+**注意**: Google Sheets連携機能は現在、Netlifyの環境変数サイズ制限（4KB）により一時的に無効化されています。
 
 ## 1. Discord Bot設定
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
+// import { google } from 'googleapis'; // 一時的に無効化してNetlifyの環境変数制限を回避
 
 // 動的レンダリングを強制（Netlify対応）
 export const dynamic = 'force-dynamic';
@@ -40,6 +40,16 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+      // Google Sheets機能は一時的に無効化
+      console.log('📝 Google Sheets機能は現在無効化されています（Netlify制限対応）');
+      
+      return NextResponse.json({
+        success: true,
+        disabled: true,
+        message: 'Google Sheets機能は一時的に無効化されています'
+      });
+      
+      /*
       // Google Sheets APIクライアントを初期化
       const serviceAccountKey = JSON.parse(googleServiceAccount);
       const auth = new google.auth.GoogleAuth({
@@ -47,8 +57,9 @@ export async function POST(request: NextRequest) {
         scopes: ['https://www.googleapis.com/auth/spreadsheets'],
       });
 
-      const sheets = google.sheets({ version: 'v4', auth });
+      const sheets = google.sheets({ version: 'v4', auth });*/
 
+      /*
       // 現在の日時を取得
       const timestamp = new Date().toLocaleString('ja-JP', {
         timeZone: 'Asia/Tokyo',
@@ -133,6 +144,7 @@ export async function POST(request: NextRequest) {
         spreadsheetId: spreadsheetId,
         updatedRange: appendResponse.data.updates?.updatedRange
       });
+      */
 
     } catch (sheetsError) {
       console.error('❌ Google Sheets API error:', sheetsError);

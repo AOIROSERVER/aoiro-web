@@ -132,24 +132,33 @@ function MinecraftAuthContent({ timestamp }: Props) {
 
       console.log('✅ Discord role assigned successfully');
 
-      // Googleスプレッドシートに記録
-      const sheetResponse = await fetch('/api/record-minecraft-auth', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          minecraftId: minecraftId.trim(),
-          discordUserId: discordUser?.id,
-          discordUsername: discordUser?.username,
-          discordGlobalName: discordUser?.global_name,
-        }),
-      });
+      // Googleスプレッドシートに記録（一時的に無効化）
+      try {
+        const sheetResponse = await fetch('/api/record-minecraft-auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            minecraftId: minecraftId.trim(),
+            discordUserId: discordUser?.id,
+            discordUsername: discordUser?.username,
+            discordGlobalName: discordUser?.global_name,
+          }),
+        });
 
-      if (sheetResponse.ok) {
-        console.log('✅ Record saved to Google Sheets successfully');
-      } else {
-        console.warn('⚠️ Failed to save to Google Sheets, but auth was successful');
+        if (sheetResponse.ok) {
+          const sheetData = await sheetResponse.json();
+          if (sheetData.disabled) {
+            console.log('ℹ️ Google Sheets機能は現在無効化されています');
+          } else {
+            console.log('✅ Record saved to Google Sheets successfully');
+          }
+        } else {
+          console.warn('⚠️ Failed to save to Google Sheets, but auth was successful');
+        }
+      } catch (sheetError) {
+        console.warn('⚠️ Google Sheets記録でエラーが発生しましたが、認証は成功しました:', sheetError);
       }
 
       setSuccess(`認証が完了しました！Minecraft ID「${minecraftId}」がDiscordアカウントに紐付けられ、認定メンバーロールが付与されました。`);
