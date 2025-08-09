@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
+// 動的レンダリングを強制（Netlify対応）
+export const dynamic = 'force-dynamic';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 

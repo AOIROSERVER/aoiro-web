@@ -20,13 +20,6 @@ export const metadata = {
     statusBarStyle: "default",
     title: "AOIROSERVERアプリ",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-    viewportFit: "cover",
-  },
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
@@ -35,6 +28,16 @@ export const metadata = {
     "theme-color": "#ffffff",
   },
 };
+
+export function generateViewport() {
+  return {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+    viewportFit: "cover",
+  };
+}
 
 export default function RootLayout({ children }: { children: any }) {
   // Service Workerを登録

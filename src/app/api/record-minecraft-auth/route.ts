@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 
+// 動的レンダリングを強制（Netlify対応）
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { minecraftId, discordUserId, discordUsername, discordGlobalName } = await request.json();

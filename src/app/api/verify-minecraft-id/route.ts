@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// 動的レンダリングを強制（Netlify対応）
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const { minecraftId, discordUserId, discordUsername } = await request.json();

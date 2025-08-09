@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+// 動的レンダリングを強制（Netlify対応）
+export const dynamic = 'force-dynamic';
+
 // Supabaseクライアントを初期化
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
