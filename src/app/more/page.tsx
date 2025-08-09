@@ -44,6 +44,8 @@ import {
   Assignment,
   Train,
   ChevronRight,
+  ShoppingCart,
+  Inventory,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -2055,6 +2057,43 @@ export default function MorePage() {
               onClick={() => router.push('/profile')}
             >
               プロフィール
+            </Button>
+          </Grid>
+        </Grid>
+
+        {/* ポイント関連 */}
+        <Typography variant="subtitle1" fontWeight="bold" mb={1} sx={{ color: '#212529' }}>
+          ポイント
+        </Typography>
+        <Grid container spacing={2} mb={3}>
+          <Grid item xs={6}>
+            <Button 
+              fullWidth 
+              variant="outlined" 
+              startIcon={<ShoppingCart sx={{ color: "#FF6B35", fontSize: { xs: 18, sm: 20 } }} />} 
+              sx={{ 
+                borderRadius: 2,
+                height: { xs: 48, sm: 56 },
+                fontSize: { xs: 12, sm: 14 }
+              }}
+              onClick={() => router.push('/point-shop')}
+            >
+              ポイントショップ
+            </Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button 
+              fullWidth 
+              variant="outlined" 
+              startIcon={<Inventory sx={{ color: "#4CAF50", fontSize: { xs: 18, sm: 20 } }} />} 
+              sx={{ 
+                borderRadius: 2,
+                height: { xs: 48, sm: 56 },
+                fontSize: { xs: 12, sm: 14 }
+              }}
+              onClick={() => router.push('/my-items')}
+            >
+              マイアイテム
             </Button>
           </Grid>
         </Grid>

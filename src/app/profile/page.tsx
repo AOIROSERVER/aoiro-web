@@ -26,7 +26,9 @@ import {
   Chat,
   MonetizationOn,
   History,
-  ChevronRight
+  ChevronRight,
+  ShoppingCart,
+  Inventory
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
@@ -332,6 +334,46 @@ function ProfileContent() {
                   <ListItemText 
                     primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>ポイント履歴</Typography>}
                     secondary={<Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>取得履歴を確認</Typography>}
+                  />
+                  <ChevronRight sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                </ListItem>
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+                <ListItem 
+                  button 
+                  onClick={() => router.push('/point-shop')}
+                  sx={{ 
+                    '&:hover': { 
+                      bgcolor: 'rgba(255,255,255,0.1)' 
+                    },
+                    cursor: 'pointer'
+                  }}
+                >
+                  <ListItemIcon>
+                    <ShoppingCart sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>ポイントショップ</Typography>}
+                    secondary={<Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>アイテムを購入</Typography>}
+                  />
+                  <ChevronRight sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                </ListItem>
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)' }} />
+                <ListItem 
+                  button 
+                  onClick={() => router.push('/my-items')}
+                  sx={{ 
+                    '&:hover': { 
+                      bgcolor: 'rgba(255,255,255,0.1)' 
+                    },
+                    cursor: 'pointer'
+                  }}
+                >
+                  <ListItemIcon>
+                    <Inventory sx={{ color: 'rgba(255,255,255,0.8)' }} />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={<Typography sx={{ color: 'white', fontWeight: 500 }}>マイアイテム</Typography>}
+                    secondary={<Typography sx={{ color: 'rgba(255,255,255,0.7)' }}>購入したアイテム</Typography>}
                   />
                   <ChevronRight sx={{ color: 'rgba(255,255,255,0.8)' }} />
                 </ListItem>

@@ -50,6 +50,9 @@ export default function PrivacyPage() {
             <li>通知設定時（デバイストークン）</li>
             <li>お問い合わせ時（メールアドレス、お名前）</li>
           </Box>
+          <Typography sx={{ color: '#333', mb: 2, lineHeight: 1.6, mt: 2 }}>
+            <strong>代表者:</strong> @aoiro_kami
+          </Typography>
         </Paper>
 
         <Paper sx={{ p: 3, mb: 3 }}>
@@ -57,7 +60,7 @@ export default function PrivacyPage() {
             2. 個人情報の利用目的
           </Typography>
           <Typography sx={{ color: '#333', mb: 2, lineHeight: 1.6 }}>
-            収集した個人情報は、以下の目的で利用いたします：
+            個人情報保護法に基づき、以下の目的で個人情報を利用いたします：
           </Typography>
           <Box component="ul" sx={{ color: '#333', pl: 3, mb: 2 }}>
             <li>アプリの機能提供（運行情報、通知サービス）</li>
@@ -78,7 +81,7 @@ export default function PrivacyPage() {
             <li>データベースの暗号化</li>
             <li>アクセス権限の制限</li>
             <li>定期的なセキュリティ監査</li>
-            <li>従業員への教育・研修</li>
+            <li>当サーバーの運営者への教育・研修</li>
           </Box>
         </Paper>
 
@@ -105,7 +108,7 @@ export default function PrivacyPage() {
           </Typography>
           <Box component="ul" sx={{ color: '#333', pl: 3, mb: 2 }}>
             <li>個人情報の開示請求</li>
-            <li>個人情報の訂正・追加・削除請求</li>
+            <li>個人情報の訂正・追加請求</li>
             <li>個人情報の利用停止・消去請求</li>
             <li>個人情報の第三者提供の停止請求</li>
           </Box>
