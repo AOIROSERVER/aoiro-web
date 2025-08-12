@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { CheckCircle } from "@mui/icons-material";
 import { useAuth } from "../../../contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 function MinecraftVerificationContent() {
   const [minecraftId, setMinecraftId] = useState('');
@@ -24,6 +24,7 @@ function MinecraftVerificationContent() {
   
   const { supabase, user, session } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // 認証状態の確認
   useEffect(() => {
@@ -53,7 +54,8 @@ function MinecraftVerificationContent() {
           console.log('Discord user data:', discordUserData);
           setDiscordUser(discordUserData);
         } else {
-          console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
+          console.log('❌ User is not Discord authenticated, metadata:', currentSession.user.user_metadata);
+          console.log('❌ Redirecting to Discord auth...');
           setError('Discord認証が必要です。Discord認証ページに移動します...');
           setTimeout(() => {
             router.push('/minecraft-auth');
@@ -68,8 +70,124 @@ function MinecraftVerificationContent() {
       }
     };
     
+    // 初回チェック
     checkAuthStatus();
+    
+    // 定期的にセッション状態をチェック（OAuth認証後の状態変更を確実に検出）
+    const interval = setInterval(checkAuthStatus, 1000);
+    
+    // 3秒後に追加チェック（OAuth認証完了後の遅延を考慮）
+    const delayedCheck = setTimeout(checkAuthStatus, 3000);
+    
+    // 6秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
+    const finalCheck = setTimeout(checkAuthStatus, 6000);
+    
+    return () => {
+      clearInterval(interval);
+      clearTimeout(delayedCheck);
+      clearTimeout(finalCheck);
+    };
   }, [supabase, user, session, router]);
+
+  // Supabase認証状態変更の監視
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔔 Auth state change event:', event);
+      console.log('Session:', session);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ User signed in, checking Discord auth...');
+        console.log('User metadata:', session.user.user_metadata);
+        
+        if (session.user.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord user authenticated, setting user data...');
+          const discordUserData = {
+            id: session.user.user_metadata.provider_id,
+            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
+            discriminator: session.user.user_metadata.discriminator || '0000',
+            global_name: session.user.user_metadata.full_name,
+            avatar: session.user.user_metadata.avatar_url
+          };
+          console.log('Discord user data:', discordUserData);
+          setDiscordUser(discordUserData);
+          setError(null); // エラーをクリア
+          console.log('✅ Discord user data set successfully');
+        } else {
+          console.log('❌ User is not Discord authenticated in auth state change');
+        }
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('🔄 Token refreshed, checking Discord auth...');
+        if (session?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord session refreshed, updating user data...');
+          const discordUserData = {
+            id: session.user.user_metadata.provider_id,
+            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
+            discriminator: session.user.user_metadata.discriminator || '0000',
+            global_name: session.user.user_metadata.full_name,
+            avatar: session.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setError(null);
+        }
+      }
+    });
+    
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
+
+  // URLパラメータからOAuth認証完了を検出
+  useEffect(() => {
+    const accessToken = searchParams?.get('access_token');
+    const refreshToken = searchParams?.get('refresh_token');
+    
+    console.log('🔍 URL parameters check:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
+    
+    if (accessToken && refreshToken) {
+      console.log('✅ OAuth tokens detected in URL, waiting for auth state change...');
+      // OAuth認証完了のトークンがURLにある場合は、認証状態変更を待つ
+      // エラーは表示しない
+      
+      // 少し待ってからセッション状態を強制的にチェック
+      setTimeout(async () => {
+        console.log('🔄 Force checking session after OAuth callback...');
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log('Current session after OAuth callback:', currentSession);
+        
+        if (currentSession?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord OAuth completed, setting user data...');
+          const discordUserData = {
+            id: currentSession.user.user_metadata.provider_id,
+            username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
+            discriminator: currentSession.user.user_metadata.discriminator || '0000',
+            global_name: currentSession.user.user_metadata.full_name,
+            avatar: currentSession.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setError(null);
+          console.log('✅ Auth step completed after OAuth callback');
+        } else {
+          console.log('❌ Discord OAuth not completed yet, retrying...');
+          // もう一度試行
+          setTimeout(async () => {
+            const { data: { session: retrySession } } = await supabase.auth.getSession();
+            if (retrySession?.user?.user_metadata?.provider === 'discord') {
+              console.log('🎯 Discord OAuth completed on retry, setting user data...');
+              const discordUserData = {
+                id: retrySession.user.user_metadata.provider_id,
+                username: retrySession.user.user_metadata.user_name || retrySession.user.user_metadata.name,
+                discriminator: retrySession.user.user_metadata.discriminator || '0000',
+                global_name: retrySession.user.user_metadata.full_name,
+                avatar: retrySession.user.user_metadata.avatar_url
+              };
+              setDiscordUser(discordUserData);
+              setError(null);
+              console.log('✅ Auth step completed after OAuth callback retry');
+            }
+          }, 2000);
+        }
+      }, 1000);
+    }
+  }, [searchParams, supabase.auth]);
 
   const handleMinecraftAuth = async () => {
     if (!minecraftId.trim()) {
@@ -262,6 +380,14 @@ function MinecraftVerificationContent() {
                 <Typography variant="caption" color="text.secondary">
                   デバッグ: Discord User: {discordUser ? 'あり' : 'なし'}
                 </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  User: {user ? 'あり' : 'なし'} | Session: {session ? 'あり' : 'なし'}
+                </Typography>
+                {discordUser && (
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Discord ID: {discordUser.id} | Username: {discordUser.username}
+                  </Typography>
+                )}
               </Box>
             )}
           </Box>
