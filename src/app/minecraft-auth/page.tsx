@@ -84,7 +84,13 @@ function MinecraftAuthContent() {
     // 定期的にセッション状態をチェック（OAuth認証後の状態変更を確実に検出）
     const interval = setInterval(checkAuthStatus, 2000);
     
-    return () => clearInterval(interval);
+    // 5秒後に追加チェック（OAuth認証完了後の遅延を考慮）
+    const delayedCheck = setTimeout(checkAuthStatus, 5000);
+    
+    return () => {
+      clearInterval(interval);
+      clearTimeout(delayedCheck);
+    };
   }, [supabase, user, session]);
 
   // Supabase認証状態変更の監視
@@ -137,6 +143,21 @@ function MinecraftAuthContent() {
           setAuthStep('minecraft');
           setError(null);
         }
+      } else if (event === 'USER_UPDATED') {
+        console.log('👤 User updated, checking Discord auth...');
+        if (session?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord user updated, setting user data...');
+          const discordUserData = {
+            id: session.user.user_metadata.provider_id,
+            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
+            discriminator: session.user.user_metadata.discriminator || '0000',
+            global_name: session.user.user_metadata.full_name,
+            avatar: session.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setAuthStep('minecraft');
+          setError(null);
+        }
       }
     });
     
@@ -167,8 +188,30 @@ function MinecraftAuthContent() {
       console.log('✅ OAuth tokens detected in URL, waiting for auth state change...');
       // OAuth認証完了のトークンがURLにある場合は、認証状態変更を待つ
       // エラーは表示しない
+      
+      // 少し待ってからセッション状態を強制的にチェック
+      setTimeout(async () => {
+        console.log('🔄 Force checking session after OAuth callback...');
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log('Current session after OAuth callback:', currentSession);
+        
+        if (currentSession?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord OAuth completed, setting user data...');
+          const discordUserData = {
+            id: currentSession.user.user_metadata.provider_id,
+            username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
+            discriminator: currentSession.user.user_metadata.discriminator || '0000',
+            global_name: currentSession.user.user_metadata.full_name,
+            avatar: currentSession.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setAuthStep('minecraft');
+          setError(null);
+          console.log('✅ Auth step changed to minecraft after OAuth callback');
+        }
+      }, 1500);
     }
-  }, [searchParams]);
+  }, [searchParams, supabase.auth]);
 
   const handleDiscordAuth = async () => {
     setLoading(true);
@@ -434,6 +477,14 @@ function MinecraftAuthContent() {
                 <Typography variant="caption" color="text.secondary">
                   デバッグ: 現在のステップ: {authStep} | Discord User: {discordUser ? 'あり' : 'なし'}
                 </Typography>
+                <Typography variant="caption" color="text.secondary" display="block">
+                  User: {user ? 'あり' : 'なし'} | Session: {session ? 'あり' : 'なし'}
+                </Typography>
+                {discordUser && (
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    Discord ID: {discordUser.id} | Username: {discordUser.username}
+                  </Typography>
+                )}
               </Box>
             )}
           </Box>
