@@ -62,14 +62,13 @@ DISCORD_MEMBER_ROLE_ID=your_member_role_id
 
 ## 3. システムの動作フロー
 
-### 3.1 認証手順（既存のAOIRO ID登録システムと統合）
-1. ユーザーが `/register` にアクセス（AOIRO ID作成ページ）
-2. Discordアカウントで認証・連携
-3. Discord連携完了後、Minecraft ID認証セクションが表示される（オプション）
-4. Minecraft IDを入力
-5. システムがMinecraft IDの存在確認（Mojang API）
-6. 存在する場合、Discordサーバーで認定メンバーロールを付与
-7. Google Sheetsに認証記録を保存（現在は無効化中）
+### 3.1 認証手順
+1. ユーザーが `/minecraft-auth` にアクセス
+2. Discordアカウントで認証
+3. Minecraft IDを入力
+4. システムがMinecraft IDの存在確認（Mojang API）
+5. 存在する場合、Discordサーバーで認定メンバーロールを付与
+6. Google Sheetsに認証記録を保存（設定されている場合）
 
 ### 3.2 APIエンドポイント
 - `POST /api/verify-minecraft-id` - Minecraft ID存在確認
@@ -80,17 +79,16 @@ DISCORD_MEMBER_ROLE_ID=your_member_role_id
 
 ### 4.1 認証ページのリンク
 ```
-https://your-domain.com/register
+https://your-domain.com/minecraft-auth
 ```
 
 ### 4.2 DiscordでのリンクシェアExample：
 ```
-🎮 **AOIRO ID作成 & Minecraft ID認証**
-AOIROSERVERのメンバーになるために、AOIRO IDを作成してください！
+🎮 **Minecraft ID認証**
+AOIROSERVERの認定メンバーになるために、Minecraft IDを認証してください！
 
-👉 アカウント作成: https://aoiroserver.site/register
+👉 認証はこちら: https://aoiroserver.site/minecraft-auth
 
-✅ Discord連携後、Minecraft ID認証も可能です
 ✅ 認証完了後、自動的に認定メンバーロールが付与されます
 ```
 
