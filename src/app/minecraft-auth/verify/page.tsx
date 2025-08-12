@@ -102,8 +102,8 @@ function MinecraftVerificationContent() {
   // Supabase認証状態変更の監視
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔔 Auth state change event:', event);
-      console.log('Session:', session);
+      console.log('🔔 Auth state change event in verify page:', event);
+      console.log('Session in verify page:', session);
       
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in, checking Discord auth...');
@@ -124,6 +124,7 @@ function MinecraftVerificationContent() {
           console.log('✅ Discord user data set successfully in auth state change');
         } else {
           console.log('❌ User is not Discord authenticated in auth state change');
+          console.log('User metadata in auth state change:', session.user.user_metadata);
         }
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('🔄 Token refreshed, checking Discord auth...');
@@ -208,6 +209,7 @@ function MinecraftVerificationContent() {
           console.log('✅ Auth step completed after OAuth callback');
         } else {
           console.log('❌ Discord OAuth not completed yet, retrying...');
+          console.log('User metadata in OAuth callback:', currentSession?.user?.user_metadata);
           // もう一度試行
           setTimeout(async () => {
             const { data: { session: retrySession } } = await supabase.auth.getSession();
@@ -225,6 +227,7 @@ function MinecraftVerificationContent() {
               console.log('✅ Auth step completed after OAuth callback retry');
             } else {
               console.log('❌ Discord OAuth still not completed, final retry...');
+              console.log('User metadata in OAuth callback retry:', retrySession?.user?.user_metadata);
               // 最終試行
               setTimeout(async () => {
                 const { data: { session: finalSession } } = await supabase.auth.getSession();
@@ -240,6 +243,9 @@ function MinecraftVerificationContent() {
                   setDiscordUser(discordUserData);
                   setError(null);
                   console.log('✅ Auth step completed after OAuth callback final retry');
+                } else {
+                  console.log('❌ Discord OAuth still not completed after final retry');
+                  console.log('User metadata in OAuth callback final retry:', finalSession?.user?.user_metadata);
                 }
               }, 3000);
             }
@@ -367,9 +373,12 @@ function MinecraftVerificationContent() {
   // Discord認証状態の確認（バックグラウンドで実行）
   useEffect(() => {
     const checkAuthStatus = async () => {
+      console.log('🔍 Checking Discord auth status in verify page...');
       const { data: { session: currentSession } } = await supabase.auth.getSession();
+      console.log('Current session in verify page:', currentSession);
       
       if (currentSession?.user?.user_metadata?.provider === 'discord') {
+        console.log('🎯 Discord user detected in verify page, setting user data...');
         const discordUserData = {
           id: currentSession.user.user_metadata.provider_id,
           username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
@@ -377,11 +386,31 @@ function MinecraftVerificationContent() {
           global_name: currentSession.user.user_metadata.full_name,
           avatar: currentSession.user.user_metadata.avatar_url
         };
+        console.log('Discord user data in verify page:', discordUserData);
         setDiscordUser(discordUserData);
+      } else {
+        console.log('❌ Discord user not detected in verify page');
+        console.log('User metadata:', currentSession?.user?.user_metadata);
       }
     };
     
+    // 初回チェック
     checkAuthStatus();
+    
+    // 定期的にセッション状態をチェック（OAuth認証後の状態変更を確実に検出）
+    const interval = setInterval(checkAuthStatus, 1000);
+    
+    // 3秒後に追加チェック（OAuth認証完了後の遅延を考慮）
+    const delayedCheck = setTimeout(checkAuthStatus, 3000);
+    
+    // 6秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
+    const finalCheck = setTimeout(checkAuthStatus, 6000);
+    
+    return () => {
+      clearInterval(interval);
+      clearTimeout(delayedCheck);
+      clearTimeout(finalCheck);
+    };
   }, [supabase.auth]);
 
   return (
@@ -449,6 +478,11 @@ function MinecraftVerificationContent() {
                 {discordUser && (
                   <Typography variant="caption" color="text.secondary" display="block">
                     Discord ID: {discordUser.id} | Username: {discordUser.username}
+                  </Typography>
+                )}
+                {user && (
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    User Metadata: {JSON.stringify(user.user_metadata, null, 2)}
                   </Typography>
                 )}
               </Box>
