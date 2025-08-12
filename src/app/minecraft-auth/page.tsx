@@ -77,11 +77,40 @@ function DiscordAuthContent() {
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
       
+      // Supabaseの直接URLを使用（Discord Developer Portalの設定と一致）
+      const supabaseCallbackUrl = 'https://cqxadmvnsusscsusdrmqd.supabase.co/auth/v1/callback';
+      const customCallbackUrl = 'https://aoiroserver.site/auth/callback';
+      console.log('Supabase callback URL:', supabaseCallbackUrl);
+      console.log('Custom callback URL:', customCallbackUrl);
+      console.log('From minecraft-auth page:', true);
+      
+      // 既存のセッションを確認（クリアは行わない）
+      console.log('🔍 Checking existing session...');
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      console.log('Session user:', session?.user);
+      console.log('Session access token:', session?.access_token ? 'present' : 'missing');
+      
+      // Supabaseの直接URLにfromパラメータを追加
+      const redirectUrlWithParams = supabaseCallbackUrl + '?from=minecraft-auth&next=/minecraft-auth/verify';
+      console.log('Final redirect URL with params:', redirectUrlWithParams);
+      console.log('URL parameters:', {
+        from: 'minecraft-auth',
+        next: '/minecraft-auth/verify',
+        fullUrl: redirectUrlWithParams
+      });
+      console.log('Expected callback URL:', redirectUrlWithParams);
+      console.log('URL encoding test:', encodeURIComponent('from=minecraft-auth&next=/minecraft-auth/verify'));
+      
       const oauthOptions = {
-        redirectTo: `${window.location.origin}/minecraft-auth/verify`,
+        redirectTo: redirectUrlWithParams,
         skipBrowserRedirect: false,
         queryParams: {
           response_type: 'code',
+        },
+        // 追加のデバッグ情報
+        options: {
+          redirectTo: redirectUrlWithParams,
         }
       };
       
@@ -100,14 +129,19 @@ function DiscordAuthContent() {
       console.log('✅ Discord OAuth initiated successfully');
       console.log('OAuth data:', data);
       console.log('Provider: discord');
-      console.log('Redirect URL used:', oauthOptions.redirectTo);
+      console.log('Redirect URL used:', redirectUrlWithParams);
+      console.log('OAuth options used:', oauthOptions);
       
       // ブラウザリダイレクトが自動的に行われる
       console.log('🔄 Waiting for browser redirect...');
-      console.log('Expected redirect to:', oauthOptions.redirectTo);
+      console.log('Expected callback URL:', redirectUrlWithParams);
+      console.log('Supabase will handle the callback and redirect to:', customCallbackUrl);
       
     } catch (err: any) {
       console.error('❌ Discord auth error:', err);
+      console.error('Full error object:', err);
+      console.error('Error type:', typeof err);
+      console.error('Error keys:', Object.keys(err || {}));
       
       let errorMessage = err.error_description || err.message || '認証に失敗しました';
       
@@ -125,6 +159,7 @@ function DiscordAuthContent() {
         errorMessage = '認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。';
       }
       
+      console.error('🚨 Setting error message:', errorMessage);
       setError(errorMessage);
     } finally {
       setLoading(false);
