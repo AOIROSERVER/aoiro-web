@@ -364,22 +364,25 @@ function MinecraftVerificationContent() {
     return `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator) % 5}.png`;
   };
 
-  if (!discordUser) {
-    return (
-      <Box sx={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <Card sx={{ p: 4, textAlign: 'center' }}>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <Typography>認証状態を確認中...</Typography>
-        </Card>
-      </Box>
-    );
-  }
+  // Discord認証状態の確認（バックグラウンドで実行）
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
+      if (currentSession?.user?.user_metadata?.provider === 'discord') {
+        const discordUserData = {
+          id: currentSession.user.user_metadata.provider_id,
+          username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
+          discriminator: currentSession.user.user_metadata.discriminator || '0000',
+          global_name: currentSession.user.user_metadata.full_name,
+          avatar: currentSession.user.user_metadata.avatar_url
+        };
+        setDiscordUser(discordUserData);
+      }
+    };
+    
+    checkAuthStatus();
+  }, [supabase.auth]);
 
   return (
     <Box
@@ -452,62 +455,97 @@ function MinecraftVerificationContent() {
             )}
           </Box>
 
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-              <img
-                src={getAvatarUrl(discordUser)}
-                alt="Discord Avatar"
-                style={{ width: 48, height: 48, borderRadius: '50%', marginRight: 12 }}
-              />
-              <Box>
-                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                  {discordUser.global_name || discordUser.username}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  @{discordUser.username}#{discordUser.discriminator}
-                </Typography>
+          {discordUser ? (
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+                <img
+                  src={getAvatarUrl(discordUser)}
+                  alt="Discord Avatar"
+                  style={{ width: 48, height: 48, borderRadius: '50%', marginRight: 12 }}
+                />
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                    {discordUser.global_name || discordUser.username}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    @{discordUser.username}#{discordUser.discriminator}
+                  </Typography>
+                </Box>
               </Box>
+              <Alert severity="success" sx={{ mb: 2 }}>
+                ✅ Discord認証完了
+              </Alert>
             </Box>
-            <Alert severity="success" sx={{ mb: 2 }}>
-              ✅ Discord認証完了
-            </Alert>
-          </Box>
+          ) : (
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                ℹ️ Discord認証が必要です
+              </Alert>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Minecraft ID認証を行うには、まずDiscordアカウントで認証してください。
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => router.push('/minecraft-auth')}
+                sx={{
+                  background: 'linear-gradient(45deg, #7289DA, #5865F2)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #5865F2, #7289DA)',
+                  },
+                  px: 4,
+                  py: 1.5
+                }}
+              >
+                Discordで認証
+              </Button>
+            </Box>
+          )}
 
-          <TextField
-            fullWidth
-            label="Minecraft ID"
-            value={minecraftId}
-            onChange={(e) => setMinecraftId(e.target.value)}
-            placeholder="あなたのMinecraft IDを入力"
-            variant="outlined"
-            disabled={loading}
-            sx={{ mb: 2 }}
-          />
-          
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            正確なMinecraft IDを入力してください
-          </Typography>
+          {discordUser ? (
+            <>
+              <TextField
+                fullWidth
+                label="Minecraft ID"
+                value={minecraftId}
+                onChange={(e) => setMinecraftId(e.target.value)}
+                placeholder="あなたのMinecraft IDを入力"
+                variant="outlined"
+                disabled={loading}
+                sx={{ mb: 2 }}
+              />
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                正確なMinecraft IDを入力してください
+              </Typography>
 
-          <Button
-            variant="contained"
-            fullWidth
-            size="large"
-            onClick={handleMinecraftAuth}
-            disabled={loading || !minecraftId.trim()}
-            startIcon={loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <CheckCircle />}
-            sx={{
-              background: 'linear-gradient(45deg, #4CAF50, #45a049)',
-              '&:hover': {
-                background: 'linear-gradient(45deg, #45a049, #4CAF50)',
-              },
-              py: 1.5,
-              fontSize: '1.1rem',
-              fontWeight: 'bold',
-              mb: 3
-            }}
-          >
-            {loading ? '認証中...' : '認証する'}
-          </Button>
+              <Button
+                variant="contained"
+                fullWidth
+                size="large"
+                onClick={handleMinecraftAuth}
+                disabled={loading || !minecraftId.trim()}
+                startIcon={loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <CheckCircle />}
+                sx={{
+                  background: 'linear-gradient(45deg, #4CAF50, #45a049)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #45a049, #4CAF50)',
+                  },
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 'bold',
+                  mb: 3
+                }}
+              >
+                {loading ? '認証中...' : '認証する'}
+              </Button>
+            </>
+          ) : (
+            <Box sx={{ textAlign: 'center', mb: 4 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                上記の「Discordで認証」ボタンをクリックして、Discordアカウントで認証を行ってください。
+              </Typography>
+            </Box>
+          )}
 
           <Button
             variant="outlined"
