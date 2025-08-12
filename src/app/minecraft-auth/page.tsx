@@ -69,7 +69,7 @@ function MinecraftAuthContent() {
           setAuthStep('minecraft');
           console.log('✅ Auth step changed to minecraft');
         } else {
-          console.log('❌ User is not Discord authenticated');
+          console.log('❌ User is not Discord authenticated, metadata:', currentSession.user.user_metadata);
           setAuthStep('discord');
         }
       } else {
@@ -78,7 +78,13 @@ function MinecraftAuthContent() {
       }
     };
     
+    // 初回チェック
     checkAuthStatus();
+    
+    // 定期的にセッション状態をチェック（OAuth認証後の状態変更を確実に検出）
+    const interval = setInterval(checkAuthStatus, 2000);
+    
+    return () => clearInterval(interval);
   }, [supabase, user, session]);
 
   // Supabase認証状態変更の監視
@@ -89,6 +95,8 @@ function MinecraftAuthContent() {
       
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in, checking Discord auth...');
+        console.log('User metadata:', session.user.user_metadata);
+        console.log('App metadata:', session.user.app_metadata);
         
         if (session.user.user_metadata?.provider === 'discord') {
           console.log('🎯 Discord user authenticated, setting user data...');
@@ -102,23 +110,49 @@ function MinecraftAuthContent() {
           console.log('Discord user data:', discordUserData);
           setDiscordUser(discordUserData);
           setAuthStep('minecraft');
+          setError(null); // エラーをクリア
           console.log('✅ Auth step changed to minecraft after sign in');
+        } else {
+          console.log('❌ User is not Discord authenticated, metadata:', session.user.user_metadata);
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('🚪 User signed out, resetting auth step...');
         setDiscordUser(null);
         setAuthStep('discord');
+        setError(null);
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('🔄 Token refreshed, checking session...');
+        // トークン更新後にセッション状態を再チェック
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord session refreshed, updating user data...');
+          const discordUserData = {
+            id: currentSession.user.user_metadata.provider_id,
+            username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
+            discriminator: currentSession.user.user_metadata.discriminator || '0000',
+            global_name: currentSession.user.user_metadata.full_name,
+            avatar: currentSession.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setAuthStep('minecraft');
+          setError(null);
+        }
       }
     });
     
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
-  // URLパラメータからエラーを取得
+  // URLパラメータからエラーと認証状態を取得
   useEffect(() => {
     const errorParam = searchParams ? searchParams.get('error') : null;
+    const accessToken = searchParams ? searchParams.get('access_token') : null;
+    const refreshToken = searchParams ? searchParams.get('refresh_token') : null;
+    
+    console.log('🔍 URL parameters check:', { errorParam, accessToken: !!accessToken, refreshToken: !!refreshToken });
     
     if (errorParam) {
+      console.log('❌ Error parameter detected:', errorParam);
       switch (errorParam) {
         case 'session_error':
           setError('セッションの設定に失敗しました。ブラウザのキャッシュをクリアして再度お試しください。');
@@ -127,8 +161,12 @@ function MinecraftAuthContent() {
           setError('Discord認証に失敗しました。再度お試しください。');
           break;
         default:
-          setError('認証エラーが発生しました。');
+          setError(`認証エラーが発生しました: ${errorParam}`);
       }
+    } else if (accessToken && refreshToken) {
+      console.log('✅ OAuth tokens detected in URL, waiting for auth state change...');
+      // OAuth認証完了のトークンがURLにある場合は、認証状態変更を待つ
+      // エラーは表示しない
     }
   }, [searchParams]);
 
@@ -224,6 +262,7 @@ function MinecraftAuthContent() {
         errorMessage = '認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。';
       }
       
+      console.error('🚨 Setting error message:', errorMessage);
       setError(errorMessage);
     } finally {
       setLoading(false);
