@@ -57,18 +57,12 @@ function MinecraftVerificationContent() {
           console.log('✅ Discord user data set successfully in checkAuthStatus');
         } else {
           console.log('❌ User is not Discord authenticated, metadata:', currentSession.user.user_metadata);
-          console.log('❌ Redirecting to Discord auth...');
-          setError('Discord認証が必要です。Discord認証ページに移動します...');
-          setTimeout(() => {
-            router.push('/minecraft-auth');
-          }, 2000);
+          console.log('ℹ️ User is authenticated but not with Discord, showing guidance...');
+          // エラーは表示せず、ガイダンスを表示
         }
       } else {
-        console.log('❌ No active session found, redirecting to Discord auth...');
-        setError('認証が必要です。Discord認証ページに移動します...');
-        setTimeout(() => {
-          router.push('/minecraft-auth');
-        }, 2000);
+        console.log('ℹ️ No active session found, showing guidance...');
+        // エラーは表示せず、ガイダンスを表示
       }
     };
     
@@ -123,8 +117,9 @@ function MinecraftVerificationContent() {
           setError(null); // エラーをクリア
           console.log('✅ Discord user data set successfully in auth state change');
         } else {
-          console.log('❌ User is not Discord authenticated in auth state change');
+          console.log('ℹ️ User is not Discord authenticated in auth state change');
           console.log('User metadata in auth state change:', session.user.user_metadata);
+          // エラーは表示せず、ガイダンスを表示
         }
       } else if (event === 'TOKEN_REFRESHED') {
         console.log('🔄 Token refreshed, checking Discord auth...');
@@ -465,6 +460,9 @@ function MinecraftVerificationContent() {
             <Typography variant="body1" color="text.secondary">
               AOIROSERVERの認定メンバーになろう
             </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Discord認証が必要です
+            </Typography>
             
             {/* デバッグ情報 */}
             {process.env.NODE_ENV === 'development' && (
@@ -575,9 +573,37 @@ function MinecraftVerificationContent() {
             </>
           ) : (
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                上記の「Discordで認証」ボタンをクリックして、Discordアカウントで認証を行ってください。
+              <Alert severity="info" sx={{ mb: 2 }}>
+                ℹ️ Discord認証が必要です
+              </Alert>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Minecraft ID認証を行うには、まずDiscordアカウントで認証してください。
               </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                既にDiscordでログインしている場合は、ページを再読み込みしてください。
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => router.push('/minecraft-auth')}
+                sx={{
+                  background: 'linear-gradient(45deg, #7289DA, #5865F2)',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #5865F2, #7289DA)',
+                  },
+                  px: 4,
+                  py: 1.5,
+                  mb: 2
+                }}
+              >
+                Discordで認証
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => window.location.reload()}
+                sx={{ mb: 2 }}
+              >
+                🔄 ページを再読み込み
+              </Button>
             </Box>
           )}
 
