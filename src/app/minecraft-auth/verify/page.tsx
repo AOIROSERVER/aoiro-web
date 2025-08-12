@@ -53,6 +53,8 @@ function MinecraftVerificationContent() {
           };
           console.log('Discord user data:', discordUserData);
           setDiscordUser(discordUserData);
+          setError(null); // エラーをクリア
+          console.log('✅ Discord user data set successfully in checkAuthStatus');
         } else {
           console.log('❌ User is not Discord authenticated, metadata:', currentSession.user.user_metadata);
           console.log('❌ Redirecting to Discord auth...');
@@ -74,18 +76,26 @@ function MinecraftVerificationContent() {
     checkAuthStatus();
     
     // 定期的にセッション状態をチェック（OAuth認証後の状態変更を確実に検出）
-    const interval = setInterval(checkAuthStatus, 1000);
+    const interval = setInterval(checkAuthStatus, 500); // 500ms間隔に短縮
     
-    // 3秒後に追加チェック（OAuth認証完了後の遅延を考慮）
-    const delayedCheck = setTimeout(checkAuthStatus, 3000);
+    // 2秒後に追加チェック（OAuth認証完了後の遅延を考慮）
+    const delayedCheck = setTimeout(checkAuthStatus, 2000);
     
-    // 6秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
-    const finalCheck = setTimeout(checkAuthStatus, 6000);
+    // 4秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
+    const finalCheck = setTimeout(checkAuthStatus, 4000);
+    
+    // 8秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
+    const extraCheck = setTimeout(checkAuthStatus, 8000);
+    
+    // 12秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
+    const finalExtraCheck = setTimeout(checkAuthStatus, 12000);
     
     return () => {
       clearInterval(interval);
       clearTimeout(delayedCheck);
       clearTimeout(finalCheck);
+      clearTimeout(extraCheck);
+      clearTimeout(finalExtraCheck);
     };
   }, [supabase, user, session, router]);
 
@@ -111,7 +121,7 @@ function MinecraftVerificationContent() {
           console.log('Discord user data:', discordUserData);
           setDiscordUser(discordUserData);
           setError(null); // エラーをクリア
-          console.log('✅ Discord user data set successfully');
+          console.log('✅ Discord user data set successfully in auth state change');
         } else {
           console.log('❌ User is not Discord authenticated in auth state change');
         }
@@ -128,6 +138,37 @@ function MinecraftVerificationContent() {
           };
           setDiscordUser(discordUserData);
           setError(null);
+          console.log('✅ Discord user data set successfully in token refresh');
+        }
+      } else if (event === 'USER_UPDATED') {
+        console.log('👤 User updated, checking Discord auth...');
+        if (session?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord user updated, setting user data...');
+          const discordUserData = {
+            id: session.user.user_metadata.provider_id,
+            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
+            discriminator: session.user.user_metadata.discriminator || '0000',
+            global_name: session.user.user_metadata.full_name,
+            avatar: session.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setError(null);
+          console.log('✅ Discord user data set successfully in user update');
+        }
+      } else if (event === 'INITIAL_SESSION') {
+        console.log('🚀 Initial session event, checking Discord auth...');
+        if (session?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord user in initial session, setting user data...');
+          const discordUserData = {
+            id: session.user.user_metadata.provider_id,
+            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
+            discriminator: session.user.user_metadata.discriminator || '0000',
+            global_name: session.user.user_metadata.full_name,
+            avatar: session.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setError(null);
+          console.log('✅ Discord user data set successfully in initial session');
         }
       }
     });
@@ -182,10 +223,29 @@ function MinecraftVerificationContent() {
               setDiscordUser(discordUserData);
               setError(null);
               console.log('✅ Auth step completed after OAuth callback retry');
+            } else {
+              console.log('❌ Discord OAuth still not completed, final retry...');
+              // 最終試行
+              setTimeout(async () => {
+                const { data: { session: finalSession } } = await supabase.auth.getSession();
+                if (finalSession?.user?.user_metadata?.provider === 'discord') {
+                  console.log('🎯 Discord OAuth completed on final retry, setting user data...');
+                  const discordUserData = {
+                    id: finalSession.user.user_metadata.provider_id,
+                    username: finalSession.user.user_metadata.user_name || finalSession.user.user_metadata.name,
+                    discriminator: finalSession.user.user_metadata.discriminator || '0000',
+                    global_name: finalSession.user.user_metadata.full_name,
+                    avatar: finalSession.user.user_metadata.avatar_url
+                  };
+                  setDiscordUser(discordUserData);
+                  setError(null);
+                  console.log('✅ Auth step completed after OAuth callback final retry');
+                }
+              }, 3000);
             }
           }, 2000);
         }
-      }, 1000);
+      }, 500); // 500msに短縮
     }
   }, [searchParams, supabase.auth]);
 
