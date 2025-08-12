@@ -67,7 +67,9 @@ function MinecraftAuthContent() {
           console.log('Discord user data:', discordUserData);
           setDiscordUser(discordUserData);
           setAuthStep('minecraft');
+          setError(null); // エラーをクリア
           console.log('✅ Auth step changed to minecraft');
+          return; // Discord認証済みの場合は処理を終了
         } else {
           console.log('❌ User is not Discord authenticated, metadata:', currentSession.user.user_metadata);
           setAuthStep('discord');
@@ -87,9 +89,13 @@ function MinecraftAuthContent() {
     // 5秒後に追加チェック（OAuth認証完了後の遅延を考慮）
     const delayedCheck = setTimeout(checkAuthStatus, 5000);
     
+    // 10秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
+    const finalCheck = setTimeout(checkAuthStatus, 10000);
+    
     return () => {
       clearInterval(interval);
       clearTimeout(delayedCheck);
+      clearTimeout(finalCheck);
     };
   }, [supabase, user, session]);
 
@@ -158,6 +164,21 @@ function MinecraftAuthContent() {
           setAuthStep('minecraft');
           setError(null);
         }
+      } else if (event === 'INITIAL_SESSION') {
+        console.log('🚀 Initial session event, checking Discord auth...');
+        if (session?.user?.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord user in initial session, setting user data...');
+          const discordUserData = {
+            id: session.user.user_metadata.provider_id,
+            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
+            discriminator: session.user.user_metadata.discriminator || '0000',
+            global_name: session.user.user_metadata.full_name,
+            avatar: session.user.user_metadata.avatar_url
+          };
+          setDiscordUser(discordUserData);
+          setAuthStep('minecraft');
+          setError(null);
+        }
       }
     });
     
@@ -208,8 +229,28 @@ function MinecraftAuthContent() {
           setAuthStep('minecraft');
           setError(null);
           console.log('✅ Auth step changed to minecraft after OAuth callback');
+        } else {
+          console.log('❌ Discord OAuth not completed yet, retrying...');
+          // もう一度試行
+          setTimeout(async () => {
+            const { data: { session: retrySession } } = await supabase.auth.getSession();
+            if (retrySession?.user?.user_metadata?.provider === 'discord') {
+              console.log('🎯 Discord OAuth completed on retry, setting user data...');
+              const discordUserData = {
+                id: retrySession.user.user_metadata.provider_id,
+                username: retrySession.user.user_metadata.user_name || retrySession.user.user_metadata.name,
+                discriminator: retrySession.user.user_metadata.discriminator || '0000',
+                global_name: retrySession.user.user_metadata.full_name,
+                avatar: retrySession.user.user_metadata.avatar_url
+              };
+              setDiscordUser(discordUserData);
+              setAuthStep('minecraft');
+              setError(null);
+              console.log('✅ Auth step changed to minecraft after OAuth callback retry');
+            }
+          }, 2000);
         }
-      }, 1500);
+      }, 1000);
     }
   }, [searchParams, supabase.auth]);
 
