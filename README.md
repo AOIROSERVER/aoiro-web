@@ -2,6 +2,19 @@
 
 鉄道運行状況と道路状況を確認できるPWA（Progressive Web App）
 
+## 🎮 Minecraft ID認証システム
+
+AOIROSERVERの認定メンバーになるためのMinecraft ID認証システムを搭載しています。
+
+### 機能
+- Discord OAuth認証
+- Minecraft ID存在確認（Mojang API）
+- **認証成功データのみ**のGoogle Sheets自動集計
+- 認定メンバーロールの自動付与
+
+### 設定方法
+詳細は `GOOGLE_SHEETS_SETUP.md` を参照してください。
+
 ## PWA機能
 
 このアプリはPWA（Progressive Web App）として設計されており、以下の機能を提供します：

@@ -91,8 +91,10 @@ NEXT_PUBLIC_ADMIN_SECRET
 - Minecraftサーバー監視
 
 ### ⏸️ 一時無効化（影響軽微）
-- Google Sheets自動記録
 - 管理者ページの一部機能
+
+### 🔄 再設定が必要（Google Sheets機能）
+- Google Sheets自動記録（`GOOGLE_SHEETS_SETUP.md`を参照して再設定）
 
 ## 優先順位
 
@@ -112,4 +114,4 @@ NEXT_PUBLIC_ADMIN_SECRET
 2. Discord連携が正常に動作
 3. エラーメッセージが表示されない
 
-Google Sheets機能は既にコードレベルで無効化されているため、環境変数を削除しても問題ありません。
+Google Sheets機能は再設定が必要です。詳細は `GOOGLE_SHEETS_SETUP.md` を参照してください。
