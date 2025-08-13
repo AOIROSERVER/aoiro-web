@@ -360,6 +360,17 @@ export async function GET(request: Request) {
     return NextResponse.redirect(redirectUrl)
   }
   
+  // Minecraft認証ページからの認証の場合は、指定されたページにリダイレクト
+  if (from === 'minecraft-auth') {
+    const baseUrl = 'https://aoiroserver.site'
+    const redirectUrl = baseUrl + next
+    console.log('🔄 Redirecting to minecraft-auth verify page:', redirectUrl)
+    console.log('Base URL used:', baseUrl)
+    console.log('Next path:', next)
+    console.log('Final redirect URL:', redirectUrl)
+    return NextResponse.redirect(redirectUrl)
+  }
+  
   // fromパラメータがregisterでない場合でも、nextが/registerの場合は新規作成画面にリダイレクト
   if (next === '/register') {
     const baseUrl = 'https://aoiroserver.site'

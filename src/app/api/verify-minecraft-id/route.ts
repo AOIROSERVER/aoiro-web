@@ -5,17 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { minecraftId, discordUserId, discordUsername } = await request.json();
+    const { minecraftId } = await request.json();
 
     console.log('🔍 Verifying Minecraft ID:', {
-      minecraftId,
-      discordUserId,
-      discordUsername: discordUsername?.substring(0, 8) + '...'
+      minecraftId
     });
 
-    if (!minecraftId || !discordUserId) {
+    if (!minecraftId) {
       return NextResponse.json(
-        { error: 'Minecraft IDとDiscord User IDが必要です' },
+        { error: 'Minecraft IDが必要です' },
         { status: 400 }
       );
     }

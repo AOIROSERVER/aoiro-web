@@ -13,20 +13,18 @@ import {
 } from "@mui/material";
 import { CheckCircle } from "@mui/icons-material";
 import { useAuth } from "../../../contexts/AuthContext";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 function MinecraftVerificationContent() {
   const [minecraftId, setMinecraftId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [discordUser, setDiscordUser] = useState<any>(null);
   
   const { supabase, user, session } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
-  // 認証状態の確認
+  // シンプルな認証状態の確認
   useEffect(() => {
     const checkAuthStatus = async () => {
       console.log('🔍 Checking auth status for Minecraft verification...');
@@ -40,224 +38,36 @@ function MinecraftVerificationContent() {
         console.log('✅ User is authenticated:', currentSession.user.email);
         console.log('User metadata:', currentSession.user.user_metadata);
         console.log('App metadata:', currentSession.user.app_metadata);
-        
-        // Discord認証済みかチェック
-        if (currentSession.user.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord user detected, setting user data...');
-          const discordUserData = {
-            id: currentSession.user.user_metadata.provider_id,
-            username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
-            discriminator: currentSession.user.user_metadata.discriminator || '0000',
-            global_name: currentSession.user.user_metadata.full_name,
-            avatar: currentSession.user.user_metadata.avatar_url
-          };
-          console.log('Discord user data:', discordUserData);
-          setDiscordUser(discordUserData);
-          setError(null); // エラーをクリア
-          console.log('✅ Discord user data set successfully in checkAuthStatus');
-        } else {
-          console.log('❌ User is not Discord authenticated, metadata:', currentSession.user.user_metadata);
-          console.log('ℹ️ User is authenticated but not with Discord, showing guidance...');
-          // エラーは表示せず、ガイダンスを表示
-        }
       } else {
-        console.log('ℹ️ No active session found, showing guidance...');
-        // エラーは表示せず、ガイダンスを表示
+        console.log('ℹ️ No active session found');
       }
     };
     
-    // 初回チェック
     checkAuthStatus();
-    
-    // 定期的にセッション状態をチェック（OAuth認証後の状態変更を確実に検出）
-    const interval = setInterval(checkAuthStatus, 500); // 500ms間隔に短縮
-    
-    // 2秒後に追加チェック（OAuth認証完了後の遅延を考慮）
-    const delayedCheck = setTimeout(checkAuthStatus, 2000);
-    
-    // 4秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
-    const finalCheck = setTimeout(checkAuthStatus, 4000);
-    
-    // 8秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
-    const extraCheck = setTimeout(checkAuthStatus, 8000);
-    
-    // 12秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
-    const finalExtraCheck = setTimeout(checkAuthStatus, 12000);
-    
-    return () => {
-      clearInterval(interval);
-      clearTimeout(delayedCheck);
-      clearTimeout(finalCheck);
-      clearTimeout(extraCheck);
-      clearTimeout(finalExtraCheck);
-    };
-  }, [supabase, user, session, router]);
+  }, [supabase, user, session]);
 
-  // Supabase認証状態変更の監視
+  // シンプルな認証状態変更の監視
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔔 Auth state change event in verify page:', event);
-      console.log('Session in verify page:', session);
+      console.log('🔔 Auth state change event:', event);
+      console.log('Session:', session);
       
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in, checking Discord auth...');
+        console.log('✅ User signed in');
         console.log('User metadata:', session.user.user_metadata);
-        
-        if (session.user.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord user authenticated, setting user data...');
-          const discordUserData = {
-            id: session.user.user_metadata.provider_id,
-            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
-            discriminator: session.user.user_metadata.discriminator || '0000',
-            global_name: session.user.user_metadata.full_name,
-            avatar: session.user.user_metadata.avatar_url
-          };
-          console.log('Discord user data:', discordUserData);
-          setDiscordUser(discordUserData);
-          setError(null); // エラーをクリア
-          console.log('✅ Discord user data set successfully in auth state change');
-        } else {
-          console.log('ℹ️ User is not Discord authenticated in auth state change');
-          console.log('User metadata in auth state change:', session.user.user_metadata);
-          // エラーは表示せず、ガイダンスを表示
-        }
-      } else if (event === 'TOKEN_REFRESHED') {
-        console.log('🔄 Token refreshed, checking Discord auth...');
-        if (session?.user?.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord session refreshed, updating user data...');
-          const discordUserData = {
-            id: session.user.user_metadata.provider_id,
-            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
-            discriminator: session.user.user_metadata.discriminator || '0000',
-            global_name: session.user.user_metadata.full_name,
-            avatar: session.user.user_metadata.avatar_url
-          };
-          setDiscordUser(discordUserData);
-          setError(null);
-          console.log('✅ Discord user data set successfully in token refresh');
-        }
-      } else if (event === 'USER_UPDATED') {
-        console.log('👤 User updated, checking Discord auth...');
-        if (session?.user?.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord user updated, setting user data...');
-          const discordUserData = {
-            id: session.user.user_metadata.provider_id,
-            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
-            discriminator: session.user.user_metadata.discriminator || '0000',
-            global_name: session.user.user_metadata.full_name,
-            avatar: session.user.user_metadata.avatar_url
-          };
-          setDiscordUser(discordUserData);
-          setError(null);
-          console.log('✅ Discord user data set successfully in user update');
-        }
-      } else if (event === 'INITIAL_SESSION') {
-        console.log('🚀 Initial session event, checking Discord auth...');
-        if (session?.user?.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord user in initial session, setting user data...');
-          const discordUserData = {
-            id: session.user.user_metadata.provider_id,
-            username: session.user.user_metadata.user_name || session.user.user_metadata.name,
-            discriminator: session.user.user_metadata.discriminator || '0000',
-            global_name: session.user.user_metadata.full_name,
-            avatar: session.user.user_metadata.avatar_url
-          };
-          setDiscordUser(discordUserData);
-          setError(null);
-          console.log('✅ Discord user data set successfully in initial session');
-        }
+      } else if (event === 'SIGNED_OUT') {
+        console.log('👋 User signed out');
       }
     });
     
     return () => subscription.unsubscribe();
   }, [supabase.auth]);
 
-  // URLパラメータからOAuth認証完了を検出
-  useEffect(() => {
-    const accessToken = searchParams?.get('access_token');
-    const refreshToken = searchParams?.get('refresh_token');
-    
-    console.log('🔍 URL parameters check:', { accessToken: !!accessToken, refreshToken: !!refreshToken });
-    
-    if (accessToken && refreshToken) {
-      console.log('✅ OAuth tokens detected in URL, waiting for auth state change...');
-      // OAuth認証完了のトークンがURLにある場合は、認証状態変更を待つ
-      // エラーは表示しない
-      
-      // 少し待ってからセッション状態を強制的にチェック
-      setTimeout(async () => {
-        console.log('🔄 Force checking session after OAuth callback...');
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        console.log('Current session after OAuth callback:', currentSession);
-        
-        if (currentSession?.user?.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord OAuth completed, setting user data...');
-          const discordUserData = {
-            id: currentSession.user.user_metadata.provider_id,
-            username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
-            discriminator: currentSession.user.user_metadata.discriminator || '0000',
-            global_name: currentSession.user.user_metadata.full_name,
-            avatar: currentSession.user.user_metadata.avatar_url
-          };
-          setDiscordUser(discordUserData);
-          setError(null);
-          console.log('✅ Auth step completed after OAuth callback');
-        } else {
-          console.log('❌ Discord OAuth not completed yet, retrying...');
-          console.log('User metadata in OAuth callback:', currentSession?.user?.user_metadata);
-          // もう一度試行
-          setTimeout(async () => {
-            const { data: { session: retrySession } } = await supabase.auth.getSession();
-            if (retrySession?.user?.user_metadata?.provider === 'discord') {
-              console.log('🎯 Discord OAuth completed on retry, setting user data...');
-              const discordUserData = {
-                id: retrySession.user.user_metadata.provider_id,
-                username: retrySession.user.user_metadata.user_name || retrySession.user.user_metadata.name,
-                discriminator: retrySession.user.user_metadata.discriminator || '0000',
-                global_name: retrySession.user.user_metadata.full_name,
-                avatar: retrySession.user.user_metadata.avatar_url
-              };
-              setDiscordUser(discordUserData);
-              setError(null);
-              console.log('✅ Auth step completed after OAuth callback retry');
-            } else {
-              console.log('❌ Discord OAuth still not completed, final retry...');
-              console.log('User metadata in OAuth callback retry:', retrySession?.user?.user_metadata);
-              // 最終試行
-              setTimeout(async () => {
-                const { data: { session: finalSession } } = await supabase.auth.getSession();
-                if (finalSession?.user?.user_metadata?.provider === 'discord') {
-                  console.log('🎯 Discord OAuth completed on final retry, setting user data...');
-                  const discordUserData = {
-                    id: finalSession.user.user_metadata.provider_id,
-                    username: finalSession.user.user_metadata.user_name || finalSession.user.user_metadata.name,
-                    discriminator: finalSession.user.user_metadata.discriminator || '0000',
-                    global_name: finalSession.user.user_metadata.full_name,
-                    avatar: finalSession.user.user_metadata.avatar_url
-                  };
-                  setDiscordUser(discordUserData);
-                  setError(null);
-                  console.log('✅ Auth step completed after OAuth callback final retry');
-                } else {
-                  console.log('❌ Discord OAuth still not completed after final retry');
-                  console.log('User metadata in OAuth callback final retry:', finalSession?.user?.user_metadata);
-                }
-              }, 3000);
-            }
-          }, 2000);
-        }
-      }, 500); // 500msに短縮
-    }
-  }, [searchParams, supabase.auth]);
+
 
   const handleMinecraftAuth = async () => {
     if (!minecraftId.trim()) {
       setError('Minecraft IDを入力してください');
-      return;
-    }
-
-    if (!discordUser) {
-      setError('Discord認証が必要です');
       return;
     }
 
@@ -276,8 +86,6 @@ function MinecraftVerificationContent() {
         },
         body: JSON.stringify({
           minecraftId: minecraftId.trim(),
-          discordUserId: discordUser.id,
-          discordUsername: discordUser.username,
         }),
       });
 
@@ -294,61 +102,13 @@ function MinecraftVerificationContent() {
 
       console.log('✅ Minecraft ID verified successfully');
 
-      // Discord認定メンバーロール付与
-      const roleResponse = await fetch('/api/assign-discord-role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          discordUserId: discordUser.id,
-          minecraftId: minecraftId.trim(),
-        }),
-      });
-
-      const roleData = await roleResponse.json();
-
-      if (!roleResponse.ok) {
-        throw new Error(roleData.error || 'Discord ロール付与に失敗しました');
-      }
-
-      console.log('✅ Discord role assigned successfully');
-
-      // Googleスプレッドシートに記録（一時的に無効化）
-      try {
-        const sheetResponse = await fetch('/api/record-minecraft-auth', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            minecraftId: minecraftId.trim(),
-            discordUserId: discordUser.id,
-            discordUsername: discordUser.username,
-            discordGlobalName: discordUser.global_name,
-          }),
-        });
-
-        if (sheetResponse.ok) {
-          const sheetData = await sheetResponse.json();
-          if (sheetData.disabled) {
-            console.log('ℹ️ Google Sheets機能は現在無効化されています');
-          } else {
-            console.log('✅ Record saved to Google Sheets successfully');
-          }
-        } else {
-          console.warn('⚠️ Failed to save to Google Sheets, but auth was successful');
-        }
-      } catch (sheetError) {
-        console.warn('⚠️ Google Sheets記録でエラーが発生しましたが、認証は成功しました:', sheetError);
-      }
-
-      setSuccess(`認証が完了しました！Minecraft ID「${minecraftId}」がDiscordアカウントに紐付けられ、認定メンバーロールが付与されました。`);
+      // 認証成功
+      setSuccess(`Minecraft ID「${minecraftId}」の認証が完了しました！`);
       
-      // 5秒後にホームページにリダイレクト
+      // 3秒後にホームページにリダイレクト
       setTimeout(() => {
         router.push('/');
-      }, 5000);
+      }, 3000);
 
     } catch (err: any) {
       console.error('❌ Minecraft auth error:', err);
@@ -358,55 +118,7 @@ function MinecraftVerificationContent() {
     }
   };
 
-  const getAvatarUrl = (user: any) => {
-    if (user.avatar) {
-      return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`;
-    }
-    return `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator) % 5}.png`;
-  };
 
-  // Discord認証状態の確認（バックグラウンドで実行）
-  useEffect(() => {
-    const checkAuthStatus = async () => {
-      console.log('🔍 Checking Discord auth status in verify page...');
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log('Current session in verify page:', currentSession);
-      
-      if (currentSession?.user?.user_metadata?.provider === 'discord') {
-        console.log('🎯 Discord user detected in verify page, setting user data...');
-        const discordUserData = {
-          id: currentSession.user.user_metadata.provider_id,
-          username: currentSession.user.user_metadata.user_name || currentSession.user.user_metadata.name,
-          discriminator: currentSession.user.user_metadata.discriminator || '0000',
-          global_name: currentSession.user.user_metadata.full_name,
-          avatar: currentSession.user.user_metadata.avatar_url
-        };
-        console.log('Discord user data in verify page:', discordUserData);
-        setDiscordUser(discordUserData);
-      } else {
-        console.log('❌ Discord user not detected in verify page');
-        console.log('User metadata:', currentSession?.user?.user_metadata);
-      }
-    };
-    
-    // 初回チェック
-    checkAuthStatus();
-    
-    // 定期的にセッション状態をチェック（OAuth認証後の状態変更を確実に検出）
-    const interval = setInterval(checkAuthStatus, 1000);
-    
-    // 3秒後に追加チェック（OAuth認証完了後の遅延を考慮）
-    const delayedCheck = setTimeout(checkAuthStatus, 3000);
-    
-    // 6秒後にもう一度チェック（OAuth認証完了後の遅延を考慮）
-    const finalCheck = setTimeout(checkAuthStatus, 6000);
-    
-    return () => {
-      clearInterval(interval);
-      clearTimeout(delayedCheck);
-      clearTimeout(finalCheck);
-    };
-  }, [supabase.auth]);
 
   return (
     <Box
@@ -461,23 +173,18 @@ function MinecraftVerificationContent() {
               AOIROSERVERの認定メンバーになろう
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Discord認証が必要です
+              Minecraft IDを入力して認証を行ってください
             </Typography>
             
             {/* デバッグ情報 */}
             {process.env.NODE_ENV === 'development' && (
               <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1, fontSize: '0.8rem' }}>
                 <Typography variant="caption" color="text.secondary">
-                  デバッグ: Discord User: {discordUser ? 'あり' : 'なし'}
+                  User: {user ? 'Authenticated' : 'Not authenticated'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" display="block">
-                  User: {user ? 'あり' : 'なし'} | Session: {session ? 'あり' : 'なし'}
+                  Session: {session ? 'Active' : 'No session'}
                 </Typography>
-                {discordUser && (
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    Discord ID: {discordUser.id} | Username: {discordUser.username}
-                  </Typography>
-                )}
                 {user && (
                   <Typography variant="caption" color="text.secondary" display="block">
                     User Metadata: {JSON.stringify(user.user_metadata, null, 2)}
@@ -487,125 +194,41 @@ function MinecraftVerificationContent() {
             )}
           </Box>
 
-          {discordUser ? (
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                <img
-                  src={getAvatarUrl(discordUser)}
-                  alt="Discord Avatar"
-                  style={{ width: 48, height: 48, borderRadius: '50%', marginRight: 12 }}
-                />
-                <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {discordUser.global_name || discordUser.username}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    @{discordUser.username}#{discordUser.discriminator}
-                  </Typography>
-                </Box>
-              </Box>
-              <Alert severity="success" sx={{ mb: 2 }}>
-                ✅ Discord認証完了
-              </Alert>
-            </Box>
-          ) : (
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                ℹ️ Discord認証が必要です
-              </Alert>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Minecraft ID認証を行うには、まずDiscordアカウントで認証してください。
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={() => router.push('/minecraft-auth')}
-                sx={{
-                  background: 'linear-gradient(45deg, #7289DA, #5865F2)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #5865F2, #7289DA)',
-                  },
-                  px: 4,
-                  py: 1.5
-                }}
-              >
-                Discordで認証
-              </Button>
-            </Box>
-          )}
+          <TextField
+            fullWidth
+            label="Minecraft ID"
+            value={minecraftId}
+            onChange={(e) => setMinecraftId(e.target.value)}
+            placeholder="あなたのMinecraft IDを入力"
+            variant="outlined"
+            disabled={loading}
+            sx={{ mb: 2 }}
+          />
+          
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            正確なMinecraft IDを入力してください
+          </Typography>
 
-          {discordUser ? (
-            <>
-              <TextField
-                fullWidth
-                label="Minecraft ID"
-                value={minecraftId}
-                onChange={(e) => setMinecraftId(e.target.value)}
-                placeholder="あなたのMinecraft IDを入力"
-                variant="outlined"
-                disabled={loading}
-                sx={{ mb: 2 }}
-              />
-              
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                正確なMinecraft IDを入力してください
-              </Typography>
-
-              <Button
-                variant="contained"
-                fullWidth
-                size="large"
-                onClick={handleMinecraftAuth}
-                disabled={loading || !minecraftId.trim()}
-                startIcon={loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <CheckCircle />}
-                sx={{
-                  background: 'linear-gradient(45deg, #4CAF50, #45a049)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #45a049, #4CAF50)',
-                  },
-                  py: 1.5,
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  mb: 3
-                }}
-              >
-                {loading ? '認証中...' : '認証する'}
-              </Button>
-            </>
-          ) : (
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                ℹ️ Discord認証が必要です
-              </Alert>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Minecraft ID認証を行うには、まずDiscordアカウントで認証してください。
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                既にDiscordでログインしている場合は、ページを再読み込みしてください。
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={() => router.push('/minecraft-auth')}
-                sx={{
-                  background: 'linear-gradient(45deg, #7289DA, #5865F2)',
-                  '&:hover': {
-                    background: 'linear-gradient(45deg, #5865F2, #7289DA)',
-                  },
-                  px: 4,
-                  py: 1.5,
-                  mb: 2
-                }}
-              >
-                Discordで認証
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => window.location.reload()}
-                sx={{ mb: 2 }}
-              >
-                🔄 ページを再読み込み
-              </Button>
-            </Box>
-          )}
+          <Button
+            variant="contained"
+            fullWidth
+            size="large"
+            onClick={handleMinecraftAuth}
+            disabled={loading || !minecraftId.trim()}
+            startIcon={loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <CheckCircle />}
+            sx={{
+              background: 'linear-gradient(45deg, #4CAF50, #45a049)',
+              '&:hover': {
+                background: 'linear-gradient(45deg, #45a049, #4CAF50)',
+              },
+              py: 1.5,
+              fontSize: '1.1rem',
+              fontWeight: 'bold',
+              mb: 3
+            }}
+          >
+            {loading ? '認証中...' : '認証する'}
+          </Button>
 
           <Button
             variant="outlined"
@@ -665,3 +288,4 @@ export default function MinecraftVerificationPage() {
     </Suspense>
   );
 }
+
