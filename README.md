@@ -9,8 +9,8 @@ AOIROSERVERの認定メンバーになるためのMinecraft ID認証システム
 ### 機能
 - Discord OAuth認証
 - Minecraft ID存在確認（Mojang API）
-- **認証成功データのみ**のGoogle Sheets自動集計
 - 認定メンバーロールの自動付与
+- ~~Google Sheets自動集計~~ （一時的に無効化 - 環境変数サイズ制限対応）
 
 ### 設定方法
 詳細は `GOOGLE_SHEETS_SETUP.md` を参照してください。

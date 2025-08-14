@@ -1,7 +1,8 @@
-# 🚨 緊急：Netlify環境変数クリーンアップ手順
+# 🚨 緊急：Netlify環境変数サイズ制限クリーンアップ
 
 ## 問題
-現在Netlifyで設定されている環境変数が4KBの制限を超えており、デプロイが失敗しています。
+Netlifyの環境変数サイズ制限（4KB）を超過しているため、デプロイが失敗しています。
+特に`GOOGLE_SERVICE_ACCOUNT_KEY`が非常に大きい（約2-3KB）ため、他の環境変数と合わせて制限を超えています。
 
 ## 即座に削除すべき環境変数
 
@@ -84,24 +85,22 @@ NEXT_PUBLIC_ADMIN_SECRET
 ## 機能への影響
 
 ### ✅ 影響なし（完全動作）
-- Minecraft ID認証システム
+- Minecraft ID認証システム（Google Sheets記録なし）
 - Discord OAuth認証
 - Discord認定メンバーロール付与
 - メール送信機能
 - Minecraftサーバー監視
 
 ### ⏸️ 一時無効化（影響軽微）
+- Google Sheets自動記録
 - 管理者ページの一部機能
-
-### 🔄 再設定が必要（Google Sheets機能）
-- Google Sheets自動記録（`GOOGLE_SHEETS_SETUP.md`を参照して再設定）
 
 ## 優先順位
 
 **最優先**: `GOOGLE_SERVICE_ACCOUNT_KEY`の削除
-- これが最も大きい（おそらく1-2KB）
-- 既にコードで無効化済み
-- 削除しても機能に影響なし
+- これが最も大きい（おそらく2-3KB）
+- 削除しても基本機能に影響なし
+- デプロイ成功のため必須
 
 **次優先**: 重複環境変数の削除
 - EMAIL_*, MAILGUN_*, ADMIN_*系
@@ -114,4 +113,16 @@ NEXT_PUBLIC_ADMIN_SECRET
 2. Discord連携が正常に動作
 3. エラーメッセージが表示されない
 
-Google Sheets機能は再設定が必要です。詳細は `GOOGLE_SHEETS_SETUP.md` を参照してください。
+## Google Sheets機能の代替案
+
+### 一時的な解決策
+1. 環境変数を削除してデプロイを成功させる
+2. 基本機能を動作させる
+3. 後でGoogle Sheets機能を個別に設定
+
+### 長期的な解決策
+1. 環境変数を分割して管理
+2. 外部設定ファイルの使用
+3. 設定管理サービスの利用
+
+Google Sheets機能は既にコードレベルで無効化されているため、環境変数を削除しても問題ありません。
