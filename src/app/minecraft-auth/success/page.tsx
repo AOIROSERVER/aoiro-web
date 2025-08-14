@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import {
   Box,
   Container,
@@ -11,14 +11,18 @@ import {
   Slide,
 } from "@mui/material";
 import { CheckCircle, Home, Refresh } from "@mui/icons-material";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
-export default function MinecraftAuthSuccessPage() {
+function MinecraftAuthSuccessContent() {
   const [countdown, setCountdown] = useState(5);
+  const [minecraftId, setMinecraftId] = useState('');
   const router = useRouter();
-  const searchParams = useSearchParams();
   
-  const minecraftId = searchParams?.get('minecraftId') || '';
+  // クライアントサイドでのみsearchParamsを取得
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    setMinecraftId(searchParams.get('minecraftId') || '');
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -408,5 +412,26 @@ export default function MinecraftAuthSuccessPage() {
         }
       `}</style>
     </Box>
+  );
+}
+
+export default function MinecraftAuthSuccessPage() {
+  return (
+    <Suspense fallback={
+      <Box sx={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Card sx={{ p: 4, textAlign: 'center' }}>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <Typography>読み込み中...</Typography>
+        </Card>
+      </Box>
+    }>
+      <MinecraftAuthSuccessContent />
+    </Suspense>
   );
 }

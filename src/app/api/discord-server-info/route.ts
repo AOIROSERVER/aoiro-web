@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// 動的レンダリングを強制（Netlify対応）
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Discord Bot TokenとサーバーIDを環境変数から取得

@@ -249,6 +249,9 @@ const otherMockServices: ServiceStatus[] = [
   }
 ];
 
+// 動的レンダリングを強制（Netlify対応）
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const apiStartTime = new Date();
   
