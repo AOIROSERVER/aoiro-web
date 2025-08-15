@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-// import { google } from 'googleapis'; // 一時的に無効化
+import { google } from 'googleapis';
 
 // 動的レンダリングを強制（Netlify対応）
 export const dynamic = 'force-dynamic';
@@ -21,16 +21,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Google Sheets機能は一時的に無効化（環境変数サイズ制限対応）
-    console.log('📝 Google Sheets機能は一時的に無効化されています（環境変数サイズ制限対応）');
-    
-    return NextResponse.json({
-      success: true,
-      disabled: true,
-      message: 'Google Sheets機能は一時的に無効化されています（環境変数サイズ制限対応）'
-    });
-
-    /*
     // Google Sheets API設定
     const googleServiceAccount = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID;
@@ -48,9 +38,9 @@ export async function POST(request: NextRequest) {
         message: 'Google Sheets設定がないため、記録をスキップしました'
       });
     }
-    */
 
-    /*
+
+
     try {
       // Google Sheets APIクライアントを初期化
       const serviceAccountKey = JSON.parse(googleServiceAccount);
@@ -159,7 +149,6 @@ export async function POST(request: NextRequest) {
         error: sheetsError instanceof Error ? sheetsError.message : 'Unknown sheets error'
       });
     }
-    */
 
   } catch (error) {
     console.error('❌ Record minecraft auth error:', error);

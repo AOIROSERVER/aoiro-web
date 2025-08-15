@@ -32,75 +32,87 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Mojang APIを使用してMinecraft IDの存在確認
-      console.log('🔄 Checking Minecraft ID with Mojang API...');
+      // OpenXBL検索APIを使用してMinecraft IDの存在確認
+      console.log('🔄 Checking Minecraft ID with OpenXBL Search API...');
       
-      // UUIDを取得してIDの存在確認
-      const mojangResponse = await fetch(
-        `https://api.mojang.com/users/profiles/minecraft/${minecraftId}`,
+      // 検索APIを使用してアカウントの存在確認
+      const searchResponse = await fetch(
+        `https://xbl.io/api/v2/search/${minecraftId}`,
         {
           method: 'GET',
           headers: {
-            'User-Agent': 'AOIROSERVER/1.0'
+            'User-Agent': 'AOIROSERVER/1.0',
+            'X-Authorization': process.env.OPENXBL_API_KEY || '3338129b-e005-497e-ab05-6cd77c30ed8c'
           }
         }
       );
 
-      console.log('📋 Mojang API Response Status:', mojangResponse.status);
+      console.log('📋 OpenXBL Search API Response Status:', searchResponse.status);
 
-      if (mojangResponse.status === 404) {
-        console.log('❌ Minecraft ID not found:', minecraftId);
+      if (!searchResponse.ok) {
+        console.error('❌ OpenXBL Search API error:', searchResponse.status, searchResponse.statusText);
+        
+        // OpenXBL APIが利用できない場合のフォールバック
+        console.log('⚠️ OpenXBL Search API unavailable, using fallback validation');
+        return NextResponse.json({
+          exists: true,
+          fallback: true,
+          message: 'OpenXBL Search APIが利用できないため、フォールバック検証を使用しました'
+        });
+      }
+
+      const searchData = await searchResponse.json();
+      console.log('📋 Search API response:', {
+        peopleCount: searchData.people?.length || 0,
+        hasRecommendations: !!searchData.recommendationSummary,
+        hasFriendFinder: !!searchData.friendFinderState
+      });
+
+      // people配列が空でない場合、アカウントが存在する
+      if (searchData.people && searchData.people.length > 0) {
+        const foundUser = searchData.people[0];
+        console.log('✅ Minecraft user found via OpenXBL:', {
+          name: foundUser.gamertag,
+          xuid: foundUser.xuid?.substring(0, 8) + '...'
+        });
+
+        // 名前の大文字小文字の違いをチェック
+        if (foundUser.gamertag && foundUser.gamertag.toLowerCase() !== minecraftId.toLowerCase()) {
+          console.log('⚠️ Case mismatch:', { input: minecraftId, actual: foundUser.gamertag });
+          return NextResponse.json({
+            exists: true,
+            correctName: foundUser.gamertag,
+            xuid: foundUser.xuid,
+            avatarUrl: foundUser.displayPicRaw || null,
+            message: `Minecraft IDが見つかりました（正確な名前: ${foundUser.gamertag}）`
+          });
+        }
+
+        return NextResponse.json({
+          exists: true,
+          xuid: foundUser.xuid,
+          gamertag: foundUser.gamertag || minecraftId,
+          avatarUrl: foundUser.displayPicRaw || null,
+          message: 'Minecraft IDが確認されました'
+        });
+      } else {
+        // people配列が空の場合、アカウントが存在しない
+        console.log('❌ Minecraft ID not found via OpenXBL:', minecraftId);
         return NextResponse.json({
           exists: false,
           message: 'Minecraft IDが見つかりません'
         });
       }
 
-      if (!mojangResponse.ok) {
-        console.error('❌ Mojang API error:', mojangResponse.status, mojangResponse.statusText);
-        
-        // Mojang APIが利用できない場合のフォールバック
-        // 基本的な形式チェックでOKとする（実際の運用では適切なフォールバック戦略が必要）
-        console.log('⚠️ Mojang API unavailable, using fallback validation');
-        return NextResponse.json({
-          exists: true,
-          fallback: true,
-          message: 'Minecraft IDの存在確認でフォールバック検証を使用しました'
-        });
-      }
-
-      const userData = await mojangResponse.json();
-      console.log('✅ Minecraft user found:', {
-        name: userData.name,
-        id: userData.id?.substring(0, 8) + '...'
-      });
-
-      // 名前の大文字小文字の違いをチェック
-      if (userData.name.toLowerCase() !== minecraftId.toLowerCase()) {
-        console.log('⚠️ Case mismatch:', { input: minecraftId, actual: userData.name });
-        return NextResponse.json({
-          exists: true,
-          correctName: userData.name,
-          message: `Minecraft IDが見つかりました（正確な名前: ${userData.name}）`
-        });
-      }
-
-      return NextResponse.json({
-        exists: true,
-        uuid: userData.id,
-        name: userData.name,
-        message: 'Minecraft IDが確認されました'
-      });
-
     } catch (apiError) {
-      console.error('❌ Mojang API error:', apiError);
+      console.error('❌ OpenXBL Search API error:', apiError);
       
       // API エラーの場合もフォールバック
       console.log('⚠️ API error occurred, using fallback validation');
       return NextResponse.json({
         exists: true,
         fallback: true,
-        message: 'Minecraft APIエラーのため、基本検証のみ実行されました'
+        message: 'OpenXBL Search APIエラーのため、基本検証のみ実行されました'
       });
     }
 

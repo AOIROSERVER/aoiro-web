@@ -90,6 +90,7 @@ function MinecraftVerificationContent() {
       });
 
       const verifyData = await verifyResponse.json();
+      console.log('📋 Verification response:', verifyData);
 
       if (!verifyResponse.ok) {
         throw new Error(verifyData.error || 'Minecraft ID認証に失敗しました');
@@ -102,6 +103,15 @@ function MinecraftVerificationContent() {
       }
 
       console.log('✅ Minecraft ID verified successfully');
+      if (verifyData.xuid) {
+        console.log('📋 XUID:', verifyData.xuid);
+      }
+      if (verifyData.gamertag) {
+        console.log('📋 Gamertag:', verifyData.gamertag);
+      }
+      if (verifyData.avatarUrl) {
+        console.log('📋 Avatar URL:', verifyData.avatarUrl);
+      }
 
       // 認証成功時のみGoogle Sheetsに記録
       try {
@@ -138,9 +148,14 @@ function MinecraftVerificationContent() {
       // 認証成功
       setSuccess(`Minecraft ID「${minecraftId}」の認証が完了しました！`);
       
-      // 1秒後に認証完了ページにリダイレクト
+      // アバター画像URLも取得して認証完了ページにリダイレクト
+      const avatarUrl = verifyData.avatarUrl || null;
       setTimeout(() => {
-        router.push(`/minecraft-auth/success?minecraftId=${encodeURIComponent(minecraftId.trim())}`);
+        const params = new URLSearchParams({
+          minecraftId: minecraftId.trim(),
+          ...(avatarUrl && { avatarUrl })
+        });
+        router.push(`/minecraft-auth/success?${params.toString()}`);
       }, 1000);
 
     } catch (err: any) {

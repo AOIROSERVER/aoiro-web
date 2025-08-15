@@ -14,29 +14,16 @@ import { CheckCircle, Home, Refresh } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 
 function MinecraftAuthSuccessContent() {
-  const [countdown, setCountdown] = useState(5);
   const [minecraftId, setMinecraftId] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const router = useRouter();
   
   // クライアントサイドでのみsearchParamsを取得
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     setMinecraftId(searchParams.get('minecraftId') || '');
+    setAvatarUrl(searchParams.get('avatarUrl') || null);
   }, []);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          router.push('/');
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [router]);
 
   const handleGoHome = () => {
     router.push('/');
@@ -257,12 +244,47 @@ function MinecraftAuthSuccessContent() {
             AOIROSERVERでより多くの機能を利用できるようになりました。
           </Typography>
 
-          {/* 自動リダイレクト情報 */}
-          <Alert severity="info" sx={{ mb: 4 }}>
-            <Typography variant="body2">
-              {countdown}秒後にホームページに自動的に移動します
-            </Typography>
-          </Alert>
+          {/* アバター画像表示 */}
+          {avatarUrl && (
+            <Box sx={{ 
+              mb: 4, 
+              display: 'flex', 
+              justifyContent: 'center',
+              position: 'relative'
+            }}>
+              <Box sx={{
+                width: 120,
+                height: 120,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '4px solid rgba(76, 175, 80, 0.3)',
+                boxShadow: '0 0 30px rgba(76, 175, 80, 0.4)',
+                position: 'relative',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'linear-gradient(45deg, rgba(76, 175, 80, 0.2), rgba(69, 160, 73, 0.1))',
+                  zIndex: 1
+                }
+              }}>
+                <img
+                  src={avatarUrl}
+                  alt={`${minecraftId}のアバター`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    position: 'relative',
+                    zIndex: 2
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
 
           {/* アクションボタン */}
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
