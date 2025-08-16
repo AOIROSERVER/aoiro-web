@@ -45,45 +45,102 @@ function MinecraftVerificationContent() {
       if (authSuccess === 'true' && fromParam === 'minecraft-auth') {
         console.log('✅ Discord auth success detected from MCID auth page');
         setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
+        
+        // 認証成功後、少し待ってからセッション状態を確認
+        setTimeout(async () => {
+          try {
+            console.log('🔍 Checking Discord auth state after success...');
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            console.log('Current session after auth success:', currentSession);
+            
+            if (currentSession?.user?.user_metadata?.provider === 'discord') {
+              console.log('✅ Discord user authenticated for Minecraft verification');
+              console.log('User details:', {
+                id: currentSession.user.id,
+                email: currentSession.user.email,
+                provider: currentSession.user.app_metadata?.provider,
+                metadata: currentSession.user.user_metadata
+              });
+            } else {
+              console.log('❌ Discord user not found after auth success');
+              console.log('User metadata:', currentSession?.user?.user_metadata);
+              console.log('App metadata:', currentSession?.user?.app_metadata);
+              setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+            }
+          } catch (err) {
+            console.error('Error checking auth state after success:', err);
+            setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
+          }
+        }, 2000); // 2秒待ってから確認
+        
         // 成功パラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (authSuccess === 'true') {
         console.log('✅ Discord auth success detected from URL');
         setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
+        
+        // 同様に少し待ってからセッション状態を確認
+        setTimeout(async () => {
+          try {
+            console.log('🔍 Checking Discord auth state after success...');
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            console.log('Current session after auth success:', currentSession);
+            
+            if (currentSession?.user?.user_metadata?.provider === 'discord') {
+              console.log('✅ Discord user authenticated for Minecraft verification');
+              console.log('User details:', {
+                id: currentSession.user.id,
+                email: currentSession.user.email,
+                provider: currentSession.user.app_metadata?.provider,
+                metadata: currentSession.user.user_metadata
+              });
+            } else {
+              console.log('❌ Discord user not found after auth success');
+              console.log('User metadata:', currentSession?.user?.user_metadata);
+              console.log('App metadata:', currentSession?.user?.app_metadata);
+              setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+            }
+          } catch (err) {
+            console.error('Error checking auth state after success:', err);
+            setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
+          }
+        }, 2000); // 2秒待ってから確認
+        
         // 成功パラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);
-      }
-      
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      console.log('Current session:', currentSession);
-      
-      if (currentSession?.user) {
-        console.log('✅ User is authenticated:', currentSession.user.email);
-        console.log('User metadata:', currentSession.user.user_metadata);
-        console.log('App metadata:', currentSession.user.app_metadata);
+      } else {
+        // 認証成功パラメータがない場合のみ、通常の認証状態確認を行う
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log('Current session:', currentSession);
         
-        // Discord認証済みかチェック
-        if (currentSession.user.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord user authenticated for Minecraft verification');
-          console.log('User details:', {
-            id: currentSession.user.id,
-            email: currentSession.user.email,
-            provider: currentSession.user.app_metadata?.provider,
-            metadata: currentSession.user.user_metadata
-          });
-        } else {
-          console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
+        if (currentSession?.user) {
+          console.log('✅ User is authenticated:', currentSession.user.email);
           console.log('User metadata:', currentSession.user.user_metadata);
           console.log('App metadata:', currentSession.user.app_metadata);
-          console.log('Provider check failed, redirecting to /minecraft-auth');
+          
+          // Discord認証済みかチェック
+          if (currentSession.user.user_metadata?.provider === 'discord') {
+            console.log('🎯 Discord user authenticated for Minecraft verification');
+            console.log('User details:', {
+              id: currentSession.user.id,
+              email: currentSession.user.email,
+              provider: currentSession.user.app_metadata?.provider,
+              metadata: currentSession.user.user_metadata
+            });
+          } else {
+            console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
+            console.log('User metadata:', currentSession.user.user_metadata);
+            console.log('App metadata:', currentSession.user.app_metadata);
+            console.log('Provider check failed, redirecting to /minecraft-auth');
+            router.push('/minecraft-auth');
+            return;
+          }
+        } else {
+          console.log('❌ No active session found, redirecting to Discord auth...');
+          console.log('Session check failed, redirecting to /minecraft-auth');
           router.push('/minecraft-auth');
           return;
         }
-      } else {
-        console.log('❌ No active session found, redirecting to Discord auth...');
-        console.log('Session check failed, redirecting to /minecraft-auth');
-        router.push('/minecraft-auth');
-        return;
       }
     };
     

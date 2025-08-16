@@ -436,11 +436,18 @@ function DiscordAuthContent() {
           {/* Discord連携状態の表示 */}
           {isLinked && discordUser ? (
             <Box sx={{ mb: 4 }}>
-              <Card sx={{ p: 3, bgcolor: 'success.50', border: '1px solid', borderColor: 'success.200' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+              <Card sx={{ 
+                p: 4, 
+                bgcolor: 'success.50', 
+                border: '2px solid', 
+                borderColor: 'success.200',
+                borderRadius: 3,
+                boxShadow: '0 8px 24px rgba(76, 175, 80, 0.15)'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CheckCircleIcon color="success" sx={{ fontSize: 32 }} />
-                    <Typography variant="h6" color="success.dark">
+                    <CheckCircleIcon color="success" sx={{ fontSize: 36 }} />
+                    <Typography variant="h5" color="success.dark" sx={{ fontWeight: 'bold' }}>
                       Discordアカウントが連携されています
                     </Typography>
                   </Box>
@@ -449,28 +456,78 @@ function DiscordAuthContent() {
                     label="連携済み" 
                     color="success" 
                     variant="outlined"
+                    sx={{ 
+                      fontSize: '0.9rem',
+                      fontWeight: 'bold',
+                      borderWidth: '2px'
+                    }}
                   />
                 </Box>
                 
-                <Divider sx={{ my: 2 }} />
+                <Divider sx={{ my: 3, borderColor: 'success.200' }} />
                 
-                <List sx={{ bgcolor: 'white', borderRadius: 2, p: 2 }}>
-                  <ListItem>
-                    <ListItemAvatar>
-                      <Avatar 
-                        src={discordUser.avatar} 
-                        alt={discordUser.username}
-                        sx={{ width: 48, height: 48 }}
-                      />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={discordUser.username}
-                      secondary={`Discord ID: ${discordUser.id}`}
+                <Box sx={{ 
+                  bgcolor: 'white', 
+                  borderRadius: 3, 
+                  p: 3,
+                  border: '1px solid',
+                  borderColor: 'success.100',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <Avatar 
+                      src={discordUser.avatar} 
+                      alt={discordUser.username}
+                      sx={{ 
+                        width: 80, 
+                        height: 80,
+                        border: '4px solid',
+                        borderColor: 'success.main',
+                        boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
+                      }}
+                      onError={(e) => {
+                        // アイコン読み込みエラー時のフォールバック
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const avatarElement = target.parentElement;
+                        if (avatarElement) {
+                          const fallbackText = document.createElement('div');
+                          fallbackText.textContent = discordUser.username.charAt(0).toUpperCase();
+                          fallbackText.style.cssText = `
+                            width: 80px;
+                            height: 80px;
+                            border: 4px solid #4CAF50;
+                            border-radius: 50%;
+                            background: linear-gradient(45deg, #7289DA, #5865F2);
+                            color: white;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 32px;
+                            font-weight: bold;
+                            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+                          `;
+                          avatarElement.appendChild(fallbackText);
+                        }
+                      }}
                     />
-                  </ListItem>
-                </List>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.dark', mb: 1 }}>
+                        {discordUser.username}
+                      </Typography>
+                      <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                        Discord ID: {discordUser.id}
+                      </Typography>
+                      {discordUser.discriminator && (
+                        <Typography variant="body2" color="text.secondary">
+                          #{discordUser.discriminator}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
                 
-                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Box sx={{ mt: 4, textAlign: 'center' }}>
                   <Button
                     variant="contained"
                     size="large"
@@ -480,8 +537,12 @@ function DiscordAuthContent() {
                       '&:hover': {
                         background: 'linear-gradient(45deg, #45a049, #4CAF50)',
                       },
-                      px: 4,
-                      py: 1.5
+                      px: 5,
+                      py: 2,
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      borderRadius: 2,
+                      boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)'
                     }}
                   >
                     🎮 Minecraft ID認証に進む
