@@ -10,16 +10,19 @@ import {
   Button,
   Alert,
   Slide,
+  Avatar,
 } from "@mui/material";
 import { CheckCircle } from "@mui/icons-material";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 function MinecraftVerificationContent() {
   const [minecraftId, setMinecraftId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [discordUser, setDiscordUser] = useState<any>(null);
   
   const { supabase, user, session } = useAuth();
   const router = useRouter();
@@ -64,6 +67,14 @@ function MinecraftVerificationContent() {
                 provider: currentSession.user.app_metadata?.provider,
                 metadata: currentSession.user.user_metadata
               });
+              
+              // Discordユーザー情報を設定
+              setDiscordUser({
+                username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
+                avatar: currentSession.user.user_metadata.avatar_url,
+                discriminator: currentSession.user.user_metadata.discriminator,
+                id: currentSession.user.user_metadata.sub
+              });
             } else {
               console.log('❌ Discord user not found after auth success');
               console.log('User metadata:', currentSession?.user?.user_metadata);
@@ -84,6 +95,14 @@ function MinecraftVerificationContent() {
                         email: retrySession.user.email,
                         provider: retrySession.user.app_metadata?.provider,
                         metadata: retrySession.user.user_metadata
+                      });
+                      
+                      // Discordユーザー情報を設定
+                      setDiscordUser({
+                        username: retrySession.user.user_metadata.full_name || retrySession.user.user_metadata.name,
+                        avatar: retrySession.user.user_metadata.avatar_url,
+                        discriminator: retrySession.user.user_metadata.discriminator,
+                        id: retrySession.user.user_metadata.sub
                       });
                     } else {
                       console.log('❌ Discord user still not found on retry');
@@ -125,6 +144,14 @@ function MinecraftVerificationContent() {
                 provider: currentSession.user.app_metadata?.provider,
                 metadata: currentSession.user.user_metadata
               });
+              
+              // Discordユーザー情報を設定
+              setDiscordUser({
+                username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
+                avatar: currentSession.user.user_metadata.avatar_url,
+                discriminator: currentSession.user.user_metadata.discriminator,
+                id: currentSession.user.user_metadata.sub
+              });
             } else {
               console.log('❌ Discord user not found after auth success');
               console.log('User metadata:', currentSession?.user?.user_metadata);
@@ -145,6 +172,14 @@ function MinecraftVerificationContent() {
                         email: retrySession.user.email,
                         provider: retrySession.user.app_metadata?.provider,
                         metadata: retrySession.user.user_metadata
+                      });
+                      
+                      // Discordユーザー情報を設定
+                      setDiscordUser({
+                        username: retrySession.user.user_metadata.full_name || retrySession.user.user_metadata.name,
+                        avatar: retrySession.user.user_metadata.avatar_url,
+                        discriminator: retrySession.user.user_metadata.discriminator,
+                        id: retrySession.user.user_metadata.sub
                       });
                     } else {
                       console.log('❌ Discord user still not found on retry');
@@ -186,6 +221,14 @@ function MinecraftVerificationContent() {
               email: currentSession.user.email,
               provider: currentSession.user.app_metadata?.provider,
               metadata: currentSession.user.user_metadata
+            });
+            
+            // Discordユーザー情報を設定
+            setDiscordUser({
+              username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
+              avatar: currentSession.user.user_metadata.avatar_url,
+              discriminator: currentSession.user.user_metadata.discriminator,
+              id: currentSession.user.user_metadata.sub
             });
           } else {
             console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
@@ -483,6 +526,76 @@ function MinecraftVerificationContent() {
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
               Minecraft IDを入力して認証を行ってください
             </Typography>
+            
+            {/* Discordアカウント連携状態の表示 */}
+            {discordUser && (
+              <Box sx={{ 
+                mt: 3, 
+                p: 3, 
+                bgcolor: 'rgba(255,255,255,0.1)', 
+                borderRadius: 2,
+                border: '1px solid rgba(255,255,255,0.2)',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
+                  <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                    Discordアカウント連携済み
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                  <Avatar 
+                    src={discordUser.avatar} 
+                    alt={discordUser.username}
+                    sx={{ 
+                      width: 64, 
+                      height: 64,
+                      border: '3px solid',
+                      borderColor: '#4CAF50',
+                      boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)'
+                    }}
+                    onError={(e) => {
+                      // アイコン読み込みエラー時のフォールバック
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const avatarElement = target.parentElement;
+                      if (avatarElement) {
+                        const fallbackText = document.createElement('div');
+                        fallbackText.textContent = discordUser.username.charAt(0).toUpperCase();
+                        fallbackText.style.cssText = `
+                          width: 64px;
+                          height: 64px;
+                          border: 3px solid #4CAF50;
+                          border-radius: 50%;
+                          background: linear-gradient(45deg, #7289DA, #5865F2);
+                          color: white;
+                          display: flex;
+                          align-items: center;
+                          justify-content: center;
+                          font-size: 24px;
+                          font-weight: bold;
+                          box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+                        `;
+                        avatarElement.appendChild(fallbackText);
+                      }
+                    }}
+                  />
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 0.5 }}>
+                      {discordUser.username}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 0.5 }}>
+                      Discord ID: {discordUser.id}
+                    </Typography>
+                    {discordUser.discriminator && (
+                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                        #{discordUser.discriminator}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+            )}
             
             {/* デバッグ情報 */}
             {process.env.NODE_ENV === 'development' && (
