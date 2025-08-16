@@ -231,13 +231,15 @@ function DiscordAuthContent() {
       // fromパラメータをminecraft-authに設定し、認証コールバック処理で確実に認識されるようにする
       const params = new URLSearchParams({
         from: 'minecraft-auth',
-        next: '/minecraft-auth/verify'
+        next: '/minecraft-auth/verify',
+        source: 'minecraft-auth-page'
       });
       const redirectUrl = `${window.location.origin}/auth/callback?${params.toString()}`;
       console.log('MCID auth redirect URL:', redirectUrl);
       console.log('URL parameters:', {
         from: 'minecraft-auth',
         next: '/minecraft-auth/verify',
+        source: 'minecraft-auth-page',
         encodedParams: params.toString()
       });
       

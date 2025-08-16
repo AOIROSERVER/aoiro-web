@@ -65,15 +65,23 @@ function MinecraftVerificationContent() {
         // Discord認証済みかチェック
         if (currentSession.user.user_metadata?.provider === 'discord') {
           console.log('🎯 Discord user authenticated for Minecraft verification');
+          console.log('User details:', {
+            id: currentSession.user.id,
+            email: currentSession.user.email,
+            provider: currentSession.user.app_metadata?.provider,
+            metadata: currentSession.user.user_metadata
+          });
         } else {
           console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
           console.log('User metadata:', currentSession.user.user_metadata);
           console.log('App metadata:', currentSession.user.app_metadata);
+          console.log('Provider check failed, redirecting to /minecraft-auth');
           router.push('/minecraft-auth');
           return;
         }
       } else {
         console.log('❌ No active session found, redirecting to Discord auth...');
+        console.log('Session check failed, redirecting to /minecraft-auth');
         router.push('/minecraft-auth');
         return;
       }

@@ -11,23 +11,30 @@ export async function GET(request: Request) {
   const tokenType = requestUrl.searchParams.get('token_type')
   const from = requestUrl.searchParams.get('from')
   const next = requestUrl.searchParams.get('next') || (from === 'register' ? '/register' : '/train-status')
+  const source = requestUrl.searchParams.get('source')
   
   // MCID認証ページからの認証の場合の特別処理
-  // fromパラメータ、nextパラメータ、リファラーヘッダーのいずれかでMCID認証ページからの認証を検出
+  // fromパラメータ、nextパラメータ、リファラーヘッダー、sourceパラメータのいずれかでMCID認証ページからの認証を検出
   const referer = request.headers.get('referer') || '';
   const isFromMinecraftAuth = from === 'minecraft-auth' || 
                               next === '/minecraft-auth' || 
                               next === '/minecraft-auth/verify' ||
+                              source === 'minecraft-auth-page' ||
                               referer.includes('/minecraft-auth') ||
-                              referer.includes('minecraft-auth');
+                              referer.includes('minecraft-auth') ||
+                              requestUrl.pathname.includes('minecraft-auth');
   
   console.log('🔍 MCID Auth Detection:', {
     from,
     next,
+    source,
     referer,
+    pathname: requestUrl.pathname,
     isFromMinecraftAuth,
+    sourceIsMinecraftAuthPage: source === 'minecraft-auth-page',
     refererIncludesMinecraftAuth: referer.includes('/minecraft-auth'),
-    refererIncludesMinecraftAuthVerify: referer.includes('minecraft-auth')
+    refererIncludesMinecraftAuthVerify: referer.includes('minecraft-auth'),
+    pathnameIncludesMinecraftAuth: requestUrl.pathname.includes('minecraft-auth')
   });
   
   if (isFromMinecraftAuth) {
