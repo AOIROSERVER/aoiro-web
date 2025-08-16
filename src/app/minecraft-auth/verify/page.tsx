@@ -31,6 +31,17 @@ function MinecraftVerificationContent() {
       console.log('User:', user);
       console.log('Session:', session);
       
+      // URLパラメータから認証完了をチェック
+      const urlParams = new URLSearchParams(window.location.search);
+      const authSuccess = urlParams.get('auth_success');
+      
+      if (authSuccess === 'true') {
+        console.log('✅ Discord auth success detected from URL');
+        setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
+        // 成功パラメータをクリア
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       console.log('Current session:', currentSession);
       
@@ -38,13 +49,24 @@ function MinecraftVerificationContent() {
         console.log('✅ User is authenticated:', currentSession.user.email);
         console.log('User metadata:', currentSession.user.user_metadata);
         console.log('App metadata:', currentSession.user.app_metadata);
+        
+        // Discord認証済みかチェック
+        if (currentSession.user.user_metadata?.provider === 'discord') {
+          console.log('🎯 Discord user authenticated for Minecraft verification');
+        } else {
+          console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
+          router.push('/minecraft-auth');
+          return;
+        }
       } else {
-        console.log('ℹ️ No active session found');
+        console.log('❌ No active session found, redirecting to Discord auth...');
+        router.push('/minecraft-auth');
+        return;
       }
     };
     
     checkAuthStatus();
-  }, [supabase, user, session]);
+  }, [supabase, user, session, router]);
 
   // シンプルな認証状態変更の監視
   useEffect(() => {

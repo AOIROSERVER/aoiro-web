@@ -457,8 +457,8 @@ export async function GET(request: Request) {
   // Minecraft認証ページからの認証の場合は、MCID認証ページに成功パラメータ付きでリダイレクト
   if (from === 'minecraft-auth') {
     const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + '/minecraft-auth?auth_success=true'
-    console.log('🔄 Redirecting to minecraft-auth page with success:', redirectUrl)
+    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true'
+    console.log('🔄 Redirecting to minecraft-auth verify page with success:', redirectUrl)
     console.log('Base URL used:', baseUrl)
     console.log('Final redirect URL:', redirectUrl)
     return NextResponse.redirect(redirectUrl)
@@ -475,8 +475,8 @@ export async function GET(request: Request) {
   // fromパラメータがminecraft-authでない場合でも、nextが/minecraft-authの場合はMCID認証ページにリダイレクト
   if (next === '/minecraft-auth') {
     const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + next + '?auth_success=true'
-    console.log('🔄 Redirecting to minecraft-auth page based on next parameter:', redirectUrl)
+    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true'
+    console.log('🔄 Redirecting to minecraft-auth verify page based on next parameter:', redirectUrl)
     return NextResponse.redirect(redirectUrl)
   }
   
