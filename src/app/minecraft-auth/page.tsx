@@ -133,7 +133,10 @@ function DiscordAuthContent() {
         // 認証成功後、Discord連携状態を確認
         setTimeout(async () => {
           try {
+            console.log('🔍 Checking Discord auth state after success...');
             const { data: { session: currentSession } } = await supabase.auth.getSession();
+            console.log('Current session after auth success:', currentSession);
+            
             if (currentSession?.user?.user_metadata?.provider === 'discord') {
               console.log('✅ Discord user authenticated, updating state...');
               setIsLinked(true);
@@ -147,13 +150,16 @@ function DiscordAuthContent() {
               }
               setSuccess('Discordアカウントの連携が完了しました！Minecraft ID認証ページに移動します...');
               
-              // 3秒後にMinecraft ID認証ページに自動リダイレクト
+              // 2秒後にMinecraft ID認証ページに自動リダイレクト
               setTimeout(() => {
+                console.log('🔄 Redirecting to minecraft-auth verify page...');
                 router.push('/minecraft-auth/verify');
-              }, 3000);
+              }, 2000);
               
             } else {
               console.log('❌ Discord user not found after auth success');
+              console.log('User metadata:', currentSession?.user?.user_metadata);
+              console.log('App metadata:', currentSession?.user?.app_metadata);
               setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
             }
           } catch (err) {
@@ -221,9 +227,23 @@ function DiscordAuthContent() {
       console.log('Current session:', session);
       console.log('Session user:', session?.user);
       
-      // シンプルなOAuthオプションを設定
+      // MCID認証専用のリダイレクトURLを設定
+      // fromパラメータをminecraft-authに設定し、認証コールバック処理で確実に認識されるようにする
+      const params = new URLSearchParams({
+        from: 'minecraft-auth',
+        next: '/minecraft-auth/verify'
+      });
+      const redirectUrl = `${window.location.origin}/auth/callback?${params.toString()}`;
+      console.log('MCID auth redirect URL:', redirectUrl);
+      console.log('URL parameters:', {
+        from: 'minecraft-auth',
+        next: '/minecraft-auth/verify',
+        encodedParams: params.toString()
+      });
+      
+      // OAuthオプションを設定
       const oauthOptions = {
-        redirectTo: `${window.location.origin}/minecraft-auth`,
+        redirectTo: redirectUrl,
         skipBrowserRedirect: false,
         queryParams: {
           response_type: 'code',
@@ -245,10 +265,10 @@ function DiscordAuthContent() {
       console.log('✅ Discord OAuth initiated successfully');
       console.log('OAuth data:', data);
       console.log('Provider: discord');
-      console.log('Redirect URL used:', oauthOptions.redirectTo);
+      console.log('Redirect URL used:', redirectUrl);
       
       // 認証が開始されたことを示すメッセージ
-      setSuccess('Discord認証が開始されました。認証完了後、このページに戻ってきます...');
+      setSuccess('Discord認証が開始されました。認証完了後、Minecraft ID認証ページに移動します...');
       
       // 認証完了を監視するためのポーリングを開始
       const checkAuthCompletion = async () => {

@@ -11,6 +11,33 @@ export async function GET(request: Request) {
   const tokenType = requestUrl.searchParams.get('token_type')
   const from = requestUrl.searchParams.get('from')
   const next = requestUrl.searchParams.get('next') || (from === 'register' ? '/register' : '/train-status')
+  
+  // MCID認証ページからの認証の場合の特別処理
+  // fromパラメータ、nextパラメータ、リファラーヘッダーのいずれかでMCID認証ページからの認証を検出
+  const referer = request.headers.get('referer') || '';
+  const isFromMinecraftAuth = from === 'minecraft-auth' || 
+                              next === '/minecraft-auth' || 
+                              next === '/minecraft-auth/verify' ||
+                              referer.includes('/minecraft-auth') ||
+                              referer.includes('minecraft-auth');
+  
+  console.log('🔍 MCID Auth Detection:', {
+    from,
+    next,
+    referer,
+    isFromMinecraftAuth,
+    refererIncludesMinecraftAuth: referer.includes('/minecraft-auth'),
+    refererIncludesMinecraftAuthVerify: referer.includes('minecraft-auth')
+  });
+  
+  if (isFromMinecraftAuth) {
+    console.log('🎮 MCID Auth detected in callback - forcing redirect to verify page');
+    const baseUrl = 'https://aoiroserver.site'
+    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true'
+    console.log('🔄 Forcing redirect to minecraft-auth verify page:', redirectUrl);
+    return NextResponse.redirect(redirectUrl)
+  }
+  
   console.log('Next parameter calculation:', {
     from,
     nextParam: requestUrl.searchParams.get('next'),
@@ -32,9 +59,12 @@ export async function GET(request: Request) {
   console.log('From parameter:', from)
   console.log('Next parameter:', next)
   console.log('From === register:', from === 'register')
-  console.log('Next === /register:', next === '/register')
+  console.log('From === minecraft-auth:', from === 'minecraft-auth')
+  console.log('Next === /minecraft-auth:', next === '/minecraft-auth')
+  console.log('Next === /minecraft-auth/verify:', next === '/minecraft-auth/verify')
   console.log('User Agent:', request.headers.get('user-agent'))
   console.log('Referer:', request.headers.get('referer'))
+  console.log('Origin header:', request.headers.get('origin'))
 
   const supabase = createRouteHandlerClient({ cookies })
 
@@ -461,14 +491,6 @@ export async function GET(request: Request) {
     console.log('🔄 Redirecting to minecraft-auth verify page with success:', redirectUrl)
     console.log('Base URL used:', baseUrl)
     console.log('Final redirect URL:', redirectUrl)
-    return NextResponse.redirect(redirectUrl)
-  }
-  
-  // fromパラメータがregisterでない場合でも、nextが/registerの場合は新規作成画面にリダイレクト
-  if (next === '/register') {
-    const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + next + '?discord_linked=true'
-    console.log('🔄 Redirecting to register page based on next parameter:', redirectUrl)
     return NextResponse.redirect(redirectUrl)
   }
   
