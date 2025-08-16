@@ -13,6 +13,14 @@ export async function GET(request: Request) {
   const next = requestUrl.searchParams.get('next') || (from === 'register' ? '/register' : '/train-status')
   const source = requestUrl.searchParams.get('source')
   
+  console.log('🚀 Auth Callback Started');
+  console.log('🔍 Request Details:', {
+    url: request.url,
+    pathname: requestUrl.pathname,
+    search: requestUrl.search,
+    origin: requestUrl.origin
+  });
+  
   // MCID認証ページからの認証の場合の特別処理
   // fromパラメータ、nextパラメータ、リファラーヘッダー、sourceパラメータのいずれかでMCID認証ページからの認証を検出
   const referer = request.headers.get('referer') || '';
@@ -34,7 +42,8 @@ export async function GET(request: Request) {
     sourceIsMinecraftAuthPage: source === 'minecraft-auth-page',
     refererIncludesMinecraftAuth: referer.includes('/minecraft-auth'),
     refererIncludesMinecraftAuthVerify: referer.includes('minecraft-auth'),
-    pathnameIncludesMinecraftAuth: requestUrl.pathname.includes('minecraft-auth')
+    pathnameIncludesMinecraftAuth: requestUrl.pathname.includes('minecraft-auth'),
+    fullReferer: referer
   });
   
   if (isFromMinecraftAuth) {
@@ -56,6 +65,7 @@ export async function GET(request: Request) {
       console.error('Error checking session before redirect:', err)
     }
     
+    console.log('✅ Redirecting to minecraft-auth verify page');
     return NextResponse.redirect(redirectUrl)
   }
   

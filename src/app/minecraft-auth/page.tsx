@@ -220,6 +220,7 @@ function DiscordAuthContent() {
       console.log('🔄 Starting Discord OAuth for MCID auth...');
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
+      console.log('Current pathname:', window.location.pathname);
       
       // 既存のセッションを確認
       console.log('🔍 Checking existing session...');
@@ -242,6 +243,7 @@ function DiscordAuthContent() {
         source: 'minecraft-auth-page',
         encodedParams: params.toString()
       });
+      console.log('Full redirect URL:', redirectUrl);
       
       // OAuthオプションを設定
       const oauthOptions = {
@@ -253,6 +255,7 @@ function DiscordAuthContent() {
       };
       
       console.log('📡 Initiating Discord OAuth with options:', oauthOptions);
+      console.log('OAuth redirectTo:', oauthOptions.redirectTo);
       
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
@@ -268,6 +271,7 @@ function DiscordAuthContent() {
       console.log('OAuth data:', data);
       console.log('Provider: discord');
       console.log('Redirect URL used:', redirectUrl);
+      console.log('OAuth response:', data);
       
       // 認証が開始されたことを示すメッセージ
       setSuccess('Discord認証が開始されました。認証完了後、Minecraft ID認証ページに移動します...');

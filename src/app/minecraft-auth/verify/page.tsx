@@ -30,6 +30,8 @@ function MinecraftVerificationContent() {
       console.log('🔍 Checking auth status for Minecraft verification...');
       console.log('User:', user);
       console.log('Session:', session);
+      console.log('Current URL:', window.location.href);
+      console.log('Current pathname:', window.location.pathname);
       
       // URLパラメータから認証完了をチェック
       const urlParams = new URLSearchParams(window.location.search);
@@ -39,7 +41,8 @@ function MinecraftVerificationContent() {
       console.log('🔍 URL parameters in verify page:', {
         authSuccess,
         from: fromParam,
-        fullParams: Object.fromEntries(urlParams.entries())
+        fullParams: Object.fromEntries(urlParams.entries()),
+        search: window.location.search
       });
       
       if (authSuccess === 'true' && fromParam === 'minecraft-auth') {
@@ -109,6 +112,7 @@ function MinecraftVerificationContent() {
         // 成功パラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);
       } else {
+        console.log('ℹ️ No auth success parameters found, checking normal auth state...');
         // 認証成功パラメータがない場合のみ、通常の認証状態確認を行う
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         console.log('Current session:', currentSession);
