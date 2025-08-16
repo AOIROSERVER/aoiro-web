@@ -49,7 +49,7 @@ function MinecraftVerificationContent() {
         console.log('✅ Discord auth success detected from MCID auth page');
         setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
         
-        // 認証成功後、少し待ってからセッション状態を確認
+        // 認証成功後、より長く待ってからセッション状態を確認
         setTimeout(async () => {
           try {
             console.log('🔍 Checking Discord auth state after success...');
@@ -68,13 +68,41 @@ function MinecraftVerificationContent() {
               console.log('❌ Discord user not found after auth success');
               console.log('User metadata:', currentSession?.user?.user_metadata);
               console.log('App metadata:', currentSession?.user?.app_metadata);
-              setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+              
+              // セッションはあるがDiscord認証情報がない場合、再試行
+              if (currentSession?.user) {
+                console.log('🔄 Session exists but Discord metadata missing, retrying...');
+                setTimeout(async () => {
+                  try {
+                    const { data: { session: retrySession } } = await supabase.auth.getSession();
+                    console.log('Retry session check:', retrySession);
+                    
+                    if (retrySession?.user?.user_metadata?.provider === 'discord') {
+                      console.log('✅ Discord user found on retry!');
+                      console.log('User details:', {
+                        id: retrySession.user.id,
+                        email: retrySession.user.email,
+                        provider: retrySession.user.app_metadata?.provider,
+                        metadata: retrySession.user.user_metadata
+                      });
+                    } else {
+                      console.log('❌ Discord user still not found on retry');
+                      setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+                    }
+                  } catch (retryErr) {
+                    console.error('Retry session check error:', retryErr);
+                    setError('認証状態の再確認に失敗しました。ページを再読み込みしてください。');
+                  }
+                }, 3000); // 3秒後に再試行
+              } else {
+                setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+              }
             }
           } catch (err) {
             console.error('Error checking auth state after success:', err);
             setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
           }
-        }, 2000); // 2秒待ってから確認
+        }, 3000); // 3秒待ってから確認（以前は2秒）
         
         // 成功パラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -101,13 +129,41 @@ function MinecraftVerificationContent() {
               console.log('❌ Discord user not found after auth success');
               console.log('User metadata:', currentSession?.user?.user_metadata);
               console.log('App metadata:', currentSession?.user?.app_metadata);
-              setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+              
+              // セッションはあるがDiscord認証情報がない場合、再試行
+              if (currentSession?.user) {
+                console.log('🔄 Session exists but Discord metadata missing, retrying...');
+                setTimeout(async () => {
+                  try {
+                    const { data: { session: retrySession } } = await supabase.auth.getSession();
+                    console.log('Retry session check:', retrySession);
+                    
+                    if (retrySession?.user?.user_metadata?.provider === 'discord') {
+                      console.log('✅ Discord user found on retry!');
+                      console.log('User details:', {
+                        id: retrySession.user.id,
+                        email: retrySession.user.email,
+                        provider: retrySession.user.app_metadata?.provider,
+                        metadata: retrySession.user.user_metadata
+                      });
+                    } else {
+                      console.log('❌ Discord user still not found on retry');
+                      setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+                    }
+                  } catch (retryErr) {
+                    console.error('Retry session check error:', retryErr);
+                    setError('認証状態の再確認に失敗しました。ページを再読み込みしてください。');
+                  }
+                }, 3000); // 3秒後に再試行
+              } else {
+                setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+              }
             }
           } catch (err) {
             console.error('Error checking auth state after success:', err);
             setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
           }
-        }, 2000); // 2秒待ってから確認
+        }, 3000); // 3秒待ってから確認（以前は2秒）
         
         // 成功パラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);

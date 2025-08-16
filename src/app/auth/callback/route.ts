@@ -59,8 +59,17 @@ export async function GET(request: Request) {
       console.log('Session state before redirect:', {
         hasSession: !!session,
         userId: session?.user?.id,
-        provider: session?.user?.app_metadata?.provider
+        provider: session?.user?.app_metadata?.provider,
+        userMetadata: session?.user?.user_metadata,
+        appMetadata: session?.user?.app_metadata
       })
+      
+      // セッションはあるがDiscord認証情報がない場合の警告
+      if (session?.user && session.user.app_metadata?.provider !== 'discord') {
+        console.log('⚠️ Warning: Session exists but Discord provider not set');
+        console.log('User metadata:', session.user.user_metadata);
+        console.log('App metadata:', session.user.app_metadata);
+      }
     } catch (err) {
       console.error('Error checking session before redirect:', err)
     }
