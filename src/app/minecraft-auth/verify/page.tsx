@@ -11,11 +11,13 @@ import {
   Alert,
   Slide,
   Avatar,
+  Chip,
 } from "@mui/material";
 import { CheckCircle } from "@mui/icons-material";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import LinkIcon from '@mui/icons-material/Link';
 
 function MinecraftVerificationContent() {
   const [minecraftId, setMinecraftId] = useState('');
@@ -523,14 +525,14 @@ function MinecraftVerificationContent() {
             <Typography variant="body1" color="text.secondary">
               AOIROSERVERの認定メンバーになろう
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
               Minecraft IDを入力して認証を行ってください
             </Typography>
             
             {/* Discordアカウント連携状態の表示 */}
             {discordUser && (
               <Box sx={{ 
-                mt: 3, 
+                mb: 4, 
                 p: 3, 
                 bgcolor: 'rgba(255,255,255,0.1)', 
                 borderRadius: 2,
