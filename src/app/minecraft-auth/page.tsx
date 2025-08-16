@@ -150,11 +150,11 @@ function DiscordAuthContent() {
               }
               setSuccess('Discordアカウントの連携が完了しました！Minecraft ID認証ページに移動します...');
               
-              // 2秒後にMinecraft ID認証ページに自動リダイレクト
+              // 1秒後にMinecraft ID認証ページに自動リダイレクト
               setTimeout(() => {
                 console.log('🔄 Redirecting to minecraft-auth verify page...');
                 router.push('/minecraft-auth/verify');
-              }, 2000);
+              }, 1000);
               
             } else {
               console.log('❌ Discord user not found after auth success');
@@ -166,7 +166,7 @@ function DiscordAuthContent() {
             console.error('Error checking auth state after success:', err);
             setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
           }
-        }, 1000);
+        }, 500);
         
         // 成功パラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);

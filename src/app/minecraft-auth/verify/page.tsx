@@ -34,8 +34,20 @@ function MinecraftVerificationContent() {
       // URLパラメータから認証完了をチェック
       const urlParams = new URLSearchParams(window.location.search);
       const authSuccess = urlParams.get('auth_success');
+      const fromParam = urlParams.get('from');
       
-      if (authSuccess === 'true') {
+      console.log('🔍 URL parameters in verify page:', {
+        authSuccess,
+        from: fromParam,
+        fullParams: Object.fromEntries(urlParams.entries())
+      });
+      
+      if (authSuccess === 'true' && fromParam === 'minecraft-auth') {
+        console.log('✅ Discord auth success detected from MCID auth page');
+        setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
+        // 成功パラメータをクリア
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (authSuccess === 'true') {
         console.log('✅ Discord auth success detected from URL');
         setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
         // 成功パラメータをクリア
@@ -55,6 +67,8 @@ function MinecraftVerificationContent() {
           console.log('🎯 Discord user authenticated for Minecraft verification');
         } else {
           console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
+          console.log('User metadata:', currentSession.user.user_metadata);
+          console.log('App metadata:', currentSession.user.app_metadata);
           router.push('/minecraft-auth');
           return;
         }

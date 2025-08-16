@@ -33,8 +33,22 @@ export async function GET(request: Request) {
   if (isFromMinecraftAuth) {
     console.log('🎮 MCID Auth detected in callback - forcing redirect to verify page');
     const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true'
+    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true&from=minecraft-auth'
     console.log('🔄 Forcing redirect to minecraft-auth verify page:', redirectUrl);
+    
+    // リダイレクト前にセッション状態を確認
+    try {
+      const supabase = createRouteHandlerClient({ cookies })
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('Session state before redirect:', {
+        hasSession: !!session,
+        userId: session?.user?.id,
+        provider: session?.user?.app_metadata?.provider
+      })
+    } catch (err) {
+      console.error('Error checking session before redirect:', err)
+    }
+    
     return NextResponse.redirect(redirectUrl)
   }
   
