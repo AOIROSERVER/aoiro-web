@@ -63,7 +63,33 @@ function DiscordAuthContent() {
       
       if (error) {
         console.log('❌ Auth error from URL:', error);
-        setError(decodeURIComponent(error));
+        let errorMessage = '認証に失敗しました';
+        
+        // エラータイプに応じたメッセージを設定
+        switch (error) {
+          case 'session_error':
+            errorMessage = 'セッションの設定に失敗しました。ブラウザのキャッシュをクリアして再度お試しください。';
+            break;
+          case 'auth_error':
+            errorMessage = '認証処理中にエラーが発生しました。再度お試しください。';
+            break;
+          case 'invalid_grant':
+            errorMessage = '認証コードが無効です。再度お試しください。';
+            break;
+          case 'redirect_uri_mismatch':
+            errorMessage = 'リダイレクトURIの設定に問題があります。管理者にお問い合わせください。';
+            break;
+          case 'client_id_error':
+            errorMessage = 'クライアントIDの設定に問題があります。管理者にお問い合わせください。';
+            break;
+          case 'pkce_error':
+            errorMessage = '認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。';
+            break;
+          default:
+            errorMessage = decodeURIComponent(error);
+        }
+        
+        setError(errorMessage);
         // エラーパラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);
         return;

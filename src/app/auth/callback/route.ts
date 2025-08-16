@@ -154,6 +154,14 @@ export async function GET(request: Request) {
           return NextResponse.redirect(redirectUrl)
         }
         
+        // MCID認証ページからの認証の場合は、MCID認証ページにエラー付きでリダイレクト
+        if (from === 'minecraft-auth') {
+          const baseUrl = 'https://aoiroserver.site'
+          const redirectUrl = baseUrl + '/minecraft-auth?error=session_error'
+          console.log('🔄 Redirecting to minecraft-auth page with session error:', redirectUrl)
+          return NextResponse.redirect(redirectUrl)
+        }
+        
         return NextResponse.redirect('https://aoiroserver.site/login?error=session_error')
       }
       
@@ -166,6 +174,14 @@ export async function GET(request: Request) {
           const baseUrl = 'https://aoiroserver.site'
           const redirectUrl = baseUrl + '/register?error=session_error'
           console.log('🔄 Redirecting to register page with no session error:', redirectUrl)
+          return NextResponse.redirect(redirectUrl)
+        }
+        
+        // MCID認証ページからの認証の場合は、MCID認証ページにエラー付きでリダイレクト
+        if (from === 'minecraft-auth') {
+          const baseUrl = 'https://aoiroserver.site'
+          const redirectUrl = baseUrl + '/minecraft-auth?error=session_error'
+          console.log('🔄 Redirecting to minecraft-auth page with no session error:', redirectUrl)
           return NextResponse.redirect(redirectUrl)
         }
         
@@ -238,6 +254,14 @@ export async function GET(request: Request) {
         const baseUrl = 'https://aoiroserver.site'
         const redirectUrl = baseUrl + '/register?error=auth_error'
         console.log('🔄 Redirecting to register page with code exchange error:', redirectUrl)
+        return NextResponse.redirect(redirectUrl)
+      }
+      
+      // MCID認証ページからの認証の場合は、MCID認証ページにエラー付きでリダイレクト
+      if (from === 'minecraft-auth') {
+        const baseUrl = 'https://aoiroserver.site'
+        const redirectUrl = baseUrl + '/minecraft-auth?error=auth_error'
+        console.log('🔄 Redirecting to minecraft-auth page with code exchange error:', redirectUrl)
         return NextResponse.redirect(redirectUrl)
       }
       
