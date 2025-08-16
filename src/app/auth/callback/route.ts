@@ -67,6 +67,25 @@ export async function GET(request: Request) {
     console.log('Provider from URL:', requestUrl.searchParams.get('provider'))
     console.log('Code format check:', code?.includes('-') ? 'UUID-like (Supabase session code)' : 'OAuth code')
     
+    // MCID認証ページからの認証の場合の詳細ログ
+    if (from === 'minecraft-auth') {
+      console.log('🎮 MCID Auth Debug Info:')
+      console.log('From parameter:', from)
+      console.log('Next parameter:', next)
+      console.log('Full URL:', request.url)
+      console.log('Code details:', {
+        codeLength: code?.length,
+        codePrefix: code?.substring(0, 20),
+        codeSuffix: code?.substring(code.length - 10),
+        isCodeValid: !!code && code.length > 10
+      })
+      console.log('Request headers:', {
+        userAgent: request.headers.get('user-agent'),
+        referer: request.headers.get('referer'),
+        origin: request.headers.get('origin')
+      })
+    }
+    
     try {
       console.log('🔄 Attempting code exchange...')
       console.log('Code to exchange:', code?.substring(0, 20) + '...')
@@ -99,6 +118,30 @@ export async function GET(request: Request) {
         errorStatus: sessionError?.status,
         errorName: sessionError?.name
       })
+      
+      // MCID認証ページからの認証の場合の詳細ログ
+      if (from === 'minecraft-auth') {
+        console.log('🎮 MCID Auth Exchange Result:')
+        console.log('Session created:', !!data?.session)
+        console.log('User created:', !!data?.user)
+        console.log('Error occurred:', !!sessionError)
+        if (sessionError) {
+          console.log('Error details:', {
+            message: sessionError.message,
+            status: sessionError.status,
+            name: sessionError.name,
+            stack: sessionError.stack
+          })
+        }
+        if (data?.session) {
+          console.log('Session details:', {
+            userId: data.session.user?.id,
+            userEmail: data.session.user?.email,
+            provider: data.session.user?.app_metadata?.provider,
+            userMetadata: data.session.user?.user_metadata
+          })
+        }
+      }
         
       if (sessionError) {
         console.error('❌ Session setting error:', sessionError)
@@ -157,9 +200,32 @@ export async function GET(request: Request) {
         // MCID認証ページからの認証の場合は、MCID認証ページにエラー付きでリダイレクト
         if (from === 'minecraft-auth') {
           const baseUrl = 'https://aoiroserver.site'
-          const redirectUrl = baseUrl + '/minecraft-auth?error=session_error'
-          console.log('🔄 Redirecting to minecraft-auth page with session error:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          let errorType = 'session_error';
+          let errorDetails = '';
+          
+          // エラーの詳細に基づいてエラータイプを決定
+          if (sessionError.message?.includes('invalid_grant')) {
+            errorType = 'invalid_grant';
+            errorDetails = '認証コードが無効または期限切れです';
+          } else if (sessionError.message?.includes('redirect_uri')) {
+            errorType = 'redirect_uri_mismatch';
+            errorDetails = 'リダイレクトURIの設定に問題があります';
+          } else if (sessionError.message?.includes('client_id')) {
+            errorType = 'client_id_error';
+            errorDetails = 'クライアントIDの設定に問題があります';
+          } else if (sessionError.message?.includes('pkce') || sessionError.message?.includes('code_verifier')) {
+            errorType = 'pkce_error';
+            errorDetails = 'PKCE認証セッションに問題があります';
+          } else if (sessionError.status === 400) {
+            errorType = 'bad_request';
+            errorDetails = 'リクエストの形式に問題があります';
+          }
+          
+          const redirectUrl = baseUrl + `/minecraft-auth?error=${errorType}&details=${encodeURIComponent(errorDetails)}`;
+          console.log('🔄 Redirecting to minecraft-auth page with detailed error:', redirectUrl);
+          console.log('Error type:', errorType);
+          console.log('Error details:', errorDetails);
+          return NextResponse.redirect(redirectUrl);
         }
         
         return NextResponse.redirect('https://aoiroserver.site/login?error=session_error')
@@ -180,9 +246,9 @@ export async function GET(request: Request) {
         // MCID認証ページからの認証の場合は、MCID認証ページにエラー付きでリダイレクト
         if (from === 'minecraft-auth') {
           const baseUrl = 'https://aoiroserver.site'
-          const redirectUrl = baseUrl + '/minecraft-auth?error=session_error'
-          console.log('🔄 Redirecting to minecraft-auth page with no session error:', redirectUrl)
-          return NextResponse.redirect(redirectUrl)
+          const redirectUrl = baseUrl + '/minecraft-auth?error=no_session&details=' + encodeURIComponent('セッションの作成に失敗しました');
+          console.log('🔄 Redirecting to minecraft-auth page with no session error:', redirectUrl);
+          return NextResponse.redirect(redirectUrl);
         }
         
         return NextResponse.redirect('https://aoiroserver.site/login?error=session_error')
@@ -260,9 +326,9 @@ export async function GET(request: Request) {
       // MCID認証ページからの認証の場合は、MCID認証ページにエラー付きでリダイレクト
       if (from === 'minecraft-auth') {
         const baseUrl = 'https://aoiroserver.site'
-        const redirectUrl = baseUrl + '/minecraft-auth?error=auth_error'
-        console.log('🔄 Redirecting to minecraft-auth page with code exchange error:', redirectUrl)
-        return NextResponse.redirect(redirectUrl)
+        const redirectUrl = baseUrl + '/minecraft-auth?error=code_exchange_error&details=' + encodeURIComponent('認証コードの交換に失敗しました');
+        console.log('🔄 Redirecting to minecraft-auth page with code exchange error:', redirectUrl);
+        return NextResponse.redirect(redirectUrl);
       }
       
       return NextResponse.redirect('https://aoiroserver.site/login?error=auth_error')
@@ -361,6 +427,7 @@ export async function GET(request: Request) {
   // 認証成功後のリダイレクト
   console.log('✅ Authentication successful, redirecting to:', next)
   console.log('From register page:', from === 'register')
+  console.log('From minecraft-auth page:', from === 'minecraft-auth')
   console.log('From parameter value:', from)
   console.log('Next parameter value:', next)
   console.log('All URL parameters:', Object.fromEntries(requestUrl.searchParams.entries()))
@@ -368,8 +435,11 @@ export async function GET(request: Request) {
   console.log('Request origin:', requestUrl.origin)
   console.log('Decision logic:', {
     fromIsRegister: from === 'register',
+    fromIsMinecraftAuth: from === 'minecraft-auth',
     nextIsRegister: next === '/register',
-    shouldRedirectToRegister: from === 'register' || next === '/register'
+    nextIsMinecraftAuth: next === '/minecraft-auth',
+    shouldRedirectToRegister: from === 'register' || next === '/register',
+    shouldRedirectToMinecraftAuth: from === 'minecraft-auth' || next === '/minecraft-auth'
   })
   
   // 新規作成画面からの認証の場合は、Discord連携完了を示すパラメータを追加
@@ -384,13 +454,12 @@ export async function GET(request: Request) {
     return NextResponse.redirect(redirectUrl)
   }
   
-  // Minecraft認証ページからの認証の場合は、指定されたページにリダイレクト
+  // Minecraft認証ページからの認証の場合は、MCID認証ページに成功パラメータ付きでリダイレクト
   if (from === 'minecraft-auth') {
     const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + next
-    console.log('🔄 Redirecting to minecraft-auth verify page:', redirectUrl)
+    const redirectUrl = baseUrl + '/minecraft-auth?auth_success=true'
+    console.log('🔄 Redirecting to minecraft-auth page with success:', redirectUrl)
     console.log('Base URL used:', baseUrl)
-    console.log('Next path:', next)
     console.log('Final redirect URL:', redirectUrl)
     return NextResponse.redirect(redirectUrl)
   }
@@ -400,6 +469,14 @@ export async function GET(request: Request) {
     const baseUrl = 'https://aoiroserver.site'
     const redirectUrl = baseUrl + next + '?discord_linked=true'
     console.log('🔄 Redirecting to register page based on next parameter:', redirectUrl)
+    return NextResponse.redirect(redirectUrl)
+  }
+  
+  // fromパラメータがminecraft-authでない場合でも、nextが/minecraft-authの場合はMCID認証ページにリダイレクト
+  if (next === '/minecraft-auth') {
+    const baseUrl = 'https://aoiroserver.site'
+    const redirectUrl = baseUrl + next + '?auth_success=true'
+    console.log('🔄 Redirecting to minecraft-auth page based on next parameter:', redirectUrl)
     return NextResponse.redirect(redirectUrl)
   }
   
@@ -419,7 +496,9 @@ export async function GET(request: Request) {
     from: from,
     next: next,
     fromNotRegister: from !== 'register',
-    nextNotRegister: next !== '/register'
+    fromNotMinecraftAuth: from !== 'minecraft-auth',
+    nextNotRegister: next !== '/register',
+    nextNotMinecraftAuth: next !== '/minecraft-auth'
   })
   return NextResponse.redirect(defaultRedirectUrl)
 } 

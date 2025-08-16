@@ -60,36 +60,67 @@ function DiscordAuthContent() {
       const urlParams = new URLSearchParams(window.location.search);
       const authSuccess = urlParams.get('auth_success');
       const error = urlParams.get('error');
+      const errorDetails = urlParams.get('details');
       
       if (error) {
         console.log('❌ Auth error from URL:', error);
+        console.log('Error details:', errorDetails);
+        
         let errorMessage = '認証に失敗しました';
+        let suggestionMessage = '';
         
         // エラータイプに応じたメッセージを設定
         switch (error) {
           case 'session_error':
-            errorMessage = 'セッションの設定に失敗しました。ブラウザのキャッシュをクリアして再度お試しください。';
+            errorMessage = 'セッションの設定に失敗しました';
+            suggestionMessage = 'ブラウザのキャッシュをクリアして再度お試しください。';
+            break;
+          case 'no_session':
+            errorMessage = 'セッションの作成に失敗しました';
+            suggestionMessage = '認証処理中に問題が発生しました。再度お試しください。';
+            break;
+          case 'code_exchange_error':
+            errorMessage = '認証コードの交換に失敗しました';
+            suggestionMessage = '認証処理中に問題が発生しました。再度お試しください。';
             break;
           case 'auth_error':
-            errorMessage = '認証処理中にエラーが発生しました。再度お試しください。';
+            errorMessage = '認証処理中にエラーが発生しました';
+            suggestionMessage = '再度お試しください。';
             break;
           case 'invalid_grant':
-            errorMessage = '認証コードが無効です。再度お試しください。';
+            errorMessage = '認証コードが無効です';
+            suggestionMessage = '再度お試しください。';
             break;
           case 'redirect_uri_mismatch':
-            errorMessage = 'リダイレクトURIの設定に問題があります。管理者にお問い合わせください。';
+            errorMessage = 'リダイレクトURIの設定に問題があります';
+            suggestionMessage = '管理者にお問い合わせください。';
             break;
           case 'client_id_error':
-            errorMessage = 'クライアントIDの設定に問題があります。管理者にお問い合わせください。';
+            errorMessage = 'クライアントIDの設定に問題があります';
+            suggestionMessage = '管理者にお問い合わせください。';
             break;
           case 'pkce_error':
-            errorMessage = '認証セッションに問題があります。ブラウザを再読み込みして再度お試しください。';
+            errorMessage = '認証セッションに問題があります';
+            suggestionMessage = 'ブラウザを再読み込みして再度お試しください。';
+            break;
+          case 'bad_request':
+            errorMessage = 'リクエストの形式に問題があります';
+            suggestionMessage = 'ブラウザを再読み込みして再度お試しください。';
             break;
           default:
             errorMessage = decodeURIComponent(error);
+            if (errorDetails) {
+              suggestionMessage = decodeURIComponent(errorDetails);
+            }
         }
         
-        setError(errorMessage);
+        // 詳細なエラー情報がある場合は追加
+        if (errorDetails && !suggestionMessage) {
+          suggestionMessage = decodeURIComponent(errorDetails);
+        }
+        
+        setError(`${errorMessage}${suggestionMessage ? `\n\n対処法: ${suggestionMessage}` : ''}`);
+        
         // エラーパラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);
         return;
@@ -98,6 +129,33 @@ function DiscordAuthContent() {
       if (authSuccess === 'true') {
         console.log('✅ Auth success detected from URL');
         setSuccess('Discord認証が完了しました！');
+        
+        // 認証成功後、Discord連携状態を確認
+        setTimeout(async () => {
+          try {
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (currentSession?.user?.user_metadata?.provider === 'discord') {
+              console.log('✅ Discord user authenticated, updating state...');
+              setIsLinked(true);
+              if (currentSession.user.user_metadata) {
+                setDiscordUser({
+                  username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
+                  avatar: currentSession.user.user_metadata.avatar_url,
+                  discriminator: currentSession.user.user_metadata.discriminator,
+                  id: currentSession.user.user_metadata.sub
+                });
+              }
+              setSuccess('Discordアカウントの連携が完了しました！');
+            } else {
+              console.log('❌ Discord user not found after auth success');
+              setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
+            }
+          } catch (err) {
+            console.error('Error checking auth state after success:', err);
+            setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
+          }
+        }, 1000);
+        
         // 成功パラメータをクリア
         window.history.replaceState({}, document.title, window.location.pathname);
       }
@@ -151,20 +209,15 @@ function DiscordAuthContent() {
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
       
-      // MCID認証専用のリダイレクトURLを設定
-      // fromパラメータをminecraft-authに設定し、nextパラメータでverifyページを指定
-      const redirectUrl = `${window.location.origin}/auth/callback?from=minecraft-auth&next=/minecraft-auth/verify`;
-      console.log('MCID auth redirect URL:', redirectUrl);
-      
       // 既存のセッションを確認
       console.log('🔍 Checking existing session...');
       const { data: { session } } = await supabase.auth.getSession();
       console.log('Current session:', session);
       console.log('Session user:', session?.user);
       
-      // OAuthオプションを設定
+      // シンプルなOAuthオプションを設定
       const oauthOptions = {
-        redirectTo: redirectUrl,
+        redirectTo: `${window.location.origin}/minecraft-auth`,
         skipBrowserRedirect: false,
         queryParams: {
           response_type: 'code',
@@ -186,10 +239,10 @@ function DiscordAuthContent() {
       console.log('✅ Discord OAuth initiated successfully');
       console.log('OAuth data:', data);
       console.log('Provider: discord');
-      console.log('Redirect URL used:', redirectUrl);
+      console.log('Redirect URL used:', oauthOptions.redirectTo);
       
       // 認証が開始されたことを示すメッセージ
-      setSuccess('Discord認証が開始されました。認証完了後、Minecraft ID認証ページに移動します...');
+      setSuccess('Discord認証が開始されました。認証完了後、このページに戻ってきます...');
       
       // 認証完了を監視するためのポーリングを開始
       const checkAuthCompletion = async () => {
