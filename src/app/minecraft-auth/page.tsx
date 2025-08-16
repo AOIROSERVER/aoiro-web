@@ -9,9 +9,24 @@ import {
   Button,
   Alert,
   Slide,
+  Chip,
+  Avatar,
+  Divider,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
+import { 
+  CheckCircle as CheckCircleIcon,
+  Link as LinkIcon,
+  Refresh as RefreshIcon,
+  Info as InfoIcon
+} from '@mui/icons-material';
 
 // Discordアイコン
 const DiscordIcon = () => (
@@ -28,16 +43,38 @@ function DiscordAuthContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [discordUser, setDiscordUser] = useState<any>(null);
+  const [isLinked, setIsLinked] = useState(false);
   
   const { supabase, user, session } = useAuth();
   const router = useRouter();
 
-  // 認証状態の確認
+  // 認証状態とDiscord連携状態の確認
   useEffect(() => {
     const checkAuthStatus = async () => {
       console.log('🔍 Checking auth status for Discord auth...');
       console.log('User:', user);
       console.log('Session:', session);
+      
+      // URLパラメータから認証完了をチェック
+      const urlParams = new URLSearchParams(window.location.search);
+      const authSuccess = urlParams.get('auth_success');
+      const error = urlParams.get('error');
+      
+      if (error) {
+        console.log('❌ Auth error from URL:', error);
+        setError(decodeURIComponent(error));
+        // エラーパラメータをクリア
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+      
+      if (authSuccess === 'true') {
+        console.log('✅ Auth success detected from URL');
+        setSuccess('Discord認証が完了しました！');
+        // 成功パラメータをクリア
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       
       const { data: { session: currentSession } } = await supabase.auth.getSession();
       console.log('Current session:', currentSession);
@@ -49,23 +86,34 @@ function DiscordAuthContent() {
         
         // Discord認証済みかチェック
         if (currentSession.user.user_metadata?.provider === 'discord') {
-          console.log('🎯 Discord user already authenticated, redirecting to verification...');
-          setSuccess('Discord認証が完了しています！Minecraft ID認証ページに移動します...');
+          console.log('🎯 Discord user already authenticated');
+          setIsLinked(true);
           
-          // 少し待ってからMinecraft ID認証ページにリダイレクト
-          setTimeout(() => {
-            router.push('/minecraft-auth/verify');
-          }, 2000);
+          // Discordユーザー情報を設定
+          if (currentSession.user.user_metadata) {
+            setDiscordUser({
+              username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
+              avatar: currentSession.user.user_metadata.avatar_url,
+              discriminator: currentSession.user.user_metadata.discriminator,
+              id: currentSession.user.user_metadata.sub
+            });
+          }
+          
+          if (!authSuccess) {
+            setSuccess('Discordアカウントが連携されています！');
+          }
         } else {
           console.log('❌ User is not Discord authenticated');
+          setIsLinked(false);
         }
       } else {
         console.log('❌ No active session found');
+        setIsLinked(false);
       }
     };
     
     checkAuthStatus();
-  }, [supabase, user, session, router]);
+  }, [supabase, user, session]);
 
   const handleDiscordAuth = async () => {
     setLoading(true);
@@ -73,44 +121,27 @@ function DiscordAuthContent() {
     setSuccess(null);
     
     try {
-      console.log('🔄 Starting Discord OAuth...');
+      console.log('🔄 Starting Discord OAuth for MCID auth...');
       console.log('Current origin:', window.location.origin);
       console.log('Current URL:', window.location.href);
       
-      // Supabaseの直接URLを使用（Discord Developer Portalの設定と一致）
-      const supabaseCallbackUrl = 'https://cqxadmvnsusscsusdrmqd.supabase.co/auth/v1/callback';
-      const customCallbackUrl = 'https://aoiroserver.site/auth/callback';
-      console.log('Supabase callback URL:', supabaseCallbackUrl);
-      console.log('Custom callback URL:', customCallbackUrl);
-      console.log('From minecraft-auth page:', true);
+      // MCID認証専用のリダイレクトURLを設定
+      // fromパラメータをminecraft-authに設定し、nextパラメータでverifyページを指定
+      const redirectUrl = `${window.location.origin}/auth/callback?from=minecraft-auth&next=/minecraft-auth/verify`;
+      console.log('MCID auth redirect URL:', redirectUrl);
       
-      // 既存のセッションを確認（クリアは行わない）
+      // 既存のセッションを確認
       console.log('🔍 Checking existing session...');
       const { data: { session } } = await supabase.auth.getSession();
       console.log('Current session:', session);
       console.log('Session user:', session?.user);
-      console.log('Session access token:', session?.access_token ? 'present' : 'missing');
       
-      // Supabaseの直接URLにfromパラメータを追加
-      const redirectUrlWithParams = supabaseCallbackUrl + '?from=minecraft-auth&next=/minecraft-auth/verify';
-      console.log('Final redirect URL with params:', redirectUrlWithParams);
-      console.log('URL parameters:', {
-        from: 'minecraft-auth',
-        next: '/minecraft-auth/verify',
-        fullUrl: redirectUrlWithParams
-      });
-      console.log('Expected callback URL:', redirectUrlWithParams);
-      console.log('URL encoding test:', encodeURIComponent('from=minecraft-auth&next=/minecraft-auth/verify'));
-      
+      // OAuthオプションを設定
       const oauthOptions = {
-        redirectTo: redirectUrlWithParams,
+        redirectTo: redirectUrl,
         skipBrowserRedirect: false,
         queryParams: {
           response_type: 'code',
-        },
-        // 追加のデバッグ情報
-        options: {
-          redirectTo: redirectUrlWithParams,
         }
       };
       
@@ -129,13 +160,57 @@ function DiscordAuthContent() {
       console.log('✅ Discord OAuth initiated successfully');
       console.log('OAuth data:', data);
       console.log('Provider: discord');
-      console.log('Redirect URL used:', redirectUrlWithParams);
-      console.log('OAuth options used:', oauthOptions);
+      console.log('Redirect URL used:', redirectUrl);
       
-      // ブラウザリダイレクトが自動的に行われる
-      console.log('🔄 Waiting for browser redirect...');
-      console.log('Expected callback URL:', redirectUrlWithParams);
-      console.log('Supabase will handle the callback and redirect to:', customCallbackUrl);
+      // 認証が開始されたことを示すメッセージ
+      setSuccess('Discord認証が開始されました。認証完了後、Minecraft ID認証ページに移動します...');
+      
+      // 認証完了を監視するためのポーリングを開始
+      const checkAuthCompletion = async () => {
+        try {
+          const { data: { session: newSession } } = await supabase.auth.getSession();
+          if (newSession?.user?.user_metadata?.provider === 'discord') {
+            console.log('✅ Discord auth completed, updating state...');
+            setIsLinked(true);
+            if (newSession.user.user_metadata) {
+              setDiscordUser({
+                username: newSession.user.user_metadata.full_name || newSession.user.user_metadata.name,
+                avatar: newSession.user.user_metadata.avatar_url,
+                discriminator: newSession.user.user_metadata.discriminator,
+                id: newSession.user.user_metadata.sub
+              });
+            }
+            setSuccess('Discordアカウントの連携が完了しました！');
+            return true;
+          }
+          return false;
+        } catch (err) {
+          console.error('Auth completion check error:', err);
+          return false;
+        }
+      };
+      
+      // 即座に1回チェック
+      const immediateCheck = await checkAuthCompletion();
+      if (immediateCheck) {
+        return; // 既に認証完了している場合は終了
+      }
+      
+      // 5秒間隔で認証完了をチェック
+      const authCheckInterval = setInterval(async () => {
+        const completed = await checkAuthCompletion();
+        if (completed) {
+          clearInterval(authCheckInterval);
+        }
+      }, 5000);
+      
+      // 30秒後にタイムアウト
+      setTimeout(() => {
+        clearInterval(authCheckInterval);
+        if (!isLinked) {
+          setError('認証の完了確認がタイムアウトしました。ページを再読み込みしてください。');
+        }
+      }, 30000);
       
     } catch (err: any) {
       console.error('❌ Discord auth error:', err);
@@ -164,6 +239,37 @@ function DiscordAuthContent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefreshStatus = async () => {
+    setLoading(true);
+    try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (currentSession?.user?.user_metadata?.provider === 'discord') {
+        setIsLinked(true);
+        if (currentSession.user.user_metadata) {
+          setDiscordUser({
+            username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
+            avatar: currentSession.user.user_metadata.avatar_url,
+            discriminator: currentSession.user.user_metadata.discriminator,
+            id: currentSession.user.user_metadata.sub
+          });
+        }
+        setSuccess('Discordアカウントの連携状態を更新しました！');
+      } else {
+        setIsLinked(false);
+        setDiscordUser(null);
+      }
+    } catch (err) {
+      console.error('Status refresh error:', err);
+      setError('状態の更新に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProceedToMinecraft = () => {
+    router.push('/minecraft-auth/verify');
   };
 
   return (
@@ -197,7 +303,7 @@ function DiscordAuthContent() {
         zIndex: 0
       }} />
 
-      <Container maxWidth="sm" sx={{ position: 'relative', zIndex: 1, py: 4 }}>
+      <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, py: 4 }}>
         <Card sx={{ 
           p: 4, 
           borderRadius: 3, 
@@ -213,50 +319,130 @@ function DiscordAuthContent() {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
-              🔐 Discord認証
+              🔐 Discordアカウント連携
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              まずDiscordアカウントで認証してください
+              AOIROSERVERの認定メンバーになるために、Discordアカウントを連携してください
             </Typography>
-            
-            {/* デバッグ情報 */}
-            {process.env.NODE_ENV === 'development' && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1, fontSize: '0.8rem' }}>
-                <Typography variant="caption" color="text.secondary">
-                  デバッグ: User: {user ? 'あり' : 'なし'} | Session: {session ? 'あり' : 'なし'}
-                </Typography>
-              </Box>
-            )}
           </Box>
 
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <Typography variant="body1" sx={{ mb: 3 }}>
-              AOIROSERVERの認定メンバーになるために、まずDiscordアカウントで認証を行ってください。
-            </Typography>
-            
-            <Button
-              variant="contained"
-              fullWidth
-              size="large"
-              onClick={handleDiscordAuth}
-              disabled={loading}
-              startIcon={loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <DiscordIcon />}
-              sx={{
-                background: 'linear-gradient(45deg, #7289DA, #5865F2)',
-                '&:hover': {
-                  background: 'linear-gradient(45deg, #5865F2, #7289DA)',
-                },
-                py: 1.5,
-                fontSize: '1.1rem',
-                fontWeight: 'bold',
-                mb: 3
-              }}
-            >
-              {loading ? '認証中...' : 'Discordで認証'}
-            </Button>
+          {/* Discord連携状態の表示 */}
+          {isLinked && discordUser ? (
+            <Box sx={{ mb: 4 }}>
+              <Card sx={{ p: 3, bgcolor: 'success.50', border: '1px solid', borderColor: 'success.200' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <CheckCircleIcon color="success" sx={{ fontSize: 32 }} />
+                    <Typography variant="h6" color="success.dark">
+                      Discordアカウントが連携されています
+                    </Typography>
+                  </Box>
+                  <Chip 
+                    icon={<LinkIcon />} 
+                    label="連携済み" 
+                    color="success" 
+                    variant="outlined"
+                  />
+                </Box>
+                
+                <Divider sx={{ my: 2 }} />
+                
+                <List sx={{ bgcolor: 'white', borderRadius: 2, p: 2 }}>
+                  <ListItem>
+                    <ListItemAvatar>
+                      <Avatar 
+                        src={discordUser.avatar} 
+                        alt={discordUser.username}
+                        sx={{ width: 48, height: 48 }}
+                      />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={discordUser.username}
+                      secondary={`Discord ID: ${discordUser.id}`}
+                    />
+                  </ListItem>
+                </List>
+                
+                <Box sx={{ mt: 3, textAlign: 'center' }}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={handleProceedToMinecraft}
+                    sx={{
+                      background: 'linear-gradient(45deg, #4CAF50, #45a049)',
+                      '&:hover': {
+                        background: 'linear-gradient(45deg, #45a049, #4CAF50)',
+                      },
+                      px: 4,
+                      py: 1.5
+                    }}
+                  >
+                    🎮 Minecraft ID認証に進む
+                  </Button>
+                </Box>
+              </Card>
+            </Box>
+          ) : (
+            <Box sx={{ mb: 4 }}>
+              <Card sx={{ p: 3, bgcolor: 'info.50', border: '1px solid', borderColor: 'info.200' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <InfoIcon color="info" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" color="info.dark">
+                    Discordアカウントの連携が必要です
+                  </Typography>
+                </Box>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  AOIROSERVERの認定メンバーになるために、まずDiscordアカウントで認証を行ってください。
+                  認証が完了すると、Minecraft ID認証ページに進むことができます。
+                </Typography>
+                
+                <Box sx={{ textAlign: 'center' }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    size="large"
+                    onClick={handleDiscordAuth}
+                    disabled={loading}
+                    startIcon={loading ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <DiscordIcon />}
+                    sx={{
+                      background: 'linear-gradient(45deg, #7289DA, #5865F2)',
+                      '&:hover': {
+                        background: 'linear-gradient(45deg, #5865F2, #7289DA)',
+                      },
+                      py: 1.5,
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      mb: 2
+                    }}
+                  >
+                    {loading ? '認証中...' : 'Discordで認証・連携'}
+                  </Button>
+                  
+                  <Typography variant="caption" color="text.secondary">
+                    Discordアカウントにログインして連携を完了してください
+                  </Typography>
+                </Box>
+              </Card>
+            </Box>
+          )}
 
-            <Typography variant="body2" color="text.secondary">
-              認証が完了すると、自動的にMinecraft ID認証ページに移動します
+          {/* 状態更新ボタン */}
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Tooltip title="連携状態を更新">
+              <IconButton 
+                onClick={handleRefreshStatus} 
+                disabled={loading}
+                sx={{ 
+                  bgcolor: 'grey.100',
+                  '&:hover': { bgcolor: 'grey.200' }
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+              連携状態を更新
             </Typography>
           </Box>
 
