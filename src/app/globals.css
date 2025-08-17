@@ -370,12 +370,12 @@
 
   /* メインコンテンツの下部マージンを追加 */
   main {
-    padding-bottom: 80px;
+    padding-bottom: 100px;
   }
 
   /* フッターのスマホ対応 */
   .footer {
-    margin-bottom: 80px;
+    margin-bottom: 100px;
     padding: 8px 0;
   }
 
