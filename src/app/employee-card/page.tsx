@@ -46,10 +46,17 @@ export default function EmployeeCardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     checkUserAuthorization();
+    checkMobileDevice();
   }, []);
+
+  const checkMobileDevice = () => {
+    const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(mobile);
+  };
 
   const checkUserAuthorization = async () => {
     try {
@@ -209,7 +216,22 @@ export default function EmployeeCardPage() {
     }
   };
 
-  const toggleCard = () => setIsCardFlipped(!isCardFlipped);
+  const toggleCard = () => {
+    setIsCardFlipped(!isCardFlipped);
+    
+    // モバイル端末での強制再描画
+    if (isMobile) {
+      setTimeout(() => {
+        const cardContainer = document.querySelector('.card-container');
+        if (cardContainer && cardContainer instanceof HTMLElement) {
+          cardContainer.style.display = 'none';
+          setTimeout(() => {
+            cardContainer.style.display = 'block';
+          }, 10);
+        }
+      }, 100);
+    }
+  };
 
   // ユーザーのアバター画像を取得（デフォルトはユーザーアイコン）
   const getUserAvatar = () => {
@@ -316,12 +338,25 @@ export default function EmployeeCardPage() {
         
         {/* 反転可能なカード */}
         <Box
+          className="card-container"
           sx={{
             perspective: "1200px",
             width: "100%",
-            maxWidth: 420,
+            maxWidth: {
+              xs: 320,    // スマホ（320px以上）- より適切なサイズ
+              sm: 380,    // 小タブレット（600px以上）
+              md: 420,    // 中タブレット（900px以上）
+              lg: 420     // PC（1200px以上）
+            },
             mx: "auto",
-            mb: 4
+            mb: 4,
+            // モバイル端末での3D変換の強制有効化
+            ...(isMobile && {
+              WebkitTransformStyle: "preserve-3d",
+              transformStyle: "preserve-3d",
+              WebkitPerspective: "1000px",
+              perspective: "1000px",
+            })
           }}
         >
           <Box
@@ -329,14 +364,26 @@ export default function EmployeeCardPage() {
             sx={{
               position: "relative",
               width: "100%",
-              height: 260,
+              height: {
+                xs: 220,    // スマホ（320px以上）
+                sm: 240,    // 小タブレット（600px以上）
+                md: 260,    // 中タブレット（900px以上）
+                lg: 260     // PC（1200px以上）
+              },
               cursor: "pointer",
               transformStyle: "preserve-3d",
               transition: "transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
               transform: isCardFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
               "&:hover": {
                 transform: isCardFlipped ? "rotateY(180deg) scale(1.02)" : "rotateY(0deg) scale(1.02)",
-              }
+              },
+              // モバイル端末での3D変換の強制有効化
+              ...(isMobile && {
+                WebkitTransformStyle: "preserve-3d",
+                transformStyle: "preserve-3d",
+                WebkitPerspective: "1000px",
+                perspective: "1000px",
+              })
             }}
           >
             {/* カードの表側 */}
@@ -345,7 +392,10 @@ export default function EmployeeCardPage() {
                 position: "absolute",
                 width: "100%",
                 height: "100%",
+                WebkitBackfaceVisibility: "hidden",
                 backfaceVisibility: "hidden",
+                WebkitTransform: "rotateY(0deg)",
+                transform: "rotateY(0deg)",
                 borderRadius: 6,
                 background: "linear-gradient(135deg, #060146 0%, #0a0a5a 25%, #1a1a6a 50%, #0a0a5a 75%, #060146 100%)",
                 color: "white",
@@ -468,7 +518,12 @@ export default function EmployeeCardPage() {
                   <Typography variant="h4" fontWeight="bold" sx={{ 
                     color: "#ffffff",
                     textShadow: "0 2px 4px rgba(0,0,0,0.6)",
-                    fontSize: "1.8rem",
+                    fontSize: {
+                      xs: "1.4rem",    // スマホ（320px以上）
+                      sm: "1.6rem",    // 小タブレット（600px以上）
+                      md: "1.8rem",    // 中タブレット（900px以上）
+                      lg: "1.8rem"     // PC（1200px以上）
+                    },
                     opacity: 0.95,
                     letterSpacing: "0.5px",
                     textTransform: "uppercase",
@@ -553,10 +608,11 @@ export default function EmployeeCardPage() {
                 <Typography 
                   variant="h4" 
                   fontWeight="900" 
+                  className="aic-text"
                   sx={{ 
                     letterSpacing: "1.2px",
                     color: "white",
-                    fontSize: "2.2rem",
+                    fontSize: "2.2rem",    // 基本サイズ
                     fontFamily: "'Arial Black', 'Helvetica Black', sans-serif",
                     textShadow: "0 3px 6px rgba(0,0,0,0.6), 0 0 25px rgba(255,255,255,0.4)",
                     textTransform: "uppercase",
@@ -566,7 +622,17 @@ export default function EmployeeCardPage() {
                     WebkitTextStroke: "0.8px rgba(255,255,255,0.9)",
                     transform: "skew(-5deg)",
                     fontStyle: "italic",
-                    textAlign: "right"
+                    textAlign: "right",
+                    // スマホ版での強制サイズ指定
+                    "@media (max-width: 600px)": {
+                      fontSize: "3.5rem !important"
+                    },
+                    "@media (max-width: 480px)": {
+                      fontSize: "3.8rem !important"
+                    },
+                    "@media (max-width: 360px)": {
+                      fontSize: "4.0rem !important"
+                    }
                   }}
                 >
                   AIC
@@ -580,7 +646,9 @@ export default function EmployeeCardPage() {
                 position: "absolute",
                 width: "100%",
                 height: "100%",
+                WebkitBackfaceVisibility: "hidden",
                 backfaceVisibility: "hidden",
+                WebkitTransform: "rotateY(180deg)",
                 transform: "rotateY(180deg)",
                 borderRadius: 6,
                 background: "linear-gradient(135deg, #060146 0%, #0a0a5a 25%, #1a1a6a 50%, #0a0a5a 75%, #060146 100%)",
@@ -666,7 +734,12 @@ export default function EmployeeCardPage() {
               }}>
                 {/* セクション情報、カード番号、社員番号、有効期限を一つのボックスにまとめる */}
                 <Box sx={{ 
-                  p: 1.5,
+                  p: {
+                    xs: 1.0,    // スマホ版ではパディングを小さく
+                    sm: 1.2,    // 小タブレット
+                    md: 1.5,    // 中タブレット以上
+                    lg: 1.5     // PC
+                  },
                   borderRadius: 3,
                   background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
                   border: "1.5px solid rgba(255,255,255,0.3)",
@@ -679,7 +752,12 @@ export default function EmployeeCardPage() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    mb: 1.5
+                    mb: {
+                      xs: 1.0,    // スマホ版ではマージンを小さく
+                      sm: 1.2,    // 小タブレット
+                      md: 1.5,    // 中タブレット以上
+                      lg: 1.5     // PC
+                    }
                   }}>
                     {/* 左側 - カード番号とユーザー名 */}
                     <Box sx={{ flex: 1, textAlign: "center" }}>
@@ -702,7 +780,12 @@ export default function EmployeeCardPage() {
                         lineHeight: 1.3,
                         textShadow: "0 2px 4px rgba(0,0,0,0.6)",
                         letterSpacing: "0.5px",
-                        mb: 0.8
+                        mb: {
+                          xs: 0.5,    // スマホ版ではマージンを小さく
+                          sm: 0.6,    // 小タブレット
+                          md: 0.8,    // 中タブレット以上
+                          lg: 0.8     // PC
+                        }
                       }}>
                         {employeeCard?.card_number ? 
                           employeeCard.card_number.replace(/(.{4})/g, '$1 ').trim() : 
@@ -713,7 +796,12 @@ export default function EmployeeCardPage() {
                       {/* 署名欄（白い背景にユーザー名を表示） */}
                       <Box sx={{ 
                         width: "100%",
-                        height: 22,
+                        height: {
+                          xs: 18,     // スマホ版では高さを小さく
+                          sm: 20,     // 小タブレット
+                          md: 22,     // 中タブレット以上
+                          lg: 22      // PC
+                        },
                         background: "rgba(255,255,255,0.9)",
                         borderRadius: 1,
                         border: "1px solid rgba(255,255,255,0.3)",
@@ -721,7 +809,12 @@ export default function EmployeeCardPage() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        px: 0.8
+                        px: {
+                          xs: 0.6,    // スマホ版ではパディングを小さく
+                          sm: 0.7,    // 小タブレット
+                          md: 0.8,    // 中タブレット以上
+                          lg: 0.8     // PC
+                        }
                       }}>
                         {/* 左辺に「署名」ラベル */}
                         <Typography variant="caption" sx={{ 
@@ -885,15 +978,30 @@ export default function EmployeeCardPage() {
               <Box sx={{ 
                 position: "relative", 
                 zIndex: 1,
-                mt: 1
+                mt: {
+                  xs: 0.5,    // スマホ版ではマージンを小さく
+                  sm: 0.8,    // 小タブレット
+                  md: 1,      // 中タブレット以上
+                  lg: 1       // PC
+                }
               }}>
                 {/* 注意事項 */}
                 <Box sx={{ 
-                  p: 1.2,
+                  p: {
+                    xs: 0.8,    // スマホ版ではパディングを小さく
+                    sm: 1.0,    // 小タブレット
+                    md: 1.2,    // 中タブレット以上
+                    lg: 1.2     // PC
+                  },
                   borderRadius: 2,
                   background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.06) 100%)",
                   border: "1px solid rgba(255,255,255,0.2)",
-                  mb: 1.2
+                  mb: {
+                    xs: 0.8,    // スマホ版ではマージンを小さく
+                    sm: 1.0,    // 小タブレット
+                    md: 1.2,    // 中タブレット以上
+                    lg: 1.2     // PC
+                  }
                 }}>
                   <Typography variant="caption" sx={{ 
                     display: "block", 
@@ -908,7 +1016,12 @@ export default function EmployeeCardPage() {
 
                 {/* 連絡先情報 */}
                 <Box sx={{ 
-                  p: 1.2,
+                  p: {
+                    xs: 0.8,    // スマホ版ではパディングを小さく
+                    sm: 1.0,    // 小タブレット
+                    md: 1.2,    // 中タブレット以上
+                    lg: 1.2     // PC
+                  },
                   borderRadius: 2,
                   background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.05) 100%)",
                   border: "1px solid rgba(255,255,255,0.2)",
