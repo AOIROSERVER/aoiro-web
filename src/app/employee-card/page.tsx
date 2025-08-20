@@ -704,7 +704,10 @@ export default function EmployeeCardPage() {
                         letterSpacing: "0.5px",
                         mb: 0.8
                       }}>
-                        {employeeCard?.card_number || '未設定'}
+                        {employeeCard?.card_number ? 
+                          employeeCard.card_number.replace(/(.{4})/g, '$1 ').trim() : 
+                          '未設定'
+                        }
                       </Typography>
                       
                       {/* 署名欄（白い背景にユーザー名を表示） */}
