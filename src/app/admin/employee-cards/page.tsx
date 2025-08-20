@@ -88,7 +88,6 @@ export default function EmployeeCardsAdminPage() {
       if (user?.email === 'aoiroserver.m@gmail.com') {
         console.log('管理者ユーザーとして認識、権限チェックをスキップ');
         loadEmployeeCards();
-        loadUsers();
         return;
       }
       
@@ -328,13 +327,13 @@ export default function EmployeeCardsAdminPage() {
   };
 
   const getUserEmail = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    return user?.email || '不明';
+    // const user = users.find(u => u.id === userId); // usersは削除されたため
+    return '不明'; // ユーザーリストがないため
   };
 
   const getUserName = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    return user?.user_metadata?.full_name || user?.user_metadata?.name || '不明';
+    // const user = users.find(u => u.id === userId); // usersは削除されたため
+    return '不明'; // ユーザーリストがないため
   };
 
   if (loading || authLoading) {

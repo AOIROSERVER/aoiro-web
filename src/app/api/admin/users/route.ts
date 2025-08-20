@@ -40,6 +40,13 @@ export async function GET() {
         }
         
         // 現在ログインしているユーザーのみを返す
+        if (!user) {
+          return NextResponse.json(
+            { error: 'ユーザー情報が取得できませんでした' },
+            { status: 401 }
+          );
+        }
+        
         const userList = [{
           id: user.id,
           email: user.email,
