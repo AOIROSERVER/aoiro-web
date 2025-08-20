@@ -347,13 +347,13 @@ export default function EmployeeCardPage() {
                 height: "100%",
                 backfaceVisibility: "hidden",
                 borderRadius: 6,
-                background: "linear-gradient(135deg, #0a1a0a 0%, #1a2a1a 25%, #2a3a2a 50%, #1a2a1a 75%, #0a1a0a 100%)",
+                background: "linear-gradient(135deg, #060146 0%, #0a0a5a 25%, #1a1a6a 50%, #0a0a5a 75%, #060146 100%)",
                 color: "white",
-                p: 3,
+                p: 1.5,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                boxShadow: "0 20px 60px rgba(10, 26, 10, 0.4), 0 8px 32px rgba(0,0,0,0.3)",
+                boxShadow: "0 20px 60px rgba(6, 1, 70, 0.4), 0 8px 32px rgba(0,0,0,0.3)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 overflow: "hidden",
                 "&::before": {
@@ -364,24 +364,11 @@ export default function EmployeeCardPage() {
                   right: 0,
                   bottom: 0,
                   background: `
-                    conic-gradient(from 0deg at 70% 40%, transparent 0deg, rgba(255,255,255,0.08) 60deg, transparent 120deg),
-                    radial-gradient(circle at 70% 40%, rgba(255,255,255,0.15) 0%, transparent 50%),
-                    linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.02) 50%, transparent 100%)
+                    conic-gradient(from 180deg at 30% 60%, transparent 0deg, rgba(255,255,255,0.05) 60deg, transparent 120deg),
+                    radial-gradient(circle at 30% 60%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                    linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.02) 25%, transparent 50%, rgba(255,255,255,0.02) 75%, transparent 100%)
                   `,
                   zIndex: 1
-                },
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  top: "-50%",
-                  left: "-50%",
-                  right: "-50%",
-                  bottom: "-50%",
-                  background: `
-                    linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.03) 50%, transparent 70%),
-                    linear-gradient(-45deg, transparent 30%, rgba(255,255,255,0.02) 50%, transparent 70%)
-                  `,
-                  zIndex: 0
                 }
               }}
             >
@@ -392,15 +379,15 @@ export default function EmployeeCardPage() {
                 left: 0,
                 width: "100%",
                 height: "100%",
-                zIndex: 1,
+                zIndex: 0,
                 "&::before": {
                   content: '""',
                   position: "absolute",
-                  top: "30%",
+                  top: "25%",
                   left: "60%",
                   width: "80%",
                   height: "80%",
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
                   clipPath: "polygon(0 0, 100% 0, 60% 100%, 0 100%)",
                   transform: "rotate(45deg)",
                   transformOrigin: "center"
@@ -422,7 +409,7 @@ export default function EmployeeCardPage() {
                   right: "20%",
                   width: "40%",
                   height: "40%",
-                  background: "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.15) 100%)",
+                  background: "linear-gradient(135deg, transparent 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.12) 100%)",
                   clipPath: "polygon(100% 0, 100% 100%, 0 100%, 0 0)",
                   transform: "rotate(-25deg)",
                   transformOrigin: "center"
@@ -435,9 +422,9 @@ export default function EmployeeCardPage() {
                   <Box sx={{ 
                     width: 0, 
                     height: 0, 
-                    borderLeft: "6px solid transparent",
-                    borderRight: "6px solid transparent",
-                    borderBottom: "10px solid white",
+                    borderRight: "10px solid white",
+                    borderTop: "5px solid transparent",
+                    borderBottom: "5px solid transparent",
                     opacity: 0.9
                   }} />
                   <Typography variant="h6" fontWeight="bold" sx={{ 
@@ -498,7 +485,7 @@ export default function EmployeeCardPage() {
                     letterSpacing: "0.3px",
                     display: "block"
                   }}>
-                    :セクション
+                    セクション
                   </Typography>
                 </Box>
               </Box>
@@ -521,7 +508,6 @@ export default function EmployeeCardPage() {
                   sx={{
                     width: 50,
                     height: 50,
-                    border: "2px solid rgba(255,255,255,0.3)",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
                     background: getUserAvatar() ? "transparent" : "rgba(255,255,255,0.2)"
                   }}
@@ -597,13 +583,13 @@ export default function EmployeeCardPage() {
                 backfaceVisibility: "hidden",
                 transform: "rotateY(180deg)",
                 borderRadius: 6,
-                background: "linear-gradient(135deg, #0a1a0a 0%, #1a2a1a 25%, #2a3a2a 50%, #1a2a1a 75%, #0a1a0a 100%)",
+                background: "linear-gradient(135deg, #060146 0%, #0a0a5a 25%, #1a1a6a 50%, #0a0a5a 75%, #060146 100%)",
                 color: "white",
                 p: 1.5,
                 display: "flex",
                 flexDirection: "column",
                 justifyContent: "space-between",
-                boxShadow: "0 20px 60px rgba(10, 26, 10, 0.4), 0 8px 32px rgba(0,0,0,0.3)",
+                boxShadow: "0 20px 60px rgba(6, 1, 70, 0.4), 0 8px 32px rgba(0,0,0,0.3)",
                 border: "1px solid rgba(255,255,255,0.1)",
                 overflow: "hidden",
                 "&::before": {
@@ -615,7 +601,8 @@ export default function EmployeeCardPage() {
                   bottom: 0,
                   background: `
                     conic-gradient(from 180deg at 30% 60%, transparent 0deg, rgba(255,255,255,0.05) 60deg, transparent 120deg),
-                    radial-gradient(circle at 30% 60%, rgba(255,255,255,0.08) 0%, transparent 50%)
+                    radial-gradient(circle at 30% 60%, rgba(255,255,255,0.08) 0%, transparent 50%),
+                    linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.02) 25%, transparent 50%, rgba(255,255,255,0.02) 75%, transparent 100%)
                   `,
                   zIndex: 1
                 }
@@ -636,7 +623,7 @@ export default function EmployeeCardPage() {
                   left: "55%",
                   width: "70%",
                   height: "70%",
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.18) 50%, transparent 100%)",
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
                   clipPath: "polygon(0 0, 100% 0, 65% 100%, 0 100%)",
                   transform: "rotate(40deg)",
                   transformOrigin: "center"
@@ -665,146 +652,274 @@ export default function EmployeeCardPage() {
                 }
               }} />
 
-              {/* 中央 - セクション情報 */}
+              {/* 上側 - セクション情報とカード番号 */}
               <Box sx={{ 
                 position: "relative", 
                 zIndex: 1, 
                 flex: 1,
                 display: "flex",
                 flexDirection: "column",
-                justifyContent: "center",
+                justifyContent: "flex-start",
                 alignItems: "center",
-                gap: 1
+                gap: 1,
+                pt: 1
               }}>
+                {/* セクション情報、カード番号、社員番号、有効期限を一つのボックスにまとめる */}
                 <Box sx={{ 
                   p: 1.5,
-                  borderRadius: 1.5,
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: 3,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.1) 100%)",
+                  border: "1.5px solid rgba(255,255,255,0.3)",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
                   textAlign: "center",
                   width: "90%"
                 }}>
-                  <Typography variant="caption" sx={{ 
-                    display: "block", 
-                    color: "#cccccc",
-                    fontSize: "0.65rem",
-                    mb: 1,
-                    lineHeight: 1.1
-                  }}>
-                    このカードはAOIROSERVERが発行するAOIRO IDカードです
-                  </Typography>
-                  
-                  {/* セクション情報 - より目立つデザイン */}
+                  {/* カード番号を大きく表示 */}
                   <Box sx={{ 
-                    p: 1,
-                    borderRadius: 1.5,
-                    background: "rgba(255,255,255,0.15)",
-                    border: "1.5px solid rgba(255,255,255,0.3)",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 1.5
                   }}>
-                    <Typography variant="body2" fontWeight="bold" sx={{ 
-                      color: "#ffffff",
-                      fontSize: "0.9rem",
-                      textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-                      letterSpacing: "0.3px"
+                    {/* 左側 - カード番号とユーザー名 */}
+                    <Box sx={{ flex: 1, textAlign: "center" }}>
+                      <Typography variant="caption" sx={{ 
+                        display: "block", 
+                        color: "#cccccc",
+                        fontSize: "0.6rem",
+                        opacity: 0.9,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.3px",
+                        mb: 0.8,
+                        fontWeight: "500"
+                      }}>
+                        カード番号
+                      </Typography>
+                      <Typography variant="h6" fontFamily="monospace" sx={{ 
+                        color: "#ffffff",
+                        fontSize: "0.9rem",
+                        fontWeight: "bold",
+                        lineHeight: 1.3,
+                        textShadow: "0 2px 4px rgba(0,0,0,0.6)",
+                        letterSpacing: "0.5px",
+                        mb: 0.8
+                      }}>
+                        {employeeCard?.card_number || '未設定'}
+                      </Typography>
+                      
+                      {/* 署名欄（白い背景にユーザー名を表示） */}
+                      <Box sx={{ 
+                        width: "100%",
+                        height: 22,
+                        background: "rgba(255,255,255,0.9)",
+                        borderRadius: 1,
+                        border: "1px solid rgba(255,255,255,0.3)",
+                        position: "relative",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        px: 0.8
+                      }}>
+                        {/* 左辺に「署名」ラベル */}
+                        <Typography variant="caption" sx={{ 
+                          color: "#060146",
+                          fontSize: "0.55rem",
+                          fontWeight: "500",
+                          letterSpacing: "0.2px"
+                        }}>
+                          署名
+                        </Typography>
+                        
+                        {/* 中心にユーザー名 */}
+                        <Typography variant="body2" sx={{ 
+                          color: "#060146",
+                          fontSize: "0.85rem",
+                          fontWeight: "500",
+                          letterSpacing: "0.3px",
+                          textAlign: "center",
+                          flex: 1,
+                          fontFamily: "'Segoe UI', 'Yu Gothic', 'Meiryo', 'Hiragino Sans', sans-serif",
+                          fontStyle: "italic",
+                          transform: "skew(-5deg)",
+                          transformOrigin: "center"
+                        }}>
+                          {getUserDisplayName()}
+                        </Typography>
+                        
+                        {/* 右側のスペーサー（バランス調整用） */}
+                        <Box sx={{ width: "18px" }} />
+                      </Box>
+                    </Box>
+
+                    {/* 右側 - QRコード */}
+                    <Box sx={{ 
+                      width: 40, 
+                      height: 40, 
+                      background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
+                      borderRadius: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1.5px solid rgba(255,255,255,0.3)",
+                      flexShrink: 0,
+                      ml: 1,
+                      boxShadow: "0 3px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
+                      position: "relative",
+                      overflow: "hidden",
+                      "&::before": {
+                        content: '""',
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)",
+                        zIndex: 0
+                      }
                     }}>
-                      {employeeCard?.section_name || 'セクション未設定'}
-                    </Typography>
-                    <Typography variant="caption" sx={{ 
-                      display: "block", 
-                      color: "#e0e0e0",
-                      fontSize: "0.6rem",
-                      mt: 0.3,
-                      opacity: 0.9
-                    }}>
-                      {employeeCard?.section_name ? 'Section' : 'Not Set'}
-                    </Typography>
+                      <QrCode sx={{ 
+                        fontSize: 22, 
+                        color: "white",
+                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
+                        zIndex: 1,
+                        position: "relative"
+                      }} />
+                    </Box>
+                  </Box>
+
+                  {/* 社員番号、有効期限、セクションを横並びで配置 */}
+                  <Box sx={{ 
+                    display: "flex", 
+                    justifyContent: "space-between", 
+                    alignItems: "flex-start",
+                    gap: 1.2
+                  }}>
+                    {/* 社員番号 */}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ 
+                        display: "block", 
+                        color: "#cccccc",
+                        fontSize: "0.55rem",
+                        opacity: 0.9,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.2px",
+                        mb: 0.5,
+                        fontWeight: "500"
+                      }}>
+                        社員番号
+                      </Typography>
+                      <Typography variant="body2" fontFamily="monospace" sx={{ 
+                        color: "#ffffff",
+                        fontSize: "0.65rem",
+                        fontWeight: "bold",
+                        lineHeight: 1.2,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.5)"
+                      }}>
+                        {employeeCard?.employee_number || '未設定'}
+                      </Typography>
+                    </Box>
+
+                    {/* 有効期限 */}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ 
+                        display: "block", 
+                        color: "#cccccc",
+                        fontSize: "0.55rem",
+                        opacity: 0.9,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.2px",
+                        mb: 0.5,
+                        fontWeight: "500"
+                      }}>
+                        有効期限
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        color: "#ffffff",
+                        fontSize: "0.65rem",
+                        fontWeight: "bold",
+                        lineHeight: 1.2,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.5)"
+                      }}>
+                        {employeeCard?.expiry_date ? 
+                          new Date(employeeCard.expiry_date).toLocaleDateString('ja-JP', { 
+                            month: '2-digit', 
+                            year: '2-digit' 
+                          }).replace('/', '/') : 
+                          '期限未設定'
+                        }
+                      </Typography>
+                    </Box>
+
+                    {/* セクション */}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" sx={{ 
+                        display: "block", 
+                        color: "#cccccc",
+                        fontSize: "0.55rem",
+                        opacity: 0.9,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.2px",
+                        mb: 0.5,
+                        fontWeight: "500"
+                      }}>
+                        セクション
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        color: "#ffffff",
+                        fontSize: "0.65rem",
+                        fontWeight: "bold",
+                        lineHeight: 1.2,
+                        textShadow: "0 1px 2px rgba(0,0,0,0.5)"
+                      }}>
+                        {employeeCard?.section_name || 'メンバー'}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
               </Box>
 
-              {/* 下部 - カード番号と有効期限 */}
-              <Box sx={{ position: "relative", zIndex: 1 }}>
+              {/* 下側 - 注意事項と連絡先 */}
+              <Box sx={{ 
+                position: "relative", 
+                zIndex: 1,
+                mt: 1
+              }}>
+                {/* 注意事項 */}
                 <Box sx={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "flex-end",
                   p: 1.2,
-                  borderRadius: 1.5,
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.15)"
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.06) 100%)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  mb: 1.2
                 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="caption" sx={{ 
-                      display: "block", 
-                      color: "#cccccc",
-                      fontSize: "0.6rem",
-                      mb: 0.4
-                    }}>
-                      カード番号
-                    </Typography>
-                    <Typography variant="h6" fontFamily="monospace" sx={{ 
-                      letterSpacing: 0.3,
-                      fontWeight: "bold",
-                      color: "#ffffff",
-                      fontSize: "0.8rem",
-                      mb: 0.8
-                    }}>
-                      {employeeCard?.card_number || 'カード番号未設定'}
-                    </Typography>
-                    <Box sx={{ display: "flex", gap: 1.5 }}>
-                      <Box>
-                        <Typography variant="caption" sx={{ 
-                          display: "block", 
-                          color: "#cccccc",
-                          fontSize: "0.6rem"
-                        }}>
-                          有効期限
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ 
-                          color: "#ffffff",
-                          fontSize: "0.75rem"
-                        }}>
-                          {employeeCard?.expiry_date ? 
-                            new Date(employeeCard.expiry_date).toLocaleDateString('ja-JP', { 
-                              month: '2-digit', 
-                              year: '2-digit' 
-                            }).replace('/', '/') : 
-                            '期限未設定'
-                          }
-                        </Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="caption" sx={{ 
-                          display: "block", 
-                          color: "#cccccc",
-                          fontSize: "0.6rem"
-                        }}>
-                          社員番号
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold" sx={{ 
-                          color: "#ffffff",
-                          fontSize: "0.75rem"
-                        }}>
-                          {employeeCard?.employee_number || '社員番号未設定'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Box>
-                  <Box sx={{ 
-                    width: 48, 
-                    height: 48, 
-                    background: "rgba(255,255,255,0.1)",
-                    borderRadius: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid rgba(255,255,255,0.2)",
-                    flexShrink: 0,
-                    ml: 1.2
+                  <Typography variant="caption" sx={{ 
+                    display: "block", 
+                    color: "rgba(255,255,255,0.7)",
+                    fontSize: "0.55rem",
+                    lineHeight: 1.2,
+                    textAlign: "center"
                   }}>
-                    <QrCode sx={{ fontSize: 28, color: "white" }} />
-                  </Box>
+                    <strong>注意事項:</strong> 本人以外の使用禁止・有効期限の確認・適切な保管・管理
+                  </Typography>
+                </Box>
+
+                {/* 連絡先情報 */}
+                <Box sx={{ 
+                  p: 1.2,
+                  borderRadius: 2,
+                  background: "linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.05) 100%)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  textAlign: "center"
+                }}>
+                  <Typography variant="caption" sx={{ 
+                    display: "block", 
+                    color: "rgba(255,255,255,0.6)",
+                    fontSize: "0.55rem",
+                    lineHeight: 1.2
+                  }}>
+                    <strong>お問い合わせ:</strong> AOIROSERVER サポートセンター<br />
+                    aoiroserver@gmail.com
+                  </Typography>
                 </Box>
               </Box>
             </Box>
