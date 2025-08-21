@@ -21,7 +21,9 @@ import {
   Security, 
   VerifiedUser, 
   Business, 
-  Person 
+  Person,
+  Login,
+  Info
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
@@ -218,19 +220,6 @@ export default function EmployeeCardPage() {
 
   const toggleCard = () => {
     setIsCardFlipped(!isCardFlipped);
-    
-    // モバイル端末での強制再描画
-    if (isMobile) {
-      setTimeout(() => {
-        const cardContainer = document.querySelector('.card-container');
-        if (cardContainer && cardContainer instanceof HTMLElement) {
-          cardContainer.style.display = 'none';
-          setTimeout(() => {
-            cardContainer.style.display = 'block';
-          }, 10);
-        }
-      }, 100);
-    }
   };
 
   // ユーザーのアバター画像を取得（デフォルトはユーザーアイコン）
@@ -282,22 +271,142 @@ export default function EmployeeCardPage() {
   if (error) {
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-        <Button 
-          variant="contained" 
-          onClick={() => window.location.reload()}
-          sx={{ mr: 2 }}
-        >
-          再試行
-        </Button>
-        <Button 
-          variant="outlined" 
-          onClick={() => router.push('/login')}
-        >
-          ログイン画面へ
-        </Button>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          {/* モダンなアイコン */}
+          <Box
+            sx={{
+              width: 120,
+              height: 120,
+              mx: 'auto',
+              mb: 4,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
+              position: 'relative',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: -10,
+                left: -10,
+                right: -10,
+                bottom: -10,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: '50%',
+                opacity: 0.2,
+                zIndex: -1,
+                animation: 'pulse 2s infinite'
+              }
+            }}
+          >
+            <Security sx={{ fontSize: 60, color: 'white' }} />
+          </Box>
+          
+          {/* タイトル */}
+          <Typography 
+            variant="h3" 
+            component="h1" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 2
+            }}
+          >
+            AOIRO ID ログインが必要です
+          </Typography>
+          
+          {/* 説明文 */}
+          <Typography 
+            variant="h6" 
+            color="text.secondary" 
+            sx={{ 
+              mb: 4, 
+              maxWidth: 500, 
+              mx: 'auto',
+              lineHeight: 1.6,
+              opacity: 0.8
+            }}
+          >
+            AIC（AOIRO ID Card）を表示するには、AOIRO IDでログインしてください。
+          </Typography>
+          
+          {/* アクションボタン */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Button 
+              variant="contained" 
+              size="large"
+              onClick={() => router.push('/login')}
+              sx={{ 
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: '25px',
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                  boxShadow: '0 12px 35px rgba(102, 126, 234, 0.4)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              startIcon={<Login sx={{ fontSize: 24 }} />}
+            >
+              ログイン
+            </Button>
+            
+            <Button 
+              variant="outlined" 
+              size="large"
+              onClick={() => router.push('/register')}
+              sx={{ 
+                borderColor: '#667eea',
+                color: '#667eea',
+                borderRadius: '25px',
+                px: 4,
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                borderWidth: 2,
+                '&:hover': {
+                  borderColor: '#5a6fd8',
+                  backgroundColor: 'rgba(102, 126, 234, 0.04)',
+                  transform: 'translateY(-2px)'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              startIcon={<Person sx={{ fontSize: 24 }} />}
+            >
+              新規登録
+            </Button>
+          </Box>
+          
+          {/* 追加情報 */}
+          <Box sx={{ mt: 6, p: 3, background: 'rgba(102, 126, 234, 0.05)', borderRadius: 3, maxWidth: 600, mx: 'auto' }}>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', opacity: 0.8 }}>
+              <Info sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+              AICは、AOIROコミュニティのメンバーシップを証明する公式カードです
+            </Typography>
+          </Box>
+        </Box>
+        
+        {/* CSS アニメーション */}
+        <style jsx>{`
+          @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.2; }
+            50% { transform: scale(1.1); opacity: 0.1; }
+            100% { transform: scale(1); opacity: 0.2; }
+          }
+        `}</style>
       </Container>
     );
   }
@@ -306,7 +415,7 @@ export default function EmployeeCardPage() {
     return (
       <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
         <Typography variant="h4" component="h1" gutterBottom>
-          証明書
+          証明証
         </Typography>
         <Typography variant="body1" color="text.secondary">
           AOIRO IDカードの生成に失敗しました。
@@ -330,7 +439,7 @@ export default function EmployeeCardPage() {
           textShadow: "0 2px 4px rgba(0,0,0,0.1)",
           letterSpacing: "1px"
         }}>
-          証明書
+          証明証
         </Typography>
         <Typography variant="body1" sx={{ color: "#666", mb: 4 }}>
           カードをタップすると表裏が反転します
@@ -339,25 +448,23 @@ export default function EmployeeCardPage() {
         {/* 反転可能なカード */}
         <Box
           className="card-container"
-          sx={{
-            perspective: "1200px",
-            width: "100%",
-            maxWidth: {
-              xs: 320,    // スマホ（320px以上）- より適切なサイズ
-              sm: 380,    // 小タブレット（600px以上）
-              md: 420,    // 中タブレット（900px以上）
-              lg: 420     // PC（1200px以上）
-            },
-            mx: "auto",
-            mb: 4,
-            // モバイル端末での3D変換の強制有効化
-            ...(isMobile && {
-              WebkitTransformStyle: "preserve-3d",
-              transformStyle: "preserve-3d",
-              WebkitPerspective: "1000px",
-              perspective: "1000px",
-            })
-          }}
+                      sx={{
+              perspective: "1200px",
+              width: "100%",
+              maxWidth: {
+                xs: 320,    // スマホ（320px以上）- より適切なサイズ
+                sm: 380,    // 小タブレット（600px以上）
+                md: 420,    // 中タブレット（900px以上）
+                lg: 420     // PC（1200px以上）
+              },
+              mx: "auto",
+              mb: 4,
+              // モバイル端末での3D変換の最適化
+              ...(isMobile && {
+                perspective: "1000px",
+                transformStyle: "preserve-3d",
+              })
+            }}
         >
           <Box
             onClick={toggleCard}
@@ -377,12 +484,10 @@ export default function EmployeeCardPage() {
               "&:hover": {
                 transform: isCardFlipped ? "rotateY(180deg) scale(1.02)" : "rotateY(0deg) scale(1.02)",
               },
-              // モバイル端末での3D変換の強制有効化
+              // モバイル端末での3D変換の最適化
               ...(isMobile && {
-                WebkitTransformStyle: "preserve-3d",
                 transformStyle: "preserve-3d",
-                WebkitPerspective: "1000px",
-                perspective: "1000px",
+                willChange: "transform",
               })
             }}
           >
@@ -392,9 +497,7 @@ export default function EmployeeCardPage() {
                 position: "absolute",
                 width: "100%",
                 height: "100%",
-                WebkitBackfaceVisibility: "hidden",
                 backfaceVisibility: "hidden",
-                WebkitTransform: "rotateY(0deg)",
                 transform: "rotateY(0deg)",
                 borderRadius: 6,
                 background: "linear-gradient(135deg, #060146 0%, #0a0a5a 25%, #1a1a6a 50%, #0a0a5a 75%, #060146 100%)",
@@ -646,9 +749,7 @@ export default function EmployeeCardPage() {
                 position: "absolute",
                 width: "100%",
                 height: "100%",
-                WebkitBackfaceVisibility: "hidden",
                 backfaceVisibility: "hidden",
-                WebkitTransform: "rotateY(180deg)",
                 transform: "rotateY(180deg)",
                 borderRadius: 6,
                 background: "linear-gradient(135deg, #060146 0%, #0a0a5a 25%, #1a1a6a 50%, #0a0a5a 75%, #060146 100%)",

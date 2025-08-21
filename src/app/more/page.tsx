@@ -46,6 +46,7 @@ import {
   ChevronRight,
   ShoppingCart,
   Inventory,
+  CreditCard,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -2033,15 +2034,20 @@ export default function MorePage() {
             <Button 
               fullWidth 
               variant="outlined" 
-              startIcon={<Shield sx={{ color: "#FF6B6B", fontSize: { xs: 18, sm: 20 } }} />} 
+              startIcon={<CreditCard sx={{ color: "#FF6B35", fontSize: { xs: 18, sm: 20 } }} />} 
               sx={{ 
                 borderRadius: 2,
                 height: { xs: 48, sm: 56 },
-                fontSize: { xs: 12, sm: 14 }
+                fontSize: { xs: 12, sm: 14 },
+                borderColor: '#FF6B35',
+                '&:hover': {
+                  borderColor: '#FF6B35',
+                  backgroundColor: 'rgba(255, 107, 53, 0.04)'
+                }
               }}
-              onClick={() => router.push('/settings/privacy')}
+              onClick={() => router.push('/employee-card')}
             >
-              プライバシー
+              AIC
             </Button>
           </Grid>
           <Grid item xs={6}>
