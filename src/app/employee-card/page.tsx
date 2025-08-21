@@ -49,11 +49,30 @@ export default function EmployeeCardPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [showCard, setShowCard] = useState(false);
 
   useEffect(() => {
     checkUserAuthorization();
     checkMobileDevice();
   }, []);
+
+  // プログレスバーの自動更新
+  useEffect(() => {
+    if (isCreating && progress < 100) {
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return Math.min(prev + Math.random() * 15, 100);
+        });
+      }, 800);
+
+      return () => clearInterval(interval);
+    }
+  }, [isCreating, progress]);
 
   const checkMobileDevice = () => {
     const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -222,6 +241,17 @@ export default function EmployeeCardPage() {
     setIsCardFlipped(!isCardFlipped);
   };
 
+  // プログレスバーの進捗を管理
+  const updateProgress = (newProgress: number) => {
+    setProgress(newProgress);
+    if (newProgress >= 100) {
+      setTimeout(() => {
+        setShowCard(true);
+        setLoading(false);
+      }, 500); // 100%表示後0.5秒でカード表示
+    }
+  };
+
   // ユーザーのアバター画像を取得（デフォルトはユーザーアイコン）
   const getUserAvatar = () => {
     if (user?.user_metadata?.avatar_url) {
@@ -260,10 +290,170 @@ export default function EmployeeCardPage() {
   if (loading) {
     return (
       <Container maxWidth="md" sx={{ py: 8, textAlign: 'center' }}>
-        <CircularProgress size={60} />
-        <Typography variant="h6" sx={{ mt: 3 }}>
-          {isCreating ? 'AOIRO IDカードを生成中...' : '読み込み中...'}
-        </Typography>
+        <Box sx={{ textAlign: 'center' }}>
+          {/* シンプルなアイコン */}
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              mx: 'auto',
+              mb: 4,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+              borderRadius: '50%',
+              boxShadow: '0 8px 24px rgba(26, 26, 46, 0.2)',
+              border: '2px solid rgba(255,215,0,0.2)'
+            }}
+          >
+            <CreditCard sx={{ 
+              fontSize: 40, 
+              color: 'rgba(255,215,0,0.8)'
+            }} />
+          </Box>
+          
+          {/* タイトル */}
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 400,
+              color: '#1a1a2e',
+              mb: 3,
+              fontSize: { xs: '1.5rem', sm: '2rem' },
+              letterSpacing: '0.05em'
+            }}
+          >
+            {isCreating ? 'AIC カード生成中' : '読み込み中'}
+          </Typography>
+          
+          {/* 説明文 */}
+          <Typography 
+            variant="h6" 
+            color="text.secondary" 
+            sx={{ 
+              mb: 5, 
+              maxWidth: 500, 
+              mx: 'auto',
+              lineHeight: 1.6,
+              opacity: 0.7,
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              fontWeight: 300
+            }}
+          >
+            {isCreating 
+              ? 'AOIRO IDカードを生成しています。しばらくお待ちください。'
+              : 'データを読み込んでいます。'
+            }
+          </Typography>
+          
+          {/* メインプログレスバー */}
+          <Box sx={{ width: '100%', maxWidth: 500, mx: 'auto', mb: 6 }}>
+            <Box
+              sx={{
+                width: '100%',
+                height: 8,
+                background: 'rgba(26, 26, 46, 0.1)',
+                borderRadius: 4,
+                overflow: 'hidden',
+                position: 'relative',
+                border: '1px solid rgba(26, 26, 46, 0.1)'
+              }}
+            >
+              <Box
+                sx={{
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #1a1a2e 0%, #533483 50%, #7209b7 100%)',
+                  borderRadius: 3,
+                  width: `${progress}%`,
+                  transition: 'width 0.8s ease-in-out',
+                  position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: '30%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)',
+                    animation: 'shimmer 2s ease-in-out infinite'
+                  }
+                }}
+              />
+            </Box>
+            
+            {/* プログレステキスト */}
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                mt: 2, 
+                opacity: 0.7,
+                fontSize: '0.9rem',
+                fontWeight: 300
+              }}
+            >
+              {progress}% 完了
+            </Typography>
+          </Box>
+          
+          {/* ステップインジケーター */}
+          {isCreating && (
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: 3, 
+              mb: 4,
+              opacity: 0.8
+            }}>
+              {['認証確認', 'データ生成', 'カード作成', '完了'].map((step, index) => {
+                const stepProgress = index === 0 ? 25 : index === 1 ? 50 : index === 2 ? 75 : 100;
+                const isCompleted = progress >= stepProgress;
+                const isCurrent = progress >= stepProgress - 25 && progress < stepProgress;
+                
+                return (
+                  <Box key={step} sx={{ textAlign: 'center' }}>
+                    <Box
+                      sx={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        background: isCompleted ? 'linear-gradient(135deg, #1a1a2e 0%, #533483 100%)' : 'rgba(26, 26, 46, 0.2)',
+                        border: '2px solid',
+                        borderColor: isCompleted ? 'rgba(255,215,0,0.3)' : 'rgba(26, 26, 46, 0.1)',
+                        mb: 1,
+                        transition: 'all 0.3s ease',
+                        transform: isCurrent ? 'scale(1.2)' : 'scale(1)',
+                        boxShadow: isCurrent ? '0 0 8px rgba(255,215,0,0.3)' : 'none'
+                      }}
+                    />
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        fontSize: '0.75rem',
+                        color: isCompleted ? 'text.primary' : 'text.secondary',
+                        opacity: isCompleted ? 0.8 : 0.5,
+                        fontWeight: isCompleted ? 500 : 300
+                      }}
+                    >
+                      {step}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+        </Box>
+        
+        {/* CSS アニメーション */}
+        <style jsx>{`
+          @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+          }
+        `}</style>
       </Container>
     );
   }
@@ -272,93 +462,174 @@ export default function EmployeeCardPage() {
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
-          {/* モダンなアイコン */}
+          {/* 高級感のあるアイコン */}
           <Box
             sx={{
-              width: 120,
-              height: 120,
+              width: 140,
+              height: 140,
               mx: 'auto',
-              mb: 4,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 20px 40px rgba(102, 126, 234, 0.3)',
+              mb: 6,
               position: 'relative',
               '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: -20,
+                left: -20,
+                right: -20,
+                bottom: -20,
+                background: 'radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)',
+                borderRadius: '50%',
+                animation: 'golden-glow 3s ease-in-out infinite'
+              },
+              '&::after': {
                 content: '""',
                 position: 'absolute',
                 top: -10,
                 left: -10,
                 right: -10,
                 bottom: -10,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'conic-gradient(from 0deg, rgba(255,215,0,0.05) 0deg, rgba(192,192,192,0.05) 90deg, rgba(255,215,0,0.05) 180deg, rgba(192,192,192,0.05) 270deg, rgba(255,215,0,0.05) 360deg)',
                 borderRadius: '50%',
-                opacity: 0.2,
-                zIndex: -1,
-                animation: 'pulse 2s infinite'
+                animation: 'rotate-slow 8s linear infinite'
               }
             }}
           >
-            <Security sx={{ fontSize: 60, color: 'white' }} />
+            <Box
+              sx={{
+                width: '100%',
+                height: '100%',
+                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #533483 75%, #7209b7 100%)',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 25px 50px rgba(26, 26, 46, 0.4), inset 0 1px 0 rgba(255,255,255,0.1)',
+                border: '2px solid rgba(255,215,0,0.3)',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'radial-gradient(circle at 30% 30%, rgba(255,215,0,0.1) 0%, transparent 50%)',
+                  animation: 'shimmer-gold 2s ease-in-out infinite'
+                }}
+              />
+              <Security sx={{ 
+                fontSize: 70, 
+                color: 'rgba(255,215,0,0.9)',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+              }} />
+            </Box>
           </Box>
           
-          {/* タイトル */}
+          {/* 高級感のあるタイトル */}
           <Typography 
-            variant="h3" 
+            variant="h2" 
             component="h1" 
             gutterBottom 
             sx={{ 
-              fontWeight: 700,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              mb: 2
+              fontWeight: 300,
+              color: '#1a1a2e',
+              mb: 3,
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              position: 'relative',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                bottom: -10,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 80,
+                height: 2,
+                background: 'linear-gradient(90deg, transparent 0%, #7209b7 50%, transparent 100%)',
+                borderRadius: 1
+              }
             }}
           >
-            AOIRO ID ログインが必要です
+            AOIRO ID
           </Typography>
           
-          {/* 説明文 */}
+          <Typography 
+            variant="h4" 
+            component="h2" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 400,
+              color: '#533483',
+              mb: 4,
+              fontSize: { xs: '1.2rem', sm: '1.5rem' },
+              letterSpacing: '0.05em'
+            }}
+          >
+            ログインが必要です
+          </Typography>
+          
+          {/* 上品な説明文 */}
           <Typography 
             variant="h6" 
             color="text.secondary" 
             sx={{ 
-              mb: 4, 
-              maxWidth: 500, 
+              mb: 6, 
+              maxWidth: 600, 
               mx: 'auto',
-              lineHeight: 1.6,
-              opacity: 0.8
+              lineHeight: 1.8,
+              opacity: 0.7,
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              fontWeight: 300,
+              fontStyle: 'italic'
             }}
           >
-            AIC（AOIRO ID Card）を表示するには、AOIRO IDでログインしてください。
+            AIC（AOIRO ID Card）を表示するには、<br />
+            AOIRO IDでログインしてください。
           </Typography>
           
-          {/* アクションボタン */}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {/* 高級感のあるアクションボタン */}
+          <Box sx={{ display: 'flex', gap: 3, justifyContent: 'center', flexWrap: 'wrap', mb: 6 }}>
             <Button 
               variant="contained" 
               size="large"
               onClick={() => router.push('/login')}
               sx={{ 
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '25px',
-                px: 4,
-                py: 1.5,
+                background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
+                borderRadius: '30px',
+                px: 5,
+                py: 2,
                 fontSize: '1.1rem',
-                fontWeight: 600,
+                fontWeight: 400,
                 textTransform: 'none',
-                boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
-                  boxShadow: '0 12px 35px rgba(102, 126, 234, 0.4)',
-                  transform: 'translateY(-2px)'
+                boxShadow: '0 15px 35px rgba(26, 26, 46, 0.3)',
+                border: '1px solid rgba(255,215,0,0.2)',
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,215,0,0.1), transparent)',
+                  transition: 'left 0.5s'
                 },
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #16213e 0%, #0f3460 100%)',
+                  boxShadow: '0 20px 45px rgba(26, 26, 46, 0.4)',
+                  transform: 'translateY(-3px)',
+                  '&::before': {
+                    left: '100%'
+                  }
+                },
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
-              startIcon={<Login sx={{ fontSize: 24 }} />}
+              startIcon={<Login sx={{ fontSize: 26, color: 'rgba(255,215,0,0.9)' }} />}
             >
               ログイン
             </Button>
@@ -368,32 +639,59 @@ export default function EmployeeCardPage() {
               size="large"
               onClick={() => router.push('/register')}
               sx={{ 
-                borderColor: '#667eea',
-                color: '#667eea',
-                borderRadius: '25px',
-                px: 4,
-                py: 1.5,
+                borderColor: 'rgba(255,215,0,0.5)',
+                color: '#533483',
+                borderRadius: '30px',
+                px: 5,
+                py: 2,
                 fontSize: '1.1rem',
-                fontWeight: 600,
+                fontWeight: 400,
                 textTransform: 'none',
                 borderWidth: 2,
+                background: 'rgba(255,215,0,0.02)',
+                backdropFilter: 'blur(10px)',
                 '&:hover': {
-                  borderColor: '#5a6fd8',
-                  backgroundColor: 'rgba(102, 126, 234, 0.04)',
-                  transform: 'translateY(-2px)'
+                  borderColor: 'rgba(255,215,0,0.8)',
+                  backgroundColor: 'rgba(255,215,0,0.05)',
+                  transform: 'translateY(-3px)',
+                  boxShadow: '0 15px 35px rgba(255,215,0,0.2)'
                 },
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
               }}
-              startIcon={<Person sx={{ fontSize: 24 }} />}
+              startIcon={<Person sx={{ fontSize: 26 }} />}
             >
               新規登録
             </Button>
           </Box>
           
-          {/* 追加情報 */}
-          <Box sx={{ mt: 6, p: 3, background: 'rgba(102, 126, 234, 0.05)', borderRadius: 3, maxWidth: 600, mx: 'auto' }}>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', opacity: 0.8 }}>
-              <Info sx={{ fontSize: 16, verticalAlign: 'middle', mr: 1 }} />
+          {/* 高級感のある追加情報 */}
+          <Box sx={{ 
+            mt: 8, 
+            p: 4, 
+            background: 'linear-gradient(135deg, rgba(26,26,46,0.03) 0%, rgba(83,52,131,0.03) 100%)',
+            borderRadius: 4,
+            maxWidth: 700,
+            mx: 'auto',
+            border: '1px solid rgba(255,215,0,0.1)',
+            position: 'relative',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 1,
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.3) 50%, transparent 100%)'
+            }
+          }}>
+            <Typography variant="body1" color="text.secondary" sx={{ 
+              textAlign: 'center', 
+              opacity: 0.8,
+              fontWeight: 300,
+              fontSize: '1rem',
+              lineHeight: 1.6
+            }}>
+              <Info sx={{ fontSize: 18, verticalAlign: 'middle', mr: 1.5, color: 'rgba(255,215,0,0.7)' }} />
               AICは、AOIROコミュニティのメンバーシップを証明する公式カードです
             </Typography>
           </Box>
@@ -401,10 +699,25 @@ export default function EmployeeCardPage() {
         
         {/* CSS アニメーション */}
         <style jsx>{`
-          @keyframes pulse {
-            0% { transform: scale(1); opacity: 0.2; }
-            50% { transform: scale(1.1); opacity: 0.1; }
-            100% { transform: scale(1); opacity: 0.2; }
+          @keyframes golden-glow {
+            0%, 100% { 
+              transform: scale(1); 
+              opacity: 0.1; 
+            }
+            50% { 
+              transform: scale(1.2); 
+              opacity: 0.2; 
+            }
+          }
+          
+          @keyframes rotate-slow {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          
+          @keyframes shimmer-gold {
+            0%, 100% { opacity: 0.1; }
+            50% { opacity: 0.2; }
           }
         `}</style>
       </Container>
