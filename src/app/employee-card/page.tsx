@@ -1,6 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { keyframes } from '@emotion/react';
+import { QRCodeSVG } from 'qrcode.react';
+import html2canvas from 'html2canvas';
 import {
   Box,
   Container,
@@ -28,6 +31,21 @@ import {
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 
+// アニメーション用のkeyframes
+const pulseKeyframe = keyframes`
+  0%, 100% { 
+    transform: scale(1); 
+  }
+  50% { 
+    transform: scale(1.05); 
+  }
+`;
+
+const shimmerKeyframe = keyframes`
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+`;
+
 interface EmployeeCard {
   id: string;
   user_id: string;
@@ -51,6 +69,7 @@ export default function EmployeeCardPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showCard, setShowCard] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     checkUserAuthorization();
@@ -64,6 +83,11 @@ export default function EmployeeCardPage() {
         setProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval);
+            // 100%到達後、1秒待ってからカード表示
+            setTimeout(() => {
+              setShowCard(true);
+              setLoading(false);
+            }, 1000);
             return 100;
           }
           return Math.min(prev + Math.random() * 15, 100);
@@ -163,7 +187,13 @@ export default function EmployeeCardPage() {
       if (existingCard) {
         console.log('✅ 既存のAOIRO IDカードを発見:', existingCard);
         setEmployeeCard(existingCard);
-        setLoading(false);
+        // 既存カードがある場合も、プログレスバーを100%まで表示してからカード表示
+        setIsCreating(true);
+        setProgress(100);
+        setTimeout(() => {
+          setShowCard(true);
+          setLoading(false);
+        }, 1000);
         return;
       }
 
@@ -227,13 +257,25 @@ export default function EmployeeCardPage() {
       // 生成されたカードを設定
       setEmployeeCard(result.employeeCard);
       setError(null);
+      
+      // プログレスバーを100%にしてから、1秒後にカード表示
+      setProgress(100);
+      setTimeout(() => {
+        setShowCard(true);
+        setLoading(false);
+      }, 1000);
 
     } catch (error) {
       console.error('❌ 自動生成エラー:', error);
       setError(error instanceof Error ? error.message : 'AOIRO IDカードの自動生成に失敗しました。');
+      // エラーの場合もプログレスバーを100%にしてから表示
+      setProgress(100);
+      setTimeout(() => {
+        setShowCard(true);
+        setLoading(false);
+      }, 1000);
     } finally {
       setIsCreating(false);
-      setLoading(false);
     }
   };
 
@@ -241,16 +283,7 @@ export default function EmployeeCardPage() {
     setIsCardFlipped(!isCardFlipped);
   };
 
-  // プログレスバーの進捗を管理
-  const updateProgress = (newProgress: number) => {
-    setProgress(newProgress);
-    if (newProgress >= 100) {
-      setTimeout(() => {
-        setShowCard(true);
-        setLoading(false);
-      }, 500); // 100%表示後0.5秒でカード表示
-    }
-  };
+
 
   // ユーザーのアバター画像を取得（デフォルトはユーザーアイコン）
   const getUserAvatar = () => {
@@ -286,6 +319,105 @@ export default function EmployeeCardPage() {
   const isExpired = (expiryDate: string) => {
     return new Date(expiryDate) < new Date();
   };
+
+  // QRコード用のデータを生成
+  const generateQRData = () => {
+    if (!employeeCard || !user) return '';
+    
+    // 人が読みやすい形式でQRコードデータを生成
+    const qrData = `AIC情報
+カード番号: ${employeeCard.card_number || '未設定'}
+社員番号: ${employeeCard.employee_number || '未設定'}
+発行日: ${formatDate(employeeCard.issue_date)}
+有効期限: ${formatDate(employeeCard.expiry_date)}`;
+    
+    return qrData;
+  };
+
+  // カード画像を保存
+  const saveCardImage = async () => {
+    if (!cardRef.current) return;
+    
+    try {
+      // 現在のカードの向きを確認
+      const isCurrentlyFlipped = isCardFlipped;
+      
+      // 保存用の一時的なスタイルを適用
+      const originalStyle = cardRef.current.style.cssText;
+      const originalTransform = cardRef.current.style.transform;
+      const originalTransition = cardRef.current.style.transition;
+      const originalPerspective = cardRef.current.style.perspective;
+      const originalTransformStyle = cardRef.current.style.transformStyle;
+      const originalBackfaceVisibility = cardRef.current.style.backfaceVisibility;
+      
+      // 保存したい面を明示的に表示
+      if (isCurrentlyFlipped) {
+        // 裏面を保存したい場合は、裏面を表示
+        cardRef.current.style.transform = 'rotateY(180deg) scale(1)';
+      } else {
+        // 表面を保存したい場合は、表面を表示
+        cardRef.current.style.transform = 'rotateY(0deg) scale(1)';
+      }
+      
+      // 3D変換の設定を一時的に調整
+      cardRef.current.style.perspective = 'none';
+      cardRef.current.style.transformStyle = 'flat';
+      
+      // さらに確実にするため、backfaceVisibilityも調整
+      cardRef.current.style.backfaceVisibility = 'visible';
+      
+      cardRef.current.style.transition = 'none';
+      
+      // 少し待ってからキャプチャ（スタイル適用を待つ）
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // カード要素をキャンバスに変換（見た目をそのまま保存）
+      const canvas = await html2canvas(cardRef.current, {
+        backgroundColor: '#ffffff', // 白い背景でカードを浮き上がらせる
+        scale: 3, // より高解像度
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: cardRef.current.offsetWidth,
+        height: cardRef.current.offsetHeight,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: document.documentElement.offsetWidth,
+        windowHeight: document.documentElement.offsetHeight
+      });
+      
+      // 元のスタイルを復元
+      cardRef.current.style.cssText = originalStyle;
+      cardRef.current.style.transform = originalTransform;
+      cardRef.current.style.transition = originalTransition;
+      
+      // 3D変換の設定も復元
+      cardRef.current.style.perspective = originalPerspective;
+      cardRef.current.style.transformStyle = originalTransformStyle;
+      cardRef.current.style.backfaceVisibility = originalBackfaceVisibility;
+      
+      // ファイル名に現在の向きを反映
+      const cardSide = isCurrentlyFlipped ? '裏面' : '表面';
+      const link = document.createElement('a');
+      link.download = `AIC_${employeeCard?.employee_number || 'card'}_${cardSide}_${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      
+    } catch (error) {
+      console.error('カード画像保存エラー:', error);
+      alert('カード画像の保存に失敗しました。');
+      
+      // エラー時も元のスタイルを復元
+      if (cardRef.current) {
+        cardRef.current.style.transition = '';
+        cardRef.current.style.perspective = '';
+        cardRef.current.style.transformStyle = '';
+        cardRef.current.style.backfaceVisibility = '';
+      }
+    }
+  };
+
+
 
   if (loading) {
     return (
@@ -378,7 +510,7 @@ export default function EmployeeCardPage() {
                     width: '30%',
                     height: '100%',
                     background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)',
-                    animation: 'shimmer 2s ease-in-out infinite'
+                                              animation: `${shimmerKeyframe} 2s ease-in-out infinite`
                   }
                 }}
               />
@@ -412,34 +544,94 @@ export default function EmployeeCardPage() {
                 const stepProgress = index === 0 ? 25 : index === 1 ? 50 : index === 2 ? 75 : 100;
                 const isCompleted = progress >= stepProgress;
                 const isCurrent = progress >= stepProgress - 25 && progress < stepProgress;
+                const isActive = progress >= stepProgress - 12.5 && progress < stepProgress + 12.5;
                 
                 return (
-                  <Box key={step} sx={{ textAlign: 'center' }}>
+                  <Box key={step} sx={{ textAlign: 'center', position: 'relative' }}>
                     <Box
                       sx={{
-                        width: 12,
-                        height: 12,
+                        width: 16,
+                        height: 16,
                         borderRadius: '50%',
-                        background: isCompleted ? 'linear-gradient(135deg, #1a1a2e 0%, #533483 100%)' : 'rgba(26, 26, 46, 0.2)',
+                        background: isCompleted 
+                          ? 'linear-gradient(135deg, #1a1a2e 0%, #533483 100%)' 
+                          : isActive 
+                            ? 'linear-gradient(135deg, rgba(26, 26, 46, 0.4) 0%, rgba(83, 52, 131, 0.4) 100%)'
+                            : 'rgba(26, 26, 46, 0.1)',
                         border: '2px solid',
-                        borderColor: isCompleted ? 'rgba(255,215,0,0.3)' : 'rgba(26, 26, 46, 0.1)',
-                        mb: 1,
-                        transition: 'all 0.3s ease',
-                        transform: isCurrent ? 'scale(1.2)' : 'scale(1)',
-                        boxShadow: isCurrent ? '0 0 8px rgba(255,215,0,0.3)' : 'none'
+                        borderColor: isCompleted 
+                          ? 'rgba(255,215,0,0.5)' 
+                          : isActive 
+                            ? 'rgba(255,215,0,0.2)'
+                            : 'rgba(26, 26, 46, 0.1)',
+                        mb: 1.5,
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: isCurrent ? 'scale(1.3)' : isActive ? 'scale(1.1)' : 'scale(1)',
+                        boxShadow: isCurrent 
+                          ? '0 0 12px rgba(255,215,0,0.4), 0 0 20px rgba(255,215,0,0.2)' 
+                          : isActive 
+                            ? '0 0 8px rgba(255,215,0,0.2)'
+                            : 'none',
+                        ...(isCompleted && {
+                          animation: `${pulseKeyframe} 2s ease-in-out infinite`
+                        }),
+                        ...(isActive && {
+                          animation: `${pulseKeyframe} 2s ease-in-out infinite`
+                        }),
+                        position: 'relative',
+
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          top: -2,
+                          left: -2,
+                          right: -2,
+                          bottom: -2,
+                          borderRadius: '50%',
+                          background: isCompleted 
+                            ? 'radial-gradient(circle, rgba(255,215,0,0.2) 0%, transparent 70%)'
+                            : isActive 
+                              ? 'radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)'
+                              : 'transparent',
+                          zIndex: -1
+                        }
                       }}
                     />
                     <Typography 
                       variant="caption" 
                       sx={{ 
-                        fontSize: '0.75rem',
-                        color: isCompleted ? 'text.primary' : 'text.secondary',
-                        opacity: isCompleted ? 0.8 : 0.5,
-                        fontWeight: isCompleted ? 500 : 300
+                        fontSize: '0.8rem',
+                        color: isCompleted 
+                          ? '#1a1a2e' 
+                          : isActive 
+                            ? '#533483'
+                            : 'text.secondary',
+                        opacity: isCompleted ? 1 : isActive ? 0.8 : 0.5,
+                        fontWeight: isCompleted ? 600 : isActive ? 500 : 300,
+                        transition: 'all 0.3s ease',
+                        textShadow: isCompleted ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'
                       }}
                     >
                       {step}
                     </Typography>
+                    
+                    {/* 進行中のステップの場合は光る効果を追加 */}
+                    {isCurrent && (
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          width: 24,
+                          height: 24,
+                          borderRadius: '50%',
+                          background: 'radial-gradient(circle, rgba(255,215,0,0.3) 0%, transparent 70%)',
+                          animation: `${pulseKeyframe} 1.5s ease-in-out infinite`,
+                          zIndex: -1,
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                      />
+                    )}
                   </Box>
                 );
               })}
@@ -452,6 +644,15 @@ export default function EmployeeCardPage() {
           @keyframes shimmer {
             0% { transform: translateX(-100%); }
             100% { transform: translateX(100%); }
+          }
+          
+          @keyframes pulse {
+            0%, 100% { 
+              transform: scale(1); 
+            }
+            50% { 
+              transform: scale(1.05); 
+            }
           }
         `}</style>
       </Container>
@@ -760,6 +961,7 @@ export default function EmployeeCardPage() {
         
         {/* 反転可能なカード */}
         <Box
+          ref={cardRef}
           className="card-container"
                       sx={{
               perspective: "1200px",
@@ -1265,7 +1467,7 @@ export default function EmployeeCardPage() {
                     <Box sx={{ 
                       width: 40, 
                       height: 40, 
-                      background: "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
+                      background: "rgba(255,255,255,0.95)",
                       borderRadius: 2,
                       display: "flex",
                       alignItems: "center",
@@ -1276,24 +1478,24 @@ export default function EmployeeCardPage() {
                       boxShadow: "0 3px 10px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1)",
                       position: "relative",
                       overflow: "hidden",
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)",
-                        zIndex: 0
-                      }
+                      p: 0.5
                     }}>
-                      <QrCode sx={{ 
-                        fontSize: 22, 
-                        color: "white",
-                        filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
-                        zIndex: 1,
-                        position: "relative"
-                      }} />
+                      {employeeCard && user ? (
+                        <QRCodeSVG
+                          value={generateQRData()}
+                          size={32}
+                          level="M"
+                          includeMargin={false}
+                          bgColor="transparent"
+                          fgColor="#1a1a2e"
+                        />
+                      ) : (
+                        <QrCode sx={{ 
+                          fontSize: 22, 
+                          color: "#1a1a2e",
+                          opacity: 0.5
+                        }} />
+                      )}
                     </Box>
                   </Box>
 
@@ -1369,7 +1571,7 @@ export default function EmployeeCardPage() {
                         opacity: 0.9,
                         textTransform: "uppercase",
                         letterSpacing: "0.2px",
-                        mb: 0.5,
+                        mb: 0.2,
                         fontWeight: "500"
                       }}>
                         セクション
@@ -1451,6 +1653,30 @@ export default function EmployeeCardPage() {
                     aoiroserver@gmail.com
                   </Typography>
                 </Box>
+
+                {/* 指定された画像を表示 */}
+                <Box sx={{ 
+                  position: "absolute",
+                  bottom: "25%",
+                  left: 20,
+                  width: 40,
+                  height: 30,
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  zIndex: 10,
+                  transform: "translateY(50%)"
+                }}>
+                  <img 
+                    src="https://i.imgur.com/XPEAbTC.jpg" 
+                    alt="AOIRO ID Card"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover"
+                    }}
+                  />
+                </Box>
               </Box>
             </Box>
           </Box>
@@ -1460,29 +1686,8 @@ export default function EmployeeCardPage() {
         <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mb: 4 }}>
           <Button
             variant="outlined"
-            startIcon={<Print />}
-            sx={{ 
-              borderColor: "#1a2a1a",
-              color: "#1a2a1a",
-              borderRadius: 2,
-              px: 4,
-              py: 1.5,
-              fontWeight: "500",
-              borderWidth: 1.5,
-              "&:hover": {
-                borderColor: "#0a1a0a",
-                bgcolor: "rgba(26, 42, 26, 0.05)",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(10, 26, 10, 0.15)"
-              },
-              transition: "all 0.3s ease"
-            }}
-          >
-            印刷
-          </Button>
-          <Button
-            variant="outlined"
             startIcon={<Download />}
+            onClick={saveCardImage}
             sx={{ 
               borderColor: "#1a2a1a",
               color: "#1a2a1a",
@@ -1500,8 +1705,9 @@ export default function EmployeeCardPage() {
               transition: "all 0.3s ease"
             }}
           >
-            PDF保存
+            カード画像保存
           </Button>
+
         </Box>
 
         {/* カード情報サマリー */}
@@ -1519,7 +1725,7 @@ export default function EmployeeCardPage() {
             textAlign: "center",
             letterSpacing: "0.5px"
           }}>
-            AORO IDカード情報
+            AIC情報
           </Typography>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={4}>
