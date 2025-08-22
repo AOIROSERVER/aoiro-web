@@ -1668,7 +1668,7 @@ export default function EmployeeCardPage() {
                   transform: "translateY(50%)"
                 }}>
                   <img 
-                    src="https://i.imgur.com/XPEAbTC.jpg" 
+                    src="https://i.imgur.com/jcTripl.png" 
                     alt="AOIRO ID Card"
                     style={{
                       width: "100%",
