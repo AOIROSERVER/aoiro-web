@@ -49,11 +49,13 @@ const shimmerKeyframe = keyframes`
 interface EmployeeCard {
   id: string;
   user_id: string;
+  user_email?: string; // オプショナルに変更（後方互換性のため）
   section_name: string;
   card_number: string;
   issue_date: string;
   expiry_date: string;
   employee_number: string;
+  discord_user_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -83,11 +85,6 @@ export default function EmployeeCardPage() {
         setProgress(prev => {
           if (prev >= 100) {
             clearInterval(interval);
-            // 100%到達後、1秒待ってからカード表示
-            setTimeout(() => {
-              setShowCard(true);
-              setLoading(false);
-            }, 1000);
             return 100;
           }
           return Math.min(prev + Math.random() * 15, 100);
@@ -119,14 +116,7 @@ export default function EmployeeCardPage() {
         return;
       }
 
-      if (!user.email) {
-        console.log('❌ ユーザーのメールアドレスが取得できません');
-        setError('ユーザー情報の取得に失敗しました。');
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ ユーザー認証成功:', user.email);
+      console.log('✅ ユーザー認証成功:', user.id);
       setUser(user);
 
       // データベース接続テスト
@@ -167,12 +157,13 @@ export default function EmployeeCardPage() {
       console.log('🔍 既存のAOIRO IDカードを確認中...');
       
       // 既存のテーブル構造に合わせて、user_idで検索
-      const { data: existingCard, error: cardError } = await supabase
+      const { data: existingCards, error: cardError } = await supabase
         .from('employee_cards')
         .select('*')
         .eq('user_id', user.id)  // user_emailの代わりにuser.idを使用
-        .eq('is_active', true)
-        .single();
+        .eq('is_active', true);
+
+      const existingCard = existingCards && existingCards.length > 0 ? existingCards[0] : null;
 
       console.log('📋 社員証明書確認結果:', { existingCard, cardError });
 
@@ -187,18 +178,17 @@ export default function EmployeeCardPage() {
       if (existingCard) {
         console.log('✅ 既存のAOIRO IDカードを発見:', existingCard);
         setEmployeeCard(existingCard);
-        // 既存カードがある場合も、プログレスバーを100%まで表示してからカード表示
-        setIsCreating(true);
-        setProgress(100);
-        setTimeout(() => {
-          setShowCard(true);
-          setLoading(false);
-        }, 1000);
+        setError(null);
+        // 既存カードがある場合は直接カード表示
+        setShowCard(true);
+        setLoading(false);
         return;
       }
 
       // AOIRO IDカードが存在しない場合は自動生成
       console.log('🔄 AOIRO IDカードが存在しません。自動生成を開始...');
+      // エラー状態をクリアしてからカード生成を開始
+      setError(null);
       await autoGenerateEmployeeCard(user.id);
 
     } catch (error) {
@@ -210,8 +200,10 @@ export default function EmployeeCardPage() {
 
   const autoGenerateEmployeeCard = async (userId: string) => {
     try {
-      setIsCreating(true);
       console.log('🔧 AOIRO IDカード自動生成開始:', userId);
+      setIsCreating(true);
+      setError(null); // エラー状態をクリア
+      setProgress(0); // プログレスをリセット
 
       // 現在のセッションを取得
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -225,16 +217,39 @@ export default function EmployeeCardPage() {
       const expiryDate = new Date();
       expiryDate.setFullYear(today.getFullYear() + 2); // 2年後
 
+      // DiscordユーザーIDを取得
+      console.log('🔍 =======[ Discord ID取得プロセス開始 ]=======');
+      const discordUserId = await getDiscordUserId(user);
+      console.log('🔍 最終的に取得されたDiscordユーザーID:', {
+        discordUserId,
+        type: typeof discordUserId,
+        isNull: discordUserId === null,
+        isUndefined: discordUserId === undefined,
+        isEmpty: discordUserId === '',
+        length: discordUserId ? discordUserId.length : 'N/A'
+      });
+      console.log('🔍 =======[ Discord ID取得プロセス終了 ]=======');
+
       const cardData = {
         user_id: userId,
         section_name: 'メンバー',
         employee_number: `EMP${Date.now().toString().slice(-6)}`, // タイムスタンプベース
         card_number: Date.now().toString().padStart(16, '0'), // 16桁の数字のみ
         issue_date: today.toISOString().split('T')[0],
-        expiry_date: expiryDate.toISOString().split('T')[0]
+        expiry_date: expiryDate.toISOString().split('T')[0],
+        discord_user_id: discordUserId || null
       };
 
-      console.log('📋 生成するカードデータ:', cardData);
+      console.log('📋 =======[ 送信カードデータ詳細 ]=======');
+      console.log('📋 生成するカードデータ:', JSON.stringify(cardData, null, 2));
+      console.log('📋 discord_user_id の詳細:', {
+        value: cardData.discord_user_id,
+        type: typeof cardData.discord_user_id,
+        isNull: cardData.discord_user_id === null,
+        isUndefined: cardData.discord_user_id === undefined,
+        isEmpty: cardData.discord_user_id === ''
+      });
+      console.log('📋 =======[ 送信カードデータ詳細終了 ]=======');
 
       // APIを呼び出してカードを作成
       const response = await fetch('/api/employee-card/auto-generate', {
@@ -248,33 +263,41 @@ export default function EmployeeCardPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'カードの生成に失敗しました');
+        console.error('❌ API詳細エラー:', errorData);
+        const errorMessage = errorData.details 
+          ? `${errorData.error}\n詳細: ${errorData.details}\nコード: ${errorData.code || 'N/A'}`
+          : errorData.error || 'カードの生成に失敗しました';
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
       console.log('✅ AOIRO IDカード自動生成成功:', result);
 
       // 生成されたカードを設定
+      console.log('✅ カード生成成功 - 状態を更新中:', result.employeeCard);
       setEmployeeCard(result.employeeCard);
       setError(null);
       
       // プログレスバーを100%にしてから、1秒後にカード表示
       setProgress(100);
+      console.log('🎯 プログレスバー100%到達 - 1秒後にカード表示開始');
       setTimeout(() => {
+        console.log('🎯 カード表示開始');
         setShowCard(true);
+        // カード表示後はローディング状態をfalseにして、カード表示画面に移行
         setLoading(false);
+        console.log('🎯 ローディング完了 - カード表示画面に移行');
       }, 1000);
 
     } catch (error) {
       console.error('❌ 自動生成エラー:', error);
       setError(error instanceof Error ? error.message : 'AOIRO IDカードの自動生成に失敗しました。');
-      // エラーの場合もプログレスバーを100%にしてから表示
-      setProgress(100);
-      setTimeout(() => {
-        setShowCard(true);
-        setLoading(false);
-      }, 1000);
+      // エラーの場合は直接エラー画面に移行
+      setLoading(false);
+      setIsCreating(false);
+      setShowCard(false);
     } finally {
+      console.log('🏁 autoGenerateEmployeeCard完了');
       setIsCreating(false);
     }
   };
@@ -304,10 +327,13 @@ export default function EmployeeCardPage() {
     if (user?.user_metadata?.name) {
       return user.user_metadata.name;
     }
+    if (user?.user_metadata?.username) {
+      return user.user_metadata.username;
+    }
     if (user?.email) {
       return user.email.split('@')[0];
     }
-    return "ユーザー";
+    return `User_${user?.id?.slice(-6) || 'Unknown'}`;
   };
 
   // 日付フォーマット関数
@@ -332,6 +358,72 @@ export default function EmployeeCardPage() {
 有効期限: ${formatDate(employeeCard.expiry_date)}`;
     
     return qrData;
+  };
+
+  // DiscordユーザーIDを取得
+  const getDiscordUserId = async (user: any): Promise<string | null> => {
+    try {
+      console.log('🔍 DiscordユーザーID取得開始 - 完全なユーザー情報:', {
+        user: user,
+        user_metadata: user?.user_metadata,
+        app_metadata: user?.app_metadata,
+        provider: user?.user_metadata?.provider,
+        providers: user?.app_metadata?.providers,
+        discord_id: user?.user_metadata?.discord_id,
+        discord_username: user?.user_metadata?.discord_username,
+        provider_id: user?.user_metadata?.provider_id,
+        sub: user?.user_metadata?.sub,
+        id: user?.user_metadata?.id,
+        username: user?.user_metadata?.username,
+        name: user?.user_metadata?.name
+      });
+      
+      // 1. provider_idを最優先でチェック（Discordの実際のユーザーID）
+      if (user?.user_metadata?.provider_id) {
+        console.log('✅ provider_idからDiscord IDを発見:', user.user_metadata.provider_id);
+        return user.user_metadata.provider_id;
+      }
+      
+      // 2. subフィールドをチェック（OAuth標準）
+      if (user?.user_metadata?.sub) {
+        console.log('✅ subフィールドからDiscord IDを発見:', user.user_metadata.sub);
+        return user.user_metadata.sub;
+      }
+      
+      // 3. discord_idフィールドをチェック
+      if (user?.user_metadata?.discord_id) {
+        console.log('✅ discord_idフィールドからDiscord IDを発見:', user.user_metadata.discord_id);
+        return user.user_metadata.discord_id;
+      }
+      
+      // 4. usernameフィールドをチェック（ユーザー名＋識別子形式）
+      if (user?.user_metadata?.username) {
+        console.log('✅ usernameからDiscord IDを発見:', user.user_metadata.username);
+        return user.user_metadata.username;
+      }
+      
+      // 5. nameフィールドをチェック（表示名＋識別子形式）
+      if (user?.user_metadata?.name) {
+        console.log('✅ nameからDiscord IDを発見:', user.user_metadata.name);
+        return user.user_metadata.name;
+      }
+      
+      // 6. Discordプロバイダーで認証されているかチェック
+      if (user?.app_metadata?.providers?.includes('discord')) {
+        // app_metadataでDiscordプロバイダーが確認された場合の追加チェック
+        const possibleId = user?.user_metadata?.id || user?.user_metadata?.user_id;
+        if (possibleId) {
+          console.log('✅ Discordプロバイダー確認後、IDを発見:', possibleId);
+          return possibleId;
+        }
+      }
+      
+      console.log('⚠️ DiscordユーザーIDが見つかりません');
+      return null;
+    } catch (error) {
+      console.error('❌ DiscordユーザーID取得エラー:', error);
+      return null;
+    }
   };
 
   // カード画像を保存
@@ -418,6 +510,17 @@ export default function EmployeeCardPage() {
   };
 
 
+
+  // デバッグ用のログ出力
+  console.log('🔍 現在の状態:', {
+    loading,
+    error,
+    employeeCard: !!employeeCard,
+    user: !!user,
+    isCreating,
+    showCard,
+    progress
+  });
 
   if (loading) {
     return (
@@ -660,6 +763,7 @@ export default function EmployeeCardPage() {
   }
 
   if (error) {
+    console.log('❌ エラー状態でログイン画面を表示:', { error, user: !!user, employeeCard: !!employeeCard });
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
         <Box sx={{ textAlign: 'center', mb: 6 }}>
@@ -789,7 +893,10 @@ export default function EmployeeCardPage() {
             }}
           >
             AIC（AOIRO ID Card）を表示するには、<br />
-            AOIRO IDでログインしてください。
+            AOIRO IDでログインしてください。<br />
+            <small style={{ color: '#f44336', fontSize: '0.8rem' }}>
+              エラー詳細: {error}
+            </small>
           </Typography>
           
           {/* 高級感のあるアクションボタン */}
@@ -1808,6 +1915,29 @@ export default function EmployeeCardPage() {
                     }) : 
                     '未設定'
                   }
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ 
+                textAlign: "center", 
+                p: 3, 
+                bgcolor: "white", 
+                borderRadius: 3, 
+                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+                border: "1px solid rgba(0,0,0,0.08)",
+                transition: "all 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.12)"
+                }
+              }}>
+                <Typography variant="body2" color="textSecondary" mb={2} sx={{ fontWeight: 500, color: "#666" }}>Discord ID</Typography>
+                <Typography variant="h6" sx={{ 
+                  color: "#0a1a0a", 
+                  fontWeight: "600"
+                }}>
+                  {employeeCard?.discord_user_id || '未設定'}
                 </Typography>
               </Box>
             </Grid>
