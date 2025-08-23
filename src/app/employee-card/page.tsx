@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { keyframes } from '@emotion/react';
 import { QRCodeSVG } from 'qrcode.react';
-import html2canvas from 'html2canvas';
+
 import {
   Box,
   Container,
@@ -17,7 +17,6 @@ import {
 } from '@mui/material';
 import { 
   Print, 
-  Download, 
   QrCode, 
   CreditCard, 
   ContactlessOutlined, 
@@ -426,88 +425,7 @@ export default function EmployeeCardPage() {
     }
   };
 
-  // カード画像を保存
-  const saveCardImage = async () => {
-    if (!cardRef.current) return;
-    
-    try {
-      // 現在のカードの向きを確認
-      const isCurrentlyFlipped = isCardFlipped;
-      
-      // 保存用の一時的なスタイルを適用
-      const originalStyle = cardRef.current.style.cssText;
-      const originalTransform = cardRef.current.style.transform;
-      const originalTransition = cardRef.current.style.transition;
-      const originalPerspective = cardRef.current.style.perspective;
-      const originalTransformStyle = cardRef.current.style.transformStyle;
-      const originalBackfaceVisibility = cardRef.current.style.backfaceVisibility;
-      
-      // 保存したい面を明示的に表示
-      if (isCurrentlyFlipped) {
-        // 裏面を保存したい場合は、裏面を表示
-        cardRef.current.style.transform = 'rotateY(180deg) scale(1)';
-      } else {
-        // 表面を保存したい場合は、表面を表示
-        cardRef.current.style.transform = 'rotateY(0deg) scale(1)';
-      }
-      
-      // 3D変換の設定を一時的に調整
-      cardRef.current.style.perspective = 'none';
-      cardRef.current.style.transformStyle = 'flat';
-      
-      // さらに確実にするため、backfaceVisibilityも調整
-      cardRef.current.style.backfaceVisibility = 'visible';
-      
-      cardRef.current.style.transition = 'none';
-      
-      // 少し待ってからキャプチャ（スタイル適用を待つ）
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // カード要素をキャンバスに変換（見た目をそのまま保存）
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: '#ffffff', // 白い背景でカードを浮き上がらせる
-        scale: 3, // より高解像度
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        width: cardRef.current.offsetWidth,
-        height: cardRef.current.offsetHeight,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: document.documentElement.offsetWidth,
-        windowHeight: document.documentElement.offsetHeight
-      });
-      
-      // 元のスタイルを復元
-      cardRef.current.style.cssText = originalStyle;
-      cardRef.current.style.transform = originalTransform;
-      cardRef.current.style.transition = originalTransition;
-      
-      // 3D変換の設定も復元
-      cardRef.current.style.perspective = originalPerspective;
-      cardRef.current.style.transformStyle = originalTransformStyle;
-      cardRef.current.style.backfaceVisibility = originalBackfaceVisibility;
-      
-      // ファイル名に現在の向きを反映
-      const cardSide = isCurrentlyFlipped ? '裏面' : '表面';
-      const link = document.createElement('a');
-      link.download = `AIC_${employeeCard?.employee_number || 'card'}_${cardSide}_${new Date().toISOString().split('T')[0]}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-      
-    } catch (error) {
-      console.error('カード画像保存エラー:', error);
-      alert('カード画像の保存に失敗しました。');
-      
-      // エラー時も元のスタイルを復元
-      if (cardRef.current) {
-        cardRef.current.style.transition = '';
-        cardRef.current.style.perspective = '';
-        cardRef.current.style.transformStyle = '';
-        cardRef.current.style.backfaceVisibility = '';
-      }
-    }
-  };
+
 
 
 
@@ -1789,33 +1707,7 @@ export default function EmployeeCardPage() {
           </Box>
         </Box>
         
-        {/* カード操作ボタン */}
-        <Box sx={{ display: "flex", justifyContent: "center", gap: 3, mb: 4 }}>
-          <Button
-            variant="outlined"
-            startIcon={<Download />}
-            onClick={saveCardImage}
-            sx={{ 
-              borderColor: "#1a2a1a",
-              color: "#1a2a1a",
-              borderRadius: 2,
-              px: 4,
-              py: 1.5,
-              fontWeight: "500",
-              borderWidth: 1.5,
-              "&:hover": {
-                borderColor: "#0a1a0a",
-                bgcolor: "rgba(26, 42, 26, 0.05)",
-                transform: "translateY(-1px)",
-                boxShadow: "0 4px 12px rgba(10, 26, 10, 0.15)"
-              },
-              transition: "all 0.3s ease"
-            }}
-          >
-            カード画像保存
-          </Button>
 
-        </Box>
 
         {/* カード情報サマリー */}
         <Paper sx={{ 
@@ -1918,29 +1810,7 @@ export default function EmployeeCardPage() {
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <Box sx={{ 
-                textAlign: "center", 
-                p: 3, 
-                bgcolor: "white", 
-                borderRadius: 3, 
-                boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-                border: "1px solid rgba(0,0,0,0.08)",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.12)"
-                }
-              }}>
-                <Typography variant="body2" color="textSecondary" mb={2} sx={{ fontWeight: 500, color: "#666" }}>Discord ID</Typography>
-                <Typography variant="h6" sx={{ 
-                  color: "#0a1a0a", 
-                  fontWeight: "600"
-                }}>
-                  {employeeCard?.discord_user_id || '未設定'}
-                </Typography>
-              </Box>
-            </Grid>
+
           </Grid>
         </Paper>
       </Box>
