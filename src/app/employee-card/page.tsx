@@ -992,7 +992,7 @@ export default function EmployeeCardPage() {
               perspective: "1200px",
               width: "100%",
               maxWidth: {
-                xs: 320,    // スマホ（320px以上）- より適切なサイズ
+                xs: 340,    // スマホ（320px以上）- AIC文字との比率を保つ
                 sm: 380,    // 小タブレット（600px以上）
                 md: 420,    // 中タブレット（900px以上）
                 lg: 420     // PC（1200px以上）
@@ -1012,8 +1012,8 @@ export default function EmployeeCardPage() {
               position: "relative",
               width: "100%",
               height: {
-                xs: 220,    // スマホ（320px以上）
-                sm: 240,    // 小タブレット（600px以上）
+                xs: 235,    // スマホ（320px以上）- AIC文字との比率を保つ
+                sm: 250,    // 小タブレット（600px以上）
                 md: 260,    // 中タブレット（900px以上）
                 lg: 260     // PC（1200px以上）
               },
@@ -1162,9 +1162,9 @@ export default function EmployeeCardPage() {
                     color: "#ffffff",
                     textShadow: "0 2px 4px rgba(0,0,0,0.6)",
                     fontSize: {
-                      xs: "1.4rem",    // スマホ（320px以上）
-                      sm: "1.6rem",    // 小タブレット（600px以上）
-                      md: "1.8rem",    // 中タブレット（900px以上）
+                      xs: "1.2rem",    // スマホ（320px以上）- AICとのバランス調整
+                      sm: "1.4rem",    // 小タブレット（600px以上）
+                      md: "1.6rem",    // 中タブレット（900px以上）
                       lg: "1.8rem"     // PC（1200px以上）
                     },
                     opacity: 0.95,
@@ -1266,15 +1266,18 @@ export default function EmployeeCardPage() {
                     transform: "skew(-5deg)",
                     fontStyle: "italic",
                     textAlign: "right",
-                    // スマホ版での強制サイズ指定
+                    // スマホ版での文字サイズ調整（PC版との比率を保持）
                     "@media (max-width: 600px)": {
-                      fontSize: "3.5rem !important"
+                      fontSize: "1.8rem !important",  // スマホ版でも適切な比率
+                      marginRight: "-8px !important"  // スマホ版で少し左に移動
                     },
                     "@media (max-width: 480px)": {
-                      fontSize: "3.8rem !important"
+                      fontSize: "1.6rem !important",  // より小さな画面に対応
+                      marginRight: "-6px !important"  // 小さな画面でも左に移動
                     },
                     "@media (max-width: 360px)": {
-                      fontSize: "4.0rem !important"
+                      fontSize: "1.4rem !important",  // 最小画面サイズに対応
+                      marginRight: "-4px !important"  // 最小画面でも左に移動
                     }
                   }}
                 >
@@ -1682,10 +1685,30 @@ export default function EmployeeCardPage() {
                 {/* 指定された画像を表示 */}
                 <Box sx={{ 
                   position: "absolute",
-                  bottom: "25%",
-                  left: 20,
-                  width: 40,
-                  height: 30,
+                  bottom: {
+                    xs: "25%",    // スマホ版でさらに下に移動
+                    sm: "25%",    // 小タブレット
+                    md: "25%",    // 中タブレット以上（元の位置）
+                    lg: "25%"     // PC（元の位置）
+                  },
+                  left: {
+                    xs: 15,       // スマホ版では少し内側に
+                    sm: 18,       // 小タブレット
+                    md: 20,       // 中タブレット以上（元の位置）
+                    lg: 20        // PC（元の位置）
+                  },
+                  width: {
+                    xs: 32,       // スマホ版では少し小さく
+                    sm: 36,       // 小タブレット
+                    md: 40,       // 中タブレット以上（元のサイズ）
+                    lg: 40        // PC（元のサイズ）
+                  },
+                  height: {
+                    xs: 24,       // スマホ版では少し小さく
+                    sm: 27,       // 小タブレット
+                    md: 30,       // 中タブレット以上（元のサイズ）
+                    lg: 30        // PC（元のサイズ）
+                  },
                   borderRadius: 2,
                   overflow: "hidden",
                   border: "1px solid rgba(255,255,255,0.2)",
