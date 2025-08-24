@@ -367,7 +367,9 @@ export default function TrainPositionPage() {
       fetch('/.netlify/functions/fetch-discord-messages')
         .then(res => res.json())
         .then(data => {
-          console.log('APIデータ:', data.trainMessages);
+          console.log('🚂 APIデータ受信:', data);
+          console.log('🚂 trainMessages:', data.trainMessages);
+          console.log('🚂 trainMessages数:', data.trainMessages?.length || 0);
           const filtered = data.trainMessages.filter((msg: any) => {
             const parts = msg.content.split('/');
             const msgLine = normalizeStationName(parts[0] || '');
@@ -503,7 +505,8 @@ export default function TrainPositionPage() {
             lastStationRef.current = null;
           }
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('🚂 API呼び出しエラー:', error);
           setCurrentStations([]);
           console.log('currentStations set: []');
           setTrainState('stopped');
