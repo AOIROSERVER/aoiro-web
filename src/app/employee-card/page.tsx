@@ -1162,10 +1162,10 @@ export default function EmployeeCardPage() {
                     color: "#ffffff",
                     textShadow: "0 2px 4px rgba(0,0,0,0.6)",
                     fontSize: {
-                      xs: "1.2rem",    // スマホ（320px以上）- AICとのバランス調整
-                      sm: "1.4rem",    // 小タブレット（600px以上）
-                      md: "1.6rem",    // 中タブレット（900px以上）
-                      lg: "1.8rem"     // PC（1200px以上）
+                      xs: "1.6rem",    // スマホ（320px以上）- より大きく
+                      sm: "1.8rem",    // 小タブレット（600px以上）- より大きく
+                      md: "2.0rem",    // 中タブレット（900px以上）- より大きく
+                      lg: "2.2rem"     // PC（1200px以上）- より大きく
                     },
                     opacity: 0.95,
                     letterSpacing: "0.5px",
@@ -1188,64 +1188,30 @@ export default function EmployeeCardPage() {
                 </Box>
               </Box>
 
-              {/* カードの左側 - ユーザーアバターと名前 */}
-              <Box sx={{ 
-                position: "absolute",
-                left: 20,
-                top: "50%",
-                transform: "translateY(-50%)",
-                zIndex: 2,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 1.5
-              }}>
-                <Avatar
-                  src={getUserAvatar() || undefined}
-                  alt={getUserDisplayName()}
-                  sx={{
-                    width: 50,
-                    height: 50,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                    background: getUserAvatar() ? "transparent" : "rgba(255,255,255,0.2)"
-                  }}
-                >
-                  {!getUserAvatar() && <Person sx={{ fontSize: 25, color: "white" }} />}
-                </Avatar>
-                <Typography variant="body2" fontWeight="bold" sx={{ 
-                  color: "#ffffff",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-                  fontSize: "0.9rem",
-                  textAlign: "center",
-                  maxWidth: 60,
-                  lineHeight: 1.2
-                }}>
-                  {getUserDisplayName()}
-                </Typography>
-              </Box>
+
 
               {/* カードの下部 */}
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", position: "relative", zIndex: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Box sx={{ 
-                    width: 24, 
-                    height: 24, 
-                    background: "rgba(255,255,255,0.1)",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    border: "1px solid rgba(255,255,255,0.2)"
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", position: "relative", zIndex: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Avatar
+                    src={getUserAvatar() || undefined}
+                    alt={getUserDisplayName()}
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                      background: getUserAvatar() ? "transparent" : "rgba(255,255,255,0.2)"
+                    }}
+                  >
+                    {!getUserAvatar() && <Person sx={{ fontSize: 18, color: "white" }} />}
+                  </Avatar>
+                  <Typography variant="body2" fontWeight="bold" sx={{ 
+                    color: "#ffffff",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.5)",
+                    fontSize: "0.85rem",
+                    lineHeight: 1.2
                   }}>
-                    <CreditCard sx={{ fontSize: 14, color: "white" }} />
-                  </Box>
-                  <Typography variant="caption" sx={{ 
-                    opacity: 0.7,
-                    fontWeight: 400,
-                    letterSpacing: "0.5px",
-                    color: "#cccccc"
-                  }}>
-                    タップで反転
+                    {getUserDisplayName()}
                   </Typography>
                 </Box>
                 <Typography 
@@ -1255,7 +1221,7 @@ export default function EmployeeCardPage() {
                   sx={{ 
                     letterSpacing: "1.2px",
                     color: "white",
-                    fontSize: "2.2rem",    // 基本サイズ
+                    fontSize: "2.8rem",    // 基本サイズを大きく
                     fontFamily: "'Arial Black', 'Helvetica Black', sans-serif",
                     textShadow: "0 3px 6px rgba(0,0,0,0.6), 0 0 25px rgba(255,255,255,0.4)",
                     textTransform: "uppercase",
@@ -1263,21 +1229,27 @@ export default function EmployeeCardPage() {
                     position: "relative",
                     lineHeight: 1,
                     WebkitTextStroke: "0.8px rgba(255,255,255,0.9)",
-                    transform: "skew(-5deg)",
                     fontStyle: "italic",
                     textAlign: "right",
                     // スマホ版での文字サイズ調整（PC版との比率を保持）
                     "@media (max-width: 600px)": {
-                      fontSize: "1.8rem !important",  // スマホ版でも適切な比率
-                      marginRight: "-8px !important"  // スマホ版で少し左に移動
+                      fontSize: "2.8rem !important",  // スマホ版でより大きく
+                      marginRight: "0px !important",  // スマホ版で右に戻す
+                      transform: "skew(-5deg) translateY(20px) !important"  // スマホ版でさらに下に移動
                     },
                     "@media (max-width: 480px)": {
-                      fontSize: "1.6rem !important",  // より小さな画面に対応
-                      marginRight: "-6px !important"  // 小さな画面でも左に移動
+                      fontSize: "2.6rem !important",  // より小さな画面でも大きく
+                      marginRight: "0px !important",  // 小さな画面でも右に戻す
+                      transform: "skew(-5deg) translateY(18px) !important"  // 小さな画面でもさらに下に移動
                     },
                     "@media (max-width: 360px)": {
-                      fontSize: "1.4rem !important",  // 最小画面サイズに対応
-                      marginRight: "-4px !important"  // 最小画面でも左に移動
+                      fontSize: "2.4rem !important",  // 最小画面でも大きく
+                      marginRight: "0px !important",  // 最小画面でも右に戻す
+                      transform: "skew(-5deg) translateY(16px) !important"  // 最小画面でもさらに下に移動
+                    },
+                    // PC版でもskewを適用
+                    "@media (min-width: 601px)": {
+                      transform: "skew(-5deg) !important"
                     }
                   }}
                 >
