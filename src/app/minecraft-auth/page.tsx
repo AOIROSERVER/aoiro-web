@@ -45,6 +45,7 @@ function DiscordAuthContent() {
   const [success, setSuccess] = useState<string | null>(null);
   const [discordUser, setDiscordUser] = useState<any>(null);
   const [isLinked, setIsLinked] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
   
   const { supabase, user, session } = useAuth();
   const router = useRouter();
@@ -261,7 +262,14 @@ function DiscordAuthContent() {
         currentURL: window.location.href
       });
       
-      // OAuthオプションを設定
+      // まずセッションをクリア（PKCE問題回避）
+      console.log('🧹 Clearing existing session for fresh OAuth...');
+      await supabase.auth.signOut();
+      
+      // セッションクリア後少し待機
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // OAuthオプションを設定（より詳細なデバッグ）
       const oauthOptions = {
         redirectTo: redirectUrl,
         skipBrowserRedirect: false,
@@ -272,10 +280,30 @@ function DiscordAuthContent() {
       
       console.log('📡 Initiating Discord OAuth with options:', oauthOptions);
       console.log('OAuth redirectTo:', oauthOptions.redirectTo);
+      console.log('🔍 Full OAuth Configuration:', {
+        provider: 'discord',
+        redirectTo: oauthOptions.redirectTo,
+        origin: origin,
+        correctedURL: redirectUrl,
+        queryParams: oauthOptions.queryParams,
+        skipBrowserRedirect: oauthOptions.skipBrowserRedirect,
+        timestamp: new Date().toISOString()
+      });
       
+      console.log('🚀 Calling supabase.auth.signInWithOAuth...');
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'discord',
         options: oauthOptions,
+      });
+      
+      console.log('OAuth Response:', {
+        hasData: !!data,
+        hasError: !!error,
+        dataUrl: data?.url,
+        dataProvider: data?.provider,
+        errorMessage: error?.message,
+        errorStatus: error?.status,
+        errorName: error?.name
       });
       
       if (error) {
@@ -363,6 +391,64 @@ function DiscordAuthContent() {
       
       console.error('🚨 Setting error message:', errorMessage);
       setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 代替認証方法（直接Supabase URLを使用）
+  const handleAlternativeDiscordAuth = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      console.log('🔄 Starting Alternative Discord OAuth (Direct Supabase)...');
+      
+      // マインクラフト認証フローのフラグを設定
+      sessionStorage.setItem('minecraft-auth-flow', 'true');
+      
+      // セッションクリア
+      await supabase.auth.signOut();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Supabaseの直接URLを使用
+      const params = new URLSearchParams({
+        from: 'minecraft-auth',
+        next: '/minecraft-auth/verify',
+        source: 'minecraft-auth-page-alt'
+      });
+      const supabaseDirectUrl = 'https://cqxadmvnsusscsudrmqd.supabase.co/auth/v1/callback';
+      const redirectUrl = `${supabaseDirectUrl}?${params.toString()}`;
+      
+      console.log('🔍 Alternative OAuth Configuration:', {
+        provider: 'discord',
+        redirectTo: redirectUrl,
+        isSupabaseDirect: true,
+        timestamp: new Date().toISOString()
+      });
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'discord',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
+          queryParams: {
+            response_type: 'code',
+          }
+        },
+      });
+      
+      if (error) {
+        console.error('❌ Alternative Discord OAuth error:', error);
+        throw error;
+      }
+
+      console.log('✅ Alternative Discord OAuth initiated successfully');
+      
+    } catch (err: any) {
+      console.error('❌ Alternative Discord auth error:', err);
+      setError('代替Discord認証に失敗しました: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -610,6 +696,64 @@ function DiscordAuthContent() {
                   <Typography variant="caption" color="text.secondary">
                     Discordアカウントにログインして連携を完了してください
                   </Typography>
+                  
+                  {/* 代替認証ボタンとデバッグオプション */}
+                  <Box sx={{ mt: 3, pt: 2, borderTop: '1px solid', borderColor: 'grey.300' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+                      上記の認証で問題が発生する場合は、以下の方法をお試しください：
+                    </Typography>
+                    
+                    <Button
+                      variant="outlined"
+                      fullWidth
+                      size="small"
+                      onClick={handleAlternativeDiscordAuth}
+                      disabled={loading}
+                      startIcon={<DiscordIcon />}
+                      sx={{
+                        borderColor: '#7289DA',
+                        color: '#7289DA',
+                        '&:hover': {
+                          borderColor: '#5865F2',
+                          color: '#5865F2',
+                          bgcolor: 'rgba(114, 137, 218, 0.05)'
+                        },
+                        mb: 1
+                      }}
+                    >
+                      代替認証方法を試す
+                    </Button>
+                    
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => setDebugMode(!debugMode)}
+                      sx={{ fontSize: '0.8rem', color: 'grey.600' }}
+                    >
+                      {debugMode ? 'デバッグ情報を非表示' : 'デバッグ情報を表示'}
+                    </Button>
+                    
+                    {debugMode && (
+                      <Card sx={{ mt: 2, p: 2, bgcolor: 'grey.50', fontSize: '0.8rem' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
+                          デバッグ情報:
+                        </Typography>
+                        <pre style={{ fontSize: '0.7rem', whiteSpace: 'pre-wrap', margin: 0 }}>
+                          {JSON.stringify({
+                            currentURL: typeof window !== 'undefined' ? window.location.href : 'N/A',
+                            origin: typeof window !== 'undefined' ? window.location.origin : 'N/A',
+                            hostname: typeof window !== 'undefined' ? window.location.hostname : 'N/A',
+                            port: typeof window !== 'undefined' ? window.location.port : 'N/A',
+                            sessionStorage: typeof window !== 'undefined' ? {
+                              minecraftAuthFlow: sessionStorage.getItem('minecraft-auth-flow'),
+                              minecraftAuthCompleted: sessionStorage.getItem('minecraft-auth-completed')
+                            } : 'N/A',
+                            timestamp: new Date().toISOString()
+                          }, null, 2)}
+                        </pre>
+                      </Card>
+                    )}
+                  </Box>
                 </Box>
               </Card>
             </Box>
