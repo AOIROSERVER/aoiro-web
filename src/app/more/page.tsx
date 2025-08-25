@@ -82,6 +82,7 @@ export default function MorePage() {
     reason: ''
   });
   const [isSendingPoints, setIsSendingPoints] = useState(false);
+  const [minecraftAuthStatus, setMinecraftAuthStatus] = useState<'unknown' | 'completed' | 'in-progress' | 'not-started'>('unknown');
   const router = useRouter();
   const { user, signOut, loading: authLoading, isAdmin } = useAuth();
 
@@ -1202,13 +1203,63 @@ export default function MorePage() {
       }
     };
 
+    // MCID認証状態の監視
+    const checkMinecraftAuthStatus = () => {
+      const isCompleted = sessionStorage.getItem('minecraft-auth-completed') === 'true';
+      const isInProgress = sessionStorage.getItem('minecraft-auth-flow') === 'true';
+      
+      console.log('🎮 MCID認証状態チェック:', {
+        isCompleted,
+        isInProgress,
+        timestamp: new Date().toISOString()
+      });
+      
+      // 状態を更新
+      if (isCompleted) {
+        setMinecraftAuthStatus('completed');
+      } else if (isInProgress) {
+        setMinecraftAuthStatus('in-progress');
+      } else {
+        setMinecraftAuthStatus('not-started');
+      }
+      
+      // 状態が変更された場合、ページを再レンダリング
+      if (isCompleted || isInProgress) {
+        console.log('🔄 MCID認証状態が変更されました');
+        // 強制的に再レンダリング
+        window.dispatchEvent(new Event('storage'));
+      }
+    };
+
+    // 初回チェック
+    checkMinecraftAuthStatus();
+
+    // 5分ごとにMCID認証状態をチェック
+    const minecraftAuthInterval = setInterval(() => {
+      checkMinecraftAuthStatus();
+    }, 5 * 60 * 1000); // 5分間隔
+
+    // ページがフォーカスされたときもMCID認証状態をチェック
+    const handleMinecraftAuthFocus = () => {
+      if (!document.hidden) {
+        console.log('👁️ ページフォーカス復帰 - MCID認証状態チェック');
+        checkMinecraftAuthStatus();
+      }
+    };
+
+    window.addEventListener('focus', handleMinecraftAuthFocus);
+    window.addEventListener('storage', checkMinecraftAuthStatus);
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('focus', handleVisibilityChange);
 
     return () => {
       clearInterval(intervalId);
+      clearInterval(minecraftAuthInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleVisibilityChange);
+      window.removeEventListener('focus', handleMinecraftAuthFocus);
+      window.removeEventListener('storage', checkMinecraftAuthStatus);
     };
   }, [user, quests]);
 
@@ -2054,6 +2105,26 @@ export default function MorePage() {
             <Button 
               fullWidth 
               variant="outlined" 
+              startIcon={<Train sx={{ color: "#4CAF50", fontSize: { xs: 18, sm: 20 } }} />} 
+              sx={{ 
+                borderRadius: 2,
+                height: { xs: 48, sm: 56 },
+                fontSize: { xs: 12, sm: 14 },
+                borderColor: '#4CAF50',
+                '&:hover': {
+                  borderColor: '#4CAF50',
+                  backgroundColor: 'rgba(76, 175, 80, 0.04)'
+                }
+              }}
+              onClick={() => router.push('/minecraft-auth')}
+            >
+              MCID認証
+            </Button>
+          </Grid>
+          <Grid item xs={6}>
+            <Button 
+              fullWidth 
+              variant="outlined" 
               startIcon={<AccountCircle sx={{ color: "#4A90E2", fontSize: { xs: 18, sm: 20 } }} />} 
               sx={{ 
                 borderRadius: 2,
@@ -2170,6 +2241,154 @@ export default function MorePage() {
             </Button>
           </Grid>
         </Grid>
+
+        {/* MCID認証状態 */}
+        <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ color: '#212529', mt: 4 }}>
+          MCID認証状態
+        </Typography>
+        <Card sx={{ 
+          background: 'linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)',
+          color: 'white',
+          borderRadius: 4,
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
+          '&:hover': { 
+            transform: 'translateY(-4px)', 
+            boxShadow: '0 12px 40px rgba(76, 175, 80, 0.4)',
+            '& .minecraft-glow': {
+              opacity: 1,
+              transform: 'scale(1.1)'
+            }
+          },
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}>
+          {/* 装飾的な光の効果 */}
+          <Box className="minecraft-glow" sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: 100,
+            height: 100,
+            background: 'radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%)',
+            borderRadius: '50%',
+            opacity: 0,
+            transition: 'all 0.4s ease'
+          }} />
+          
+          <Box sx={{ 
+            p: { xs: 3, sm: 4 }, 
+            textAlign: 'center', 
+            position: 'relative', 
+            zIndex: 1 
+          }}>
+            <Box sx={{ 
+              width: { xs: 50, sm: 60 }, 
+              height: { xs: 50, sm: 60 }, 
+              mb: { xs: 2, sm: 3 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: '50%',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <Train sx={{ 
+                fontSize: { xs: 30, sm: 36 }, 
+                color: 'white',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+              }} />
+            </Box>
+            <Typography variant="h5" fontWeight="bold" mb={2} sx={{ 
+              background: 'linear-gradient(45deg, #fff, #e8f5e8)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              fontSize: { xs: '1.2rem', sm: '1.5rem' }
+            }}>
+              MCID認証
+            </Typography>
+            <Typography variant="body1" sx={{ 
+              mb: { xs: 2, sm: 3 }, 
+              opacity: 0.9, 
+              fontWeight: 500,
+              fontSize: { xs: '0.9rem', sm: '1rem' }
+            }}>
+              AOIROSERVERの認定メンバーになるためのMinecraft ID認証を行いましょう
+            </Typography>
+            
+            {/* 認証状態に応じたボタン */}
+            <Button
+              variant="contained"
+              onClick={() => router.push('/minecraft-auth')}
+              sx={{
+                background: 'linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1))',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '25px',
+                px: { xs: 3, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                textTransform: 'none',
+                position: 'relative',
+                overflow: 'hidden',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.2))',
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 8px 25px rgba(255,255,255,0.3)'
+                },
+                '&:before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                  transition: 'left 0.5s'
+                },
+                '&:hover:before': {
+                  left: '100%'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              startIcon={<Launch sx={{ fontSize: { xs: 16, sm: 18 } }} />}
+            >
+              {minecraftAuthStatus === 'completed' ? '認証完了済み' : 
+               minecraftAuthStatus === 'in-progress' ? '認証中...' : '認証を開始'}
+            </Button>
+            
+            {/* 認証状態の表示 */}
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              {minecraftAuthStatus === 'completed' ? (
+                <>
+                  <CheckCircle sx={{ fontSize: 16, color: '#4CAF50' }} />
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 500 }}>
+                    認証完了済み
+                  </Typography>
+                </>
+              ) : minecraftAuthStatus === 'in-progress' ? (
+                <>
+                  <CircularProgress sx={{ fontSize: 16, color: 'rgba(255,255,255,0.8)' }} />
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                    認証中...
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <Info sx={{ fontSize: 16, color: 'rgba(255,255,255,0.8)' }} />
+                  <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                    未認証
+                  </Typography>
+                </>
+              )}
+            </Box>
+          </Box>
+        </Card>
 
         {/* Discordコミュニティ */}
         <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ color: '#212529', mt: 4 }}>
