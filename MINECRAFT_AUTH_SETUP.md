@@ -1,134 +1,121 @@
-# Minecraft ID認証システム設定ガイド
+# マインクラフト認証セットアップガイド
 
-## 概要
-AOIROSERVERでのMinecraft ID認証システムの設定手順を説明します。このシステムによって、DiscordアカウントとMinecraft IDを紐付けて、認定メンバーロールを自動付与できます。
+## 🚨 重要：ポート設定について
 
-## 必要な環境変数
+### 問題の原因
+「リクエストの形式に問題があります」エラーは、Discord OAuthのリダイレクトURI設定が原因です。
 
-### Discord Bot設定
-```env
-DISCORD_BOT_TOKEN=your_discord_bot_token
-DISCORD_SERVER_ID=your_discord_server_id
-DISCORD_MEMBER_ROLE_ID=your_member_role_id
+### 現在の状況
+- **アクセス先**: `http://localhost:8888/minecraft-auth/`
+- **Discord OAuth設定**: `http://localhost:3000/auth/callback` のみ許可
+- **結果**: ポートの不一致でOAuth認証が失敗
+
+## 解決方法
+
+### 方法1: localhost:3000を使用（推奨）
+```
+正しい: http://localhost:3000/minecraft-auth/
+間違い: http://localhost:8888/minecraft-auth/
 ```
 
-### Google Sheets設定（現在無効化中）
-```env
-# GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"..."}
-# GOOGLE_SPREADSHEET_ID=your_spreadsheet_id
-```
-**注意**: Google Sheets連携機能は現在、Netlifyの環境変数サイズ制限（4KB）により一時的に無効化されています。
+### 方法2: Discord OAuthに8888ポートを追加
 
-## 1. Discord Bot設定
-
-### 1.1 Discord Developer Portalでのボット作成
+#### Discord Developer Portal設定
 1. [Discord Developer Portal](https://discord.com/developers/applications) にアクセス
-2. 「New Application」→「Bot」タブ
-3. Bot Tokenを取得して`DISCORD_BOT_TOKEN`に設定
-
-### 1.2 必要な権限
-ボットに以下の権限を付与してください：
-- `Manage Roles` - ロール管理権限
-- `View Guild Members` - メンバー情報確認権限
-- `Read Message History` - 必要に応じて
-
-### 1.3 サーバーIDと認定メンバーロールIDの取得
-1. Discord設定で「開発者モード」を有効化
-2. サーバーを右クリック→「IDをコピー」→ `DISCORD_SERVER_ID`に設定
-3. 認定メンバーロールを右クリック→「IDをコピー」→ `DISCORD_MEMBER_ROLE_ID`に設定
-
-## 2. Google Sheets設定（オプション）
-
-### 2.1 Google Cloud Projectの作成
-1. [Google Cloud Console](https://console.cloud.google.com/) にアクセス
-2. 新しいプロジェクトを作成
-3. Google Sheets APIを有効化
-
-### 2.2 サービスアカウントの作成
-1. 「IAM & Admin」→「Service Accounts」
-2. 「Create Service Account」をクリック
-3. サービスアカウント名を入力
-4. 「Keys」タブで「Add Key」→「JSON」
-5. ダウンロードしたJSONの内容を`GOOGLE_SERVICE_ACCOUNT_KEY`に設定
-
-### 2.3 スプレッドシートの準備
-1. Google Sheetsで新しいスプレッドシートを作成
-2. スプレッドシートURLから IDを取得
+2. アプリケーション → OAuth2 → General
+3. **Redirects** セクションに追加：
    ```
-   https://docs.google.com/spreadsheets/d/SPREADSHEET_ID/edit
+   http://localhost:8888/auth/callback
    ```
-3. `GOOGLE_SPREADSHEET_ID`にIDを設定
-4. サービスアカウントのメールアドレスにスプレッドシートの編集権限を付与
+4. **Save Changes** をクリック
 
-## 3. システムの動作フロー
+#### Supabase設定
+1. Supabaseダッシュボード → Authentication → Configuration → URL Configuration
+2. **Redirect URLs** に追加：
+   ```
+   http://localhost:8888/auth/callback
+   ```
 
-### 3.1 認証手順
-1. ユーザーが `/minecraft-auth` にアクセス
-2. Discordアカウントで認証
-3. Minecraft IDを入力
-4. システムがMinecraft IDの存在確認（Mojang API）
-5. 存在する場合、Discordサーバーで認定メンバーロールを付与
-6. Google Sheetsに認証記録を保存（設定されている場合）
+## テスト手順
 
-### 3.2 APIエンドポイント
-- `POST /api/verify-minecraft-id` - Minecraft ID存在確認
-- `POST /api/assign-discord-role` - Discordロール付与
-- `POST /api/record-minecraft-auth` - Google Sheets記録
-
-## 4. 使用方法
-
-### 4.1 認証ページのリンク
-```
-https://your-domain.com/minecraft-auth
+### 1. ポート確認
+```bash
+# 開発サーバーのポートを確認
+npm run dev
+# ↓ 表示されるポートを確認
+# Local: http://localhost:3000 または http://localhost:8888
 ```
 
-### 4.2 DiscordでのリンクシェアExample：
+### 2. マインクラフト認証テスト
+1. 正しいポートでアクセス: `http://localhost:3000/minecraft-auth/`
+2. 「Discordで認証」ボタンをクリック
+3. Discord認証画面にリダイレクト
+4. 認証完了後、verifyページに戻る
+
+### 3. エラー確認
+- ブラウザ開発者ツール（F12）でコンソールログを確認
+- ネットワークタブでリクエストURLを確認
+
+## よくあるエラーと対処法
+
+### 「リクエストの形式に問題があります」
+- **原因**: ポート不一致
+- **対処**: 正しいポートでアクセス
+
+### 「redirect_uri_mismatch」
+- **原因**: Discord OAuth設定のリダイレクトURI不一致
+- **対処**: Discord Developer Portalでリダイレクトが追加
+
+### 「invalid_grant」
+- **原因**: 認証コードの期限切れ
+- **対処**: ブラウザを再読み込みして再試行
+
+## デバッグログ確認
+
+### コンソールで確認すべき項目
+```javascript
+🔍 Port Configuration Debug: {
+  currentOrigin: "http://localhost:8888",
+  hostname: "localhost", 
+  port: "8888",
+  isLocalhost: true,
+  correctedOrigin: "http://localhost:3000",  // ← これが修正後の値
+  currentURL: "http://localhost:8888/minecraft-auth/"
+}
 ```
-🎮 **Minecraft ID認証**
-AOIROSERVERの認定メンバーになるために、Minecraft IDを認証してください！
 
-👉 認証はこちら: https://aoiroserver.site/minecraft-auth
-
-✅ 認証完了後、自動的に認定メンバーロールが付与されます
+### 正常なログ例
+```javascript
+🔄 Starting Discord OAuth for MCID auth...
+🎮 Minecraft auth flow flag set in sessionStorage
+MCID auth redirect URL: http://localhost:3000/auth/callback?from=minecraft-auth&next=%2Fminecraft-auth%2Fverify&source=minecraft-auth-page
+✅ Discord OAuth initiated successfully
 ```
 
-## 5. トラブルシューティング
+## 注意事項
 
-### 5.1 よくある問題
+### ローカル開発環境
+- **推奨**: `localhost:3000` を使用
+- **理由**: Discord OAuth設定がシンプル
 
-**Discord認証が失敗する**
-- Discord OAuth設定を確認
-- リダイレクトURLが正しく設定されているか確認
+### 本番環境
+- **本番URL**: `https://aoiroserver.site/minecraft-auth/`
+- **設定済み**: Discord OAuthとSupabase設定済み
 
-**Minecraft ID確認が失敗する**
-- Mojang APIが利用可能か確認
-- フォールバック機能が動作している場合あり
+## 設定確認チェックリスト
 
-**ロール付与が失敗する**
-- ボットの権限を確認
-- ボットのロールがターゲットロールより上位にあるか確認
-- ユーザーがサーバーメンバーか確認
+### Discord Developer Portal
+- [ ] Client IDとClient Secretが設定済み
+- [ ] Redirectsに `http://localhost:3000/auth/callback` が追加済み
+- [ ] Redirectsに `http://localhost:8888/auth/callback` が追加済み（必要に応じて）
+- [ ] Scopesで `identify` と `email` が選択済み
 
-**Google Sheets記録が失敗する**
-- サービスアカウント設定を確認
-- スプレッドシートの共有設定を確認
-- Google Sheets APIが有効化されているか確認
+### Supabase
+- [ ] Authentication → Providers → Discord が有効
+- [ ] Client IDとClient Secretが正しく設定
+- [ ] Redirect URLsに `http://localhost:3000/auth/callback` が追加済み
+- [ ] Redirect URLsに `http://localhost:8888/auth/callback` が追加済み（必要に応じて）
 
-### 5.2 ログの確認
-ブラウザの開発者ツールまたはサーバーログで詳細なエラー情報を確認できます。
-
-## 6. セキュリティ考慮事項
-
-- Discord Bot Tokenは絶対に公開しないでください
-- Google Serviceアカウントキーは安全に管理してください
-- 認証ログを定期的に確認し、不正な利用がないか監視してください
-- ボットの権限は必要最小限に設定してください
-
-## 7. データ形式
-
-### 7.1 Google Sheetsの出力形式
-| 認証日時 | Minecraft ID | Discord表示名 | Discordユーザー名 | Discord User ID |
-|---------|-------------|-------------|-----------------|-----------------|
-| 2024/01/01 12:00:00 | PlayerName | Display Name | username#1234 | 123456789012345 |
-
-この形式により、Minecraft IDとDiscordアカウントの紐付けを一目で確認できます。
+### 環境変数
+- [ ] `NEXT_PUBLIC_SUPABASE_URL` が設定済み
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY` が設定済み

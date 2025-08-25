@@ -239,7 +239,9 @@ function DiscordAuthContent() {
         next: '/minecraft-auth/verify',
         source: 'minecraft-auth-page'
       });
-      const redirectUrl = `${window.location.origin}/auth/callback?${params.toString()}`;
+      // ローカル開発環境では正しいポートを使用
+      const origin = window.location.hostname === 'localhost' ? 'http://localhost:3000' : window.location.origin;
+      const redirectUrl = `${origin}/auth/callback?${params.toString()}`;
       console.log('MCID auth redirect URL:', redirectUrl);
       console.log('URL parameters:', {
         from: 'minecraft-auth',
@@ -248,6 +250,16 @@ function DiscordAuthContent() {
         encodedParams: params.toString()
       });
       console.log('Full redirect URL:', redirectUrl);
+      
+      // ポート設定デバッグ情報
+      console.log('🔍 Port Configuration Debug:', {
+        currentOrigin: window.location.origin,
+        hostname: window.location.hostname,
+        port: window.location.port,
+        isLocalhost: window.location.hostname === 'localhost',
+        correctedOrigin: origin,
+        currentURL: window.location.href
+      });
       
       // OAuthオプションを設定
       const oauthOptions = {
