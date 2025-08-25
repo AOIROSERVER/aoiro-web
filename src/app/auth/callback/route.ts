@@ -46,37 +46,8 @@ export async function GET(request: Request) {
     fullReferer: referer
   });
   
-  if (isFromMinecraftAuth) {
-    console.log('🎮 MCID Auth detected in callback - forcing redirect to verify page');
-    const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true&from=minecraft-auth'
-    console.log('🔄 Forcing redirect to minecraft-auth verify page:', redirectUrl);
-    
-    // リダイレクト前にセッション状態を確認
-    try {
-      const supabase = createRouteHandlerClient({ cookies })
-      const { data: { session } } = await supabase.auth.getSession()
-      console.log('Session state before redirect:', {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        provider: session?.user?.app_metadata?.provider,
-        userMetadata: session?.user?.user_metadata,
-        appMetadata: session?.user?.app_metadata
-      })
-      
-      // セッションはあるがDiscord認証情報がない場合の警告
-      if (session?.user && session.user.app_metadata?.provider !== 'discord') {
-        console.log('⚠️ Warning: Session exists but Discord provider not set');
-        console.log('User metadata:', session.user.user_metadata);
-        console.log('App metadata:', session.user.app_metadata);
-      }
-    } catch (err) {
-      console.error('Error checking session before redirect:', err)
-    }
-    
-    console.log('✅ Redirecting to minecraft-auth verify page');
-    return NextResponse.redirect(redirectUrl)
-  }
+  // マインクラフト認証の検出のみ（早期リダイレクトは削除）
+  // セッション作成後にリダイレクトを行うようにAICシステムと同様の処理に変更
   
   console.log('Next parameter calculation:', {
     from,
@@ -525,19 +496,26 @@ export async function GET(request: Request) {
   }
   
   // Minecraft認証ページからの認証の場合は、MCID認証ページに成功パラメータ付きでリダイレクト
-  if (from === 'minecraft-auth') {
+  // より確実な検出のため、isFromMinecraftAuth変数も使用
+  if (isFromMinecraftAuth || from === 'minecraft-auth') {
     const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true'
+    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true&from=minecraft-auth'
     console.log('🔄 Redirecting to minecraft-auth verify page with success:', redirectUrl)
     console.log('Base URL used:', baseUrl)
     console.log('Final redirect URL:', redirectUrl)
+    console.log('Detection reason:', {
+      isFromMinecraftAuth,
+      fromIsMinecraftAuth: from === 'minecraft-auth',
+      source,
+      referer
+    })
     return NextResponse.redirect(redirectUrl)
   }
   
   // fromパラメータがminecraft-authでない場合でも、nextが/minecraft-authの場合はMCID認証ページにリダイレクト
-  if (next === '/minecraft-auth') {
+  if (next === '/minecraft-auth' || next === '/minecraft-auth/verify') {
     const baseUrl = 'https://aoiroserver.site'
-    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true'
+    const redirectUrl = baseUrl + '/minecraft-auth/verify?auth_success=true&from=minecraft-auth'
     console.log('🔄 Redirecting to minecraft-auth verify page based on next parameter:', redirectUrl)
     return NextResponse.redirect(redirectUrl)
   }

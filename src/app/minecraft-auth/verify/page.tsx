@@ -29,7 +29,7 @@ function MinecraftVerificationContent() {
   const { supabase, user, session } = useAuth();
   const router = useRouter();
 
-  // シンプルな認証状態の確認
+  // 改善された認証状態の確認（AICシステムを参考）
   useEffect(() => {
     const checkAuthStatus = async () => {
       console.log('🔍 Checking auth status for Minecraft verification...');
@@ -50,202 +50,113 @@ function MinecraftVerificationContent() {
         search: window.location.search
       });
       
-      if (authSuccess === 'true' && fromParam === 'minecraft-auth') {
-        console.log('✅ Discord auth success detected from MCID auth page');
-        setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
-        
-        // 認証成功後、より長く待ってからセッション状態を確認
-        setTimeout(async () => {
-          try {
-            console.log('🔍 Checking Discord auth state after success...');
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            console.log('Current session after auth success:', currentSession);
-            
-            if (currentSession?.user?.user_metadata?.provider === 'discord') {
-              console.log('✅ Discord user authenticated for Minecraft verification');
-              console.log('User details:', {
-                id: currentSession.user.id,
-                email: currentSession.user.email,
-                provider: currentSession.user.app_metadata?.provider,
-                metadata: currentSession.user.user_metadata
-              });
-              
-              // Discordユーザー情報を設定
-              setDiscordUser({
-                username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
-                avatar: currentSession.user.user_metadata.avatar_url,
-                discriminator: currentSession.user.user_metadata.discriminator,
-                id: currentSession.user.user_metadata.sub
-              });
-            } else {
-              console.log('❌ Discord user not found after auth success');
-              console.log('User metadata:', currentSession?.user?.user_metadata);
-              console.log('App metadata:', currentSession?.user?.app_metadata);
-              
-              // セッションはあるがDiscord認証情報がない場合、再試行
-              if (currentSession?.user) {
-                console.log('🔄 Session exists but Discord metadata missing, retrying...');
-                setTimeout(async () => {
-                  try {
-                    const { data: { session: retrySession } } = await supabase.auth.getSession();
-                    console.log('Retry session check:', retrySession);
-                    
-                    if (retrySession?.user?.user_metadata?.provider === 'discord') {
-                      console.log('✅ Discord user found on retry!');
-                      console.log('User details:', {
-                        id: retrySession.user.id,
-                        email: retrySession.user.email,
-                        provider: retrySession.user.app_metadata?.provider,
-                        metadata: retrySession.user.user_metadata
-                      });
-                      
-                      // Discordユーザー情報を設定
-                      setDiscordUser({
-                        username: retrySession.user.user_metadata.full_name || retrySession.user.user_metadata.name,
-                        avatar: retrySession.user.user_metadata.avatar_url,
-                        discriminator: retrySession.user.user_metadata.discriminator,
-                        id: retrySession.user.user_metadata.sub
-                      });
-                    } else {
-                      console.log('❌ Discord user still not found on retry');
-                      setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
-                    }
-                  } catch (retryErr) {
-                    console.error('Retry session check error:', retryErr);
-                    setError('認証状態の再確認に失敗しました。ページを再読み込みしてください。');
-                  }
-                }, 3000); // 3秒後に再試行
-              } else {
-                setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
-              }
-            }
-          } catch (err) {
-            console.error('Error checking auth state after success:', err);
-            setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
-          }
-        }, 3000); // 3秒待ってから確認（以前は2秒）
-        
-        // 成功パラメータをクリア
+      // 成功パラメータをクリア（最初に実行）
+      if (authSuccess === 'true') {
         window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (authSuccess === 'true') {
-        console.log('✅ Discord auth success detected from URL');
-        setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
-        
-        // 同様に少し待ってからセッション状態を確認
-        setTimeout(async () => {
-          try {
-            console.log('🔍 Checking Discord auth state after success...');
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
-            console.log('Current session after auth success:', currentSession);
-            
-            if (currentSession?.user?.user_metadata?.provider === 'discord') {
-              console.log('✅ Discord user authenticated for Minecraft verification');
-              console.log('User details:', {
-                id: currentSession.user.id,
-                email: currentSession.user.email,
-                provider: currentSession.user.app_metadata?.provider,
-                metadata: currentSession.user.user_metadata
-              });
-              
-              // Discordユーザー情報を設定
-              setDiscordUser({
-                username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
-                avatar: currentSession.user.user_metadata.avatar_url,
-                discriminator: currentSession.user.user_metadata.discriminator,
-                id: currentSession.user.user_metadata.sub
-              });
-            } else {
-              console.log('❌ Discord user not found after auth success');
-              console.log('User metadata:', currentSession?.user?.user_metadata);
-              console.log('App metadata:', currentSession?.user?.app_metadata);
-              
-              // セッションはあるがDiscord認証情報がない場合、再試行
-              if (currentSession?.user) {
-                console.log('🔄 Session exists but Discord metadata missing, retrying...');
-                setTimeout(async () => {
-                  try {
-                    const { data: { session: retrySession } } = await supabase.auth.getSession();
-                    console.log('Retry session check:', retrySession);
-                    
-                    if (retrySession?.user?.user_metadata?.provider === 'discord') {
-                      console.log('✅ Discord user found on retry!');
-                      console.log('User details:', {
-                        id: retrySession.user.id,
-                        email: retrySession.user.email,
-                        provider: retrySession.user.app_metadata?.provider,
-                        metadata: retrySession.user.user_metadata
-                      });
-                      
-                      // Discordユーザー情報を設定
-                      setDiscordUser({
-                        username: retrySession.user.user_metadata.full_name || retrySession.user.user_metadata.name,
-                        avatar: retrySession.user.user_metadata.avatar_url,
-                        discriminator: retrySession.user.user_metadata.discriminator,
-                        id: retrySession.user.user_metadata.sub
-                      });
-                    } else {
-                      console.log('❌ Discord user still not found on retry');
-                      setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
-                    }
-                  } catch (retryErr) {
-                    console.error('Retry session check error:', retryErr);
-                    setError('認証状態の再確認に失敗しました。ページを再読み込みしてください。');
-                  }
-                }, 3000); // 3秒後に再試行
-              } else {
-                setError('Discord認証は完了しましたが、連携状態の確認に失敗しました。ページを再読み込みしてください。');
-              }
-            }
-          } catch (err) {
-            console.error('Error checking auth state after success:', err);
-            setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
-          }
-        }, 3000); // 3秒待ってから確認（以前は2秒）
-        
-        // 成功パラメータをクリア
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else {
-        console.log('ℹ️ No auth success parameters found, checking normal auth state...');
-        // 認証成功パラメータがない場合のみ、通常の認証状態確認を行う
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        console.log('Current session:', currentSession);
-        
-        if (currentSession?.user) {
-          console.log('✅ User is authenticated:', currentSession.user.email);
-          console.log('User metadata:', currentSession.user.user_metadata);
-          console.log('App metadata:', currentSession.user.app_metadata);
+        // マインクラフト認証フローが完了したことを示すフラグを設定
+        sessionStorage.setItem('minecraft-auth-completed', 'true');
+      }
+      
+      // 即座にセッション状態を確認（タイムアウトを減らす）
+      const checkSessionWithRetry = async (retryCount = 0) => {
+        try {
+          console.log(`🔍 Checking session state (attempt ${retryCount + 1})...`);
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          console.log('Current session:', currentSession);
           
-          // Discord認証済みかチェック
-          if (currentSession.user.user_metadata?.provider === 'discord') {
-            console.log('🎯 Discord user authenticated for Minecraft verification');
-            console.log('User details:', {
-              id: currentSession.user.id,
-              email: currentSession.user.email,
-              provider: currentSession.user.app_metadata?.provider,
-              metadata: currentSession.user.user_metadata
-            });
-            
-            // Discordユーザー情報を設定
-            setDiscordUser({
-              username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
-              avatar: currentSession.user.user_metadata.avatar_url,
-              discriminator: currentSession.user.user_metadata.discriminator,
-              id: currentSession.user.user_metadata.sub
-            });
-          } else {
-            console.log('❌ User is not Discord authenticated, redirecting to Discord auth...');
+          if (currentSession?.user) {
+            console.log('✅ User is authenticated:', currentSession.user.email);
             console.log('User metadata:', currentSession.user.user_metadata);
             console.log('App metadata:', currentSession.user.app_metadata);
-            console.log('Provider check failed, redirecting to /minecraft-auth');
-            router.push('/minecraft-auth');
-            return;
+            
+            // Discord認証済みかチェック（より柔軟な判定）
+            const isDiscordUser = currentSession.user.user_metadata?.provider === 'discord' ||
+                                  currentSession.user.app_metadata?.provider === 'discord' ||
+                                  currentSession.user.user_metadata?.full_name ||
+                                  currentSession.user.user_metadata?.avatar_url;
+            
+            if (isDiscordUser) {
+              console.log('🎯 Discord user authenticated for Minecraft verification');
+              console.log('User details:', {
+                id: currentSession.user.id,
+                email: currentSession.user.email,
+                provider: currentSession.user.app_metadata?.provider,
+                metadata: currentSession.user.user_metadata
+              });
+              
+              // Discordユーザー情報を設定
+              setDiscordUser({
+                username: currentSession.user.user_metadata.full_name || 
+                         currentSession.user.user_metadata.name || 
+                         currentSession.user.user_metadata.preferred_username ||
+                         currentSession.user.email?.split('@')[0] || 'Unknown',
+                avatar: currentSession.user.user_metadata.avatar_url,
+                discriminator: currentSession.user.user_metadata.discriminator,
+                id: currentSession.user.user_metadata.sub || currentSession.user.id
+              });
+              
+              if (authSuccess === 'true') {
+                setSuccess('Discordアカウントの連携が完了しています！Minecraft ID認証を行ってください。');
+              }
+              
+              return true; // 認証成功
+            } else {
+              console.log('❌ User is not Discord authenticated');
+              console.log('Provider metadata:', {
+                userProvider: currentSession.user.user_metadata?.provider,
+                appProvider: currentSession.user.app_metadata?.provider,
+                hasFullName: !!currentSession.user.user_metadata?.full_name,
+                hasAvatar: !!currentSession.user.user_metadata?.avatar_url
+              });
+              
+              // リトライ可能な場合は再試行
+              if (retryCount < 2) {
+                console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
+                setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
+                return false;
+              } else {
+                console.log('❌ Max retries reached, redirecting to Discord auth');
+                router.push('/minecraft-auth');
+                return false;
+              }
+            }
+          } else {
+            console.log('❌ No active session found');
+            
+            // リトライ可能な場合は再試行
+            if (retryCount < 2 && authSuccess === 'true') {
+              console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
+              setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
+              return false;
+            } else {
+              console.log('❌ No session found, redirecting to Discord auth');
+              router.push('/minecraft-auth');
+              return false;
+            }
           }
-        } else {
-          console.log('❌ No active session found, redirecting to Discord auth...');
-          console.log('Session check failed, redirecting to /minecraft-auth');
-          router.push('/minecraft-auth');
-          return;
+        } catch (err) {
+          console.error('Error checking auth state:', err);
+          
+          // リトライ可能な場合は再試行
+          if (retryCount < 2) {
+            console.log(`🔄 Retrying after error in 2 seconds... (retry ${retryCount + 1}/2)`);
+            setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
+            return false;
+          } else {
+            setError('認証状態の確認に失敗しました。ページを再読み込みしてください。');
+            return false;
+          }
         }
+      };
+      
+      // 認証成功パラメータがある場合は少し待ってから確認
+      if (authSuccess === 'true') {
+        console.log('✅ Discord auth success detected, checking session...');
+        setTimeout(() => checkSessionWithRetry(), 1000); // 1秒待機（以前の3秒から短縮）
+      } else {
+        // 通常の確認は即座に実行
+        console.log('ℹ️ No auth success parameters, checking current session...');
+        checkSessionWithRetry();
       }
     };
     

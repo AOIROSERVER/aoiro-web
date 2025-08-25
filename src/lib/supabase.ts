@@ -31,27 +31,57 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
   },
 });
 
-// クッキー管理のヘルパー関数
+// クッキー管理のヘルパー関数（マインクラフト認証対応強化）
 export const setAuthCookie = (name: string, value: string, days: number = 7) => {
   if (typeof window === 'undefined') return;
   
-  const expires = new Date();
-  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-  
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;samesite=lax${process.env.NODE_ENV === 'production' ? ';secure' : ''}`;
+  try {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    
+    // より堅牢なクッキー設定（AIC認証システムを参考）
+    const cookieOptions = [
+      `${name}=${encodeURIComponent(value)}`,
+      `expires=${expires.toUTCString()}`,
+      'path=/',
+      'samesite=lax',
+      // 本番環境ではセキュア通信を強制
+      process.env.NODE_ENV === 'production' ? 'secure' : '',
+      // HttpOnlyは設定しない（JavaScriptからアクセス可能にする）
+    ].filter(Boolean).join(';');
+    
+    document.cookie = cookieOptions;
+    
+    console.log('🍪 Auth cookie set successfully:', {
+      name,
+      valueLength: value.length,
+      expires: expires.toISOString(),
+      isProduction: process.env.NODE_ENV === 'production'
+    });
+  } catch (error) {
+    console.error('❌ Failed to set auth cookie:', error);
+  }
 };
 
 export const getAuthCookie = (name: string): string | null => {
   if (typeof window === 'undefined') return null;
   
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  try {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) {
+        const value = c.substring(nameEQ.length, c.length);
+        return decodeURIComponent(value);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('❌ Failed to get auth cookie:', error);
+    return null;
   }
-  return null;
 };
 
 export const removeAuthCookie = (name: string) => {

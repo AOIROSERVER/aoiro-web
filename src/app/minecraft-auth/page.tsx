@@ -222,6 +222,10 @@ function DiscordAuthContent() {
       console.log('Current URL:', window.location.href);
       console.log('Current pathname:', window.location.pathname);
       
+      // マインクラフト認証フローのフラグを設定
+      sessionStorage.setItem('minecraft-auth-flow', 'true');
+      console.log('🎮 Minecraft auth flow flag set in sessionStorage');
+      
       // 既存のセッションを確認
       console.log('🔍 Checking existing session...');
       const { data: { session } } = await supabase.auth.getSession();

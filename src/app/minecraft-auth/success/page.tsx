@@ -23,9 +23,18 @@ function MinecraftAuthSuccessContent() {
     const searchParams = new URLSearchParams(window.location.search);
     setMinecraftId(searchParams.get('minecraftId') || '');
     setAvatarUrl(searchParams.get('avatarUrl') || null);
+    
+    // マインクラフト認証フローが完了したのでフラグをクリア
+    sessionStorage.removeItem('minecraft-auth-flow');
+    sessionStorage.setItem('minecraft-auth-completed', 'true');
+    console.log('🎮 Minecraft auth flow completed, flags updated');
   }, []);
 
   const handleGoHome = () => {
+    // 完全にマインクラフト認証フローから離脱
+    sessionStorage.removeItem('minecraft-auth-flow');
+    sessionStorage.removeItem('minecraft-auth-completed');
+    console.log('🏠 Leaving minecraft auth flow, going to home');
     router.push('/');
   };
 

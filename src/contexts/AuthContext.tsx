@@ -50,12 +50,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tokenType: session?.token_type
         });
         
-        // セッションが存在する場合はローカルストレージに保存
+        // セッションが存在する場合はローカルストレージとクッキーに保存
         if (session && typeof window !== 'undefined') {
           console.log('💾 Saving session to localStorage...');
           localStorage.setItem('aoiro-auth-token', JSON.stringify(session));
           
-          // セッションクッキーはSupabaseが自動管理するため、手動設定は削除
+          // クッキーを手動で設定（AICシステムと同様）
+          if (session.access_token) {
+            console.log('🍪 Setting auth cookies manually...');
+            setAuthCookie('sb-access-token', session.access_token, 7);
+            if (session.refresh_token) {
+              setAuthCookie('sb-refresh-token', session.refresh_token, 7);
+            }
+            console.log('✅ Auth cookies set successfully');
+          }
         }
         
         setSession(session);
@@ -150,7 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               localStorage.setItem('aoiro-auth-token', JSON.stringify(session));
               console.log('💾 Session saved to localStorage');
               
-              // クッキーを手動で設定
+              // クッキーを手動で設定（マインクラフト認証でも確実に設定）
               if (session.access_token) {
                 console.log('🍪 Setting auth cookies manually...');
                 setAuthCookie('sb-access-token', session.access_token, 7);
@@ -167,10 +175,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // ログインボーナスは手動で取得するため、自動取得は無効化
           console.log('ℹ️ Login bonus will be available manually on the more page');
 
-          // 認証成功後のリダイレクト
-          if (window.location.pathname === '/') {
+          // 認証成功後のリダイレクト（マインクラフト認証の場合は特別処理しない）
+          const isMinecraftAuthFlow = window.location.href.includes('minecraft-auth') || 
+                                      window.location.pathname.includes('minecraft-auth') ||
+                                      document.referrer.includes('minecraft-auth') ||
+                                      sessionStorage.getItem('minecraft-auth-flow') === 'true';
+          
+          console.log('🔍 Checking redirect conditions:', {
+            pathname: window.location.pathname,
+            href: window.location.href,
+            referrer: document.referrer,
+            isMinecraftAuthFlow,
+            sessionMinecraftAuth: sessionStorage.getItem('minecraft-auth-flow')
+          });
+          
+          if (window.location.pathname === '/' && !isMinecraftAuthFlow) {
             console.log('🔄 Redirecting to train-status from home page');
             router.push('/train-status');
+          } else if (isMinecraftAuthFlow) {
+            console.log('🎮 Minecraft auth flow detected, skipping auto-redirect');
           }
         } else if (event === "SIGNED_OUT") {
           console.log('❌ User signed out');
