@@ -120,7 +120,7 @@ export default function ESSystemPage() {
   ];
 
   // 年齢オプション
-  const ageOptions = Array.from({length: 21}, (_, i) => i + 10); // 10歳から30歳まで
+  const ageOptions: (number | string)[] = Array.from({length: 21}, (_, i) => i + 10); // 10歳から30歳まで
   ageOptions.push("30歳以上");
 
   // バリデーション関数
