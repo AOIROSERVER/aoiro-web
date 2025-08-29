@@ -37,7 +37,7 @@ async function addToGoogleSheets(submissionData: any) {
     console.log('📋 ヘッダー行チェック開始');
     const headerResponse = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: 'A1:J1',
+      range: 'A1:K1', // Discordユーザー名列を追加したため範囲をKまで拡張
     });
 
     console.log('ヘッダー行取得結果:', headerResponse.data.values);
@@ -47,7 +47,7 @@ async function addToGoogleSheets(submissionData: any) {
       console.log('📝 ヘッダー行を追加中...');
       await sheets.spreadsheets.values.update({
         spreadsheetId: GOOGLE_SHEETS_ID,
-        range: 'A1:J1',
+        range: 'A1:K1', // Discordユーザー名列を追加
         valueInputOption: 'RAW',
         requestBody: {
           values: [[
@@ -60,7 +60,8 @@ async function addToGoogleSheets(submissionData: any) {
             '使用端末/会社名',
             '意志表明',
             'ポートフォリオURL',
-            'ステータス'
+            'ステータス',
+            'Discordユーザー名' // 新しい列を追加
           ]]
         },
       });
@@ -84,7 +85,8 @@ async function addToGoogleSheets(submissionData: any) {
       submissionData.device || '',
       submissionData.motivation || '',
       portfolioDisplayValue,
-      submissionData.status
+      submissionData.status,
+      submissionData.discord_username || '' // Discordユーザー名を追加
     ]];
 
     console.log('📊 追加するデータ:', values);
@@ -198,6 +200,12 @@ async function sendNotificationEmail(submissionData: any) {
                     <td style="padding: 12px 8px; color: #212529;">${submissionData.email}</td>
                   </tr>
                   ` : ''}
+                  ${submissionData.discord_username ? `
+                  <tr style="border-bottom: 1px solid #dee2e6;">
+                    <td style="padding: 12px 8px; font-weight: 600; color: #495057;">Discordユーザー名</td>
+                    <td style="padding: 12px 8px; color: #212529;">${submissionData.discord_username}</td>
+                  </tr>
+                  ` : ''}
                   ${submissionData.prefecture ? `
                   <tr style="border-bottom: 1px solid #dee2e6;">
                     <td style="padding: 12px 8px; font-weight: 600; color: #495057;">都道府県</td>
@@ -271,6 +279,7 @@ export async function POST(request: NextRequest) {
       prefecture, 
       device, 
       motivation, 
+      discordUsername, // Discordユーザー名を追加
       portfolioData, 
       portfolioFileName, 
       captchaToken 
@@ -284,6 +293,7 @@ export async function POST(request: NextRequest) {
       prefecture,
       device: device ? 'あり' : 'なし',
       motivation: motivation ? 'あり' : 'なし',
+      discordUsername: discordUsername || 'なし', // Discordユーザー名をログに追加
       portfolioData: portfolioData ? 'あり（Base64）' : 'なし',
       portfolioFileName: portfolioFileName || 'なし',
       captchaToken: captchaToken ? 'あり' : 'なし'
@@ -340,6 +350,7 @@ export async function POST(request: NextRequest) {
       prefecture: prefecture || null,
       device: device || null,
       motivation: motivation || null,
+      discord_username: discordUsername || null, // Discordユーザー名を追加
       portfolio_url: portfolioUrl,
       portfolioData: portfolioData,
       portfolioFileName: portfolioFileName,

@@ -18,7 +18,9 @@ import {
   IconButton,
   Tooltip,
   FormHelperText,
-  Divider
+  Divider,
+  CircularProgress,
+  Fade
 } from "@mui/material";
 import { 
   ArrowBack, 
@@ -40,13 +42,25 @@ import {
   AutoAwesome,
   Celebration,
   Schedule,
-  Drafts
+  Drafts,
+  Login,
+  Lock
 } from "@mui/icons-material";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function ESSystemPage() {
+  const { user, loading: authLoading, session } = useAuth();
+  const router = useRouter();
+  
+  // ユーザー認証状態
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [discordUsername, setDiscordUsername] = useState("");
+  const [authCheckComplete, setAuthCheckComplete] = useState(false);
+  
+  // フォーム状態
   const [applicationType, setApplicationType] = useState("");
   const [minecraftTag, setMinecraftTag] = useState("");
   const [age, setAge] = useState("");
@@ -74,7 +88,49 @@ export default function ESSystemPage() {
   });
 
   const captchaRef = useRef<HCaptcha>(null);
-  const router = useRouter();
+
+  // 認証チェック
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      console.log('🔍 ESシステム - 認証チェック開始');
+      console.log('AuthLoading:', authLoading);
+      console.log('User:', user);
+      console.log('Session:', session);
+
+      if (authLoading) {
+        console.log('🔄 認証ローディング中...');
+        return;
+      }
+
+      if (!user || !session) {
+        console.log('❌ ユーザーがログインしていません');
+        setIsAuthenticated(false);
+        setAuthCheckComplete(true);
+        return;
+      }
+
+      console.log('✅ ユーザー認証成功:', user.email);
+      setIsAuthenticated(true);
+      
+      // Discordユーザー名を取得
+      const discordName = user.user_metadata?.full_name || 
+                         user.user_metadata?.name || 
+                         user.user_metadata?.username ||
+                         user.email?.split('@')[0] ||
+                         'Unknown User';
+      console.log('Discord Username:', discordName);
+      setDiscordUsername(discordName);
+      
+      // メールアドレスを自動設定
+      if (user.email) {
+        setEmail(user.email);
+      }
+      
+      setAuthCheckComplete(true);
+    };
+
+    checkAuthentication();
+  }, [authLoading, user, session]);
 
   // ポートフォリオ画像選択処理（クエストと同じ方式）
   const handlePortfolioSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -244,6 +300,7 @@ export default function ESSystemPage() {
         prefecture,
         device,
         motivation,
+        discordUsername, // Discordユーザー名を追加
         portfolioData: portfolioPreview, // Base64エンコードされた画像データ
         portfolioFileName: portfolio?.name,
         captchaToken
@@ -286,6 +343,108 @@ export default function ESSystemPage() {
     setError("hCaptchaの認証に失敗しました。もう一度お試しください。");
     setCaptchaToken("");
   };
+
+  // 認証チェック中のローディング画面
+  if (!authCheckComplete || authLoading) {
+    return (
+      <Box sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        <Card sx={{ p: 4, textAlign: 'center', maxWidth: 400 }}>
+          <CircularProgress sx={{ mb: 2, color: '#667eea' }} />
+          <Typography variant="h6" color="text.secondary">
+            認証確認中...
+          </Typography>
+        </Card>
+      </Box>
+    );
+  }
+
+  // 未認証ユーザーのログイン促進画面
+  if (!isAuthenticated) {
+    return (
+      <Box sx={{ 
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2
+      }}>
+        <Card sx={{ 
+          p: 4, 
+          textAlign: 'center', 
+          maxWidth: 500,
+          borderRadius: 4,
+          boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)'
+        }}>
+          <Fade in={true} timeout={800}>
+            <Box>
+              <Lock sx={{ 
+                fontSize: 64, 
+                color: '#667eea', 
+                mb: 2,
+                animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%': { transform: 'scale(1)' },
+                  '50%': { transform: 'scale(1.1)' },
+                  '100%': { transform: 'scale(1)' }
+                }
+              }} />
+              <Typography variant="h4" fontWeight="bold" sx={{ 
+                mb: 2,
+                background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                ログインが必要です
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
+                ESシステムを利用するには<br />AOIRO IDでのログインが必要です
+              </Typography>
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                AOIRO IDにログインすることで、申請状況の管理や<br />
+                過去の申請履歴を確認できるようになります。
+              </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<Login />}
+                onClick={() => router.push('/login')}
+                sx={{
+                  py: 2,
+                  px: 4,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.5px',
+                  textTransform: 'none',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                    boxShadow: '0 12px 35px rgba(102, 126, 234, 0.5)',
+                    transform: 'translateY(-3px)',
+                  },
+                  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                }}
+              >
+                AOIRO IDでログイン
+              </Button>
+            </Box>
+          </Fade>
+        </Card>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ 
@@ -440,7 +599,10 @@ export default function ESSystemPage() {
 
                   {/* 詳細情報カード */}
                   <Box sx={{
-                    display: 'inline-block',
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: 600,
+                    mx: 'auto',
                     background: 'rgba(255, 255, 255, 0.8)',
                     borderRadius: 3,
                     p: 3,
@@ -448,28 +610,48 @@ export default function ESSystemPage() {
                     boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
                     border: '1px solid rgba(102, 126, 234, 0.2)'
                   }}>
-                    <Grid container spacing={2} alignItems="center">
+                    <Grid container spacing={3} alignItems="stretch">
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Schedule sx={{ color: '#667eea', mr: 1, fontSize: 20 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            審査期間
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          textAlign: 'center',
+                          p: 2,
+                          borderRadius: 2,
+                          background: 'rgba(102, 126, 234, 0.05)'
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                            <Schedule sx={{ color: '#667eea', mr: 1, fontSize: 24 }} />
+                            <Typography variant="body2" color="text.secondary" fontWeight="500">
+                              審査期間
+                            </Typography>
+                          </Box>
+                          <Typography variant="h6" fontWeight="600" sx={{ color: '#333' }}>
+                            1〜2週間程度
                           </Typography>
                         </Box>
-                        <Typography variant="body1" fontWeight="600">
-                          1〜2週間程度
-                        </Typography>
                       </Grid>
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          <Drafts sx={{ color: '#667eea', mr: 1, fontSize: 20 }} />
-                          <Typography variant="body2" color="text.secondary">
-                            結果通知方法
+                        <Box sx={{ 
+                          display: 'flex', 
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          textAlign: 'center',
+                          p: 2,
+                          borderRadius: 2,
+                          background: 'rgba(102, 126, 234, 0.05)'
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                            <Drafts sx={{ color: '#667eea', mr: 1, fontSize: 24 }} />
+                            <Typography variant="body2" color="text.secondary" fontWeight="500">
+                              結果通知方法
+                            </Typography>
+                          </Box>
+                          <Typography variant="h6" fontWeight="600" sx={{ color: '#333' }}>
+                            メール・Discord
                           </Typography>
                         </Box>
-                        <Typography variant="body1" fontWeight="600">
-                          メール・Discord
-                        </Typography>
                       </Grid>
                     </Grid>
                   </Box>
@@ -617,6 +799,30 @@ export default function ESSystemPage() {
                     </Typography>
                   </Alert>
                 )}
+
+                {/* ログイン状態表示 */}
+                <Card sx={{ 
+                  mb: 3, 
+                  p: 3, 
+                  background: 'rgba(76, 175, 80, 0.1)',
+                  border: '1px solid rgba(76, 175, 80, 0.3)',
+                  borderRadius: 3
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <CheckCircle sx={{ color: '#4CAF50', fontSize: 28 }} />
+                    <Box>
+                      <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 0.5 }}>
+                        AOIRO IDでログイン済み
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>メールアドレス:</strong> {email}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        <strong>Discordユーザー名:</strong> {discordUsername}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Card>
 
                 {/* タイトルセクション */}
                 <Box sx={{ textAlign: 'center', mb: 4 }}>

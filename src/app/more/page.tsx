@@ -17,6 +17,7 @@ import {
   DialogActions,
   TextField,
   Alert,
+  Chip,
 } from "@mui/material";
 import {
   Settings,
@@ -47,6 +48,7 @@ import {
   ShoppingCart,
   Inventory,
   CreditCard,
+  Security,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -2386,6 +2388,155 @@ export default function MorePage() {
                   </Typography>
                 </>
               )}
+            </Box>
+          </Box>
+        </Card>
+
+        {/* ESシステム */}
+        <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ color: '#212529', mt: 4 }}>
+          ESシステム（エントリーシート）
+        </Typography>
+        <Card sx={{ 
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          borderRadius: 4,
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
+          '&:hover': { 
+            transform: 'translateY(-4px)', 
+            boxShadow: '0 12px 40px rgba(102, 126, 234, 0.4)',
+            '& .es-glow': {
+              opacity: 1,
+              transform: 'scale(1.1)'
+            }
+          },
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          mb: 3
+        }} onClick={() => router.push('/es-system')}>
+          {/* 装飾的な背景要素 */}
+          <Box className="es-glow" sx={{
+            position: 'absolute',
+            top: '-50%',
+            right: '-20%',
+            width: '150px',
+            height: '150px',
+            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+            borderRadius: '50%',
+            opacity: 0.7,
+            transform: 'scale(1)',
+            transition: 'all 0.6s ease'
+          }} />
+          
+          <Box sx={{ 
+            position: 'relative', 
+            zIndex: 1, 
+            p: { xs: 3, sm: 4 }, 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'flex-start'
+          }}>
+            {/* アイコンとタイトル */}
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Security sx={{ 
+                fontSize: { xs: 32, sm: 40 }, 
+                mr: 2,
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+              }} />
+              <Typography variant="h5" fontWeight="bold" sx={{
+                background: 'linear-gradient(45deg, #ffffff 30%, #f0f0f0 90%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                fontSize: { xs: '1.2rem', sm: '1.5rem' }
+              }}>
+                ESシステム
+              </Typography>
+            </Box>
+            <Typography variant="body1" sx={{ 
+              mb: { xs: 2, sm: 3 }, 
+              opacity: 0.9, 
+              fontWeight: 500,
+              fontSize: { xs: '0.9rem', sm: '1rem' }
+            }}>
+              運営申請・クリエイティブ申請・入社申請のエントリーシートを提出
+            </Typography>
+            
+            {/* 申請ボタン */}
+            <Button
+              variant="contained"
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push('/es-system');
+              }}
+              sx={{
+                background: 'linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1))',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '25px',
+                px: { xs: 3, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                textTransform: 'none',
+                position: 'relative',
+                overflow: 'hidden',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.2))',
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 8px 25px rgba(255,255,255,0.3)'
+                },
+                '&:before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                  transition: 'left 0.5s'
+                },
+                '&:hover:before': {
+                  left: '100%'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              startIcon={<Send sx={{ fontSize: { xs: 16, sm: 18 } }} />}
+            >
+              申請を開始
+            </Button>
+            
+            {/* 申請種類の説明 */}
+            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+              <Chip 
+                label="運営申請" 
+                size="small" 
+                sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  fontSize: '0.75rem'
+                }} 
+              />
+              <Chip 
+                label="クリエイティブ申請" 
+                size="small" 
+                sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  fontSize: '0.75rem'
+                }} 
+              />
+              <Chip 
+                label="入社申請" 
+                size="small" 
+                sx={{ 
+                  backgroundColor: 'rgba(255,255,255,0.2)', 
+                  color: 'white',
+                  fontSize: '0.75rem'
+                }} 
+              />
             </Box>
           </Box>
         </Card>
