@@ -110,21 +110,28 @@ export default function ESSystemPage() {
       }
 
       console.log('✅ ユーザー認証成功:', user.email);
+      console.log('ユーザーメタデータ:', user.user_metadata);
+      console.log('アプリメタデータ:', user.app_metadata);
       setIsAuthenticated(true);
       
-      // Discordユーザー名を取得
+      // Discordユーザー名を取得（より詳細なフォールバック）
       const discordName = user.user_metadata?.full_name || 
                          user.user_metadata?.name || 
                          user.user_metadata?.username ||
+                         user.user_metadata?.preferred_username ||
+                         user.identities?.[0]?.identity_data?.full_name ||
+                         user.identities?.[0]?.identity_data?.name ||
+                         user.identities?.[0]?.identity_data?.username ||
                          user.email?.split('@')[0] ||
-                         'Unknown User';
+                         'ユーザー名不明';
       console.log('Discord Username:', discordName);
+      console.log('All user identities:', user.identities);
       setDiscordUsername(discordName);
       
       // メールアドレスを自動設定
-      if (user.email) {
-        setEmail(user.email);
-      }
+      const userEmail = user.email || '不明';
+      console.log('User Email:', userEmail);
+      setEmail(userEmail);
       
       setAuthCheckComplete(true);
     };
@@ -373,13 +380,13 @@ export default function ESSystemPage() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2
+        p: { xs: 1, sm: 2 } // スマホでパディングを削減
       }}>
         <Card sx={{ 
-          p: 4, 
+          p: { xs: 2, sm: 4 }, // スマホでパディングを削減
           textAlign: 'center', 
-          maxWidth: 500,
-          borderRadius: 4,
+          maxWidth: { xs: '95%', sm: 500 }, // スマホで幅を調整
+          borderRadius: { xs: 2, sm: 4 },
           boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
           background: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(10px)',
@@ -398,21 +405,44 @@ export default function ESSystemPage() {
                   '100%': { transform: 'scale(1)' }
                 }
               }} />
-              <Typography variant="h4" fontWeight="bold" sx={{ 
-                mb: 2,
-                background: 'linear-gradient(135deg, #667eea, #764ba2)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
-              }}>
+              <Typography 
+                variant="h4" 
+                fontWeight="bold" 
+                sx={{ 
+                  mb: 2,
+                  fontSize: { xs: '1.5rem', sm: '2.125rem' }, // スマホで文字サイズ調整
+                  background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}
+              >
                 ログインが必要です
               </Typography>
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-                ESシステムを利用するには<br />AOIRO IDでのログインが必要です
+              <Typography 
+                variant="h6" 
+                color="text.secondary" 
+                sx={{ 
+                  mb: 3,
+                  fontSize: { xs: '1rem', sm: '1.25rem' }, // スマホで文字サイズ調整
+                  lineHeight: 1.4
+                }}
+              >
+                ESシステムを利用するには
+                <br />AOIRO IDでのログインが必要です
               </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-                AOIRO IDにログインすることで、申請状況の管理や<br />
-                過去の申請履歴を確認できるようになります。
+              <Typography 
+                variant="body1" 
+                color="text.secondary" 
+                sx={{ 
+                  mb: 4,
+                  fontSize: { xs: '0.875rem', sm: '1rem' }, // スマホで文字サイズ調整
+                  lineHeight: 1.5,
+                  display: { xs: 'none', sm: 'block' } // スマホでは説明文を非表示
+                }}
+              >
+                AOIRO IDにログインすることで、申請状況の管理や
+                <br />過去の申請履歴を確認できるようになります。
               </Typography>
               <Button
                 variant="contained"
@@ -420,12 +450,12 @@ export default function ESSystemPage() {
                 startIcon={<Login />}
                 onClick={() => router.push('/login')}
                 sx={{
-                  py: 2,
-                  px: 4,
+                  py: { xs: 1.5, sm: 2 }, // スマホでボタンの高さ調整
+                  px: { xs: 3, sm: 4 }, // スマホでボタンの幅調整
                   borderRadius: 3,
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-                  fontSize: '1.1rem',
+                  fontSize: { xs: '1rem', sm: '1.1rem' }, // スマホで文字サイズ調整
                   fontWeight: 600,
                   letterSpacing: '0.5px',
                   textTransform: 'none',
@@ -475,30 +505,72 @@ export default function ESSystemPage() {
         zIndex: 0
       }} />
 
-      <Box sx={{ position: 'relative', zIndex: 1, p: 3 }}>
+      <Box sx={{ 
+        position: 'relative', 
+        zIndex: 1, 
+        p: { xs: 1, sm: 3 }, // スマホでパディングを削減
+        maxWidth: '100%',
+        overflow: 'hidden'
+      }}>
         {/* ヘッダー */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          mb: { xs: 2, sm: 4 }, // スマホでマージン調整
+          px: { xs: 1, sm: 0 }, // スマホで左右のパディング追加
+          flexWrap: 'nowrap', // 改行を防止
+          minWidth: 0, // flexboxの縮小を許可
+          width: '100%', // 全幅を確保
+          overflow: 'hidden' // はみ出しを防止
+        }}>
           <IconButton 
             onClick={() => router.back()}
-            sx={{ color: 'white', mr: 2 }}
+            sx={{ 
+              color: 'white', 
+              mr: { xs: 1, sm: 2 }, // スマホでマージン調整
+              p: { xs: 1, sm: 1 }, // スマホでパディング調整
+              flexShrink: 0 // ボタンの縮小を防止
+            }}
           >
             <ArrowBack />
           </IconButton>
-          <Security sx={{ color: 'white', fontSize: 32, mr: 2 }} />
-          <Typography variant="h4" fontWeight="bold" sx={{ color: 'white', wordBreak: 'break-word', whiteSpace: 'normal', margin: 0 }}>
-            ESシステム（エントリーシート）
+          <Security sx={{ 
+            color: 'white', 
+            fontSize: { xs: 24, sm: 32 }, // スマホでアイコンサイズ調整
+            mr: { xs: 1, sm: 2 },
+            flexShrink: 0 // アイコンの縮小を防止
+          }} />
+          <Typography 
+            variant="h4" 
+            fontWeight="bold" 
+            sx={{ 
+              color: 'white', 
+              fontSize: { xs: '1.25rem', sm: '2.125rem' }, // スマホで文字サイズ調整
+              wordBreak: 'break-word', 
+              whiteSpace: 'nowrap', // 改行を防止
+              margin: 0,
+              lineHeight: 1.2,
+              flexShrink: 0, // テキストの縮小を防止
+              minWidth: 0 // 最小幅を0に設定
+            }}
+          >
+            ESシステム
           </Typography>
         </Box>
 
         {/* メインコンテンツ */}
         <Card sx={{ 
-          borderRadius: 4, 
+          borderRadius: { xs: 2, sm: 4 }, // スマホでボーダー半径調整
           boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
           background: 'rgba(255,255,255,0.95)',
           backdropFilter: 'blur(10px)',
-          mb: 3
+          mb: { xs: 2, sm: 3 }, // スマホでマージン調整
+          mx: { xs: 0.5, sm: 0 } // スマホで左右マージン追加
         }}>
-          <CardContent sx={{ p: 4 }}>
+          <CardContent sx={{ 
+            p: { xs: 2, sm: 4 }, // スマホでパディング削減
+            '&:last-child': { pb: { xs: 2, sm: 4 } } // 最後の子要素のパディング調整
+          }}>
             {sent ? (
               <Box sx={{ 
                 textAlign: 'center', 
@@ -791,92 +863,197 @@ export default function ESSystemPage() {
                   </Grid>
                 </Box>
 
-                {/* 開発環境アラート */}
-                {process.env.NODE_ENV === 'development' && (
-                  <Alert severity="info" sx={{ borderRadius: 2, mb: 3 }}>
-                    <Typography sx={{ fontSize: '14px' }}>
-                      <strong>開発環境</strong>: ファイルアップロードとGoogle Sheets保存は簡易モードで動作します。データはコンソールログで確認できます。
-                    </Typography>
-                  </Alert>
-                )}
+
 
                 {/* ログイン状態表示 */}
+                {isAuthenticated && (
                 <Card sx={{ 
-                  mb: 3, 
-                  p: 3, 
+                  mb: { xs: 2, sm: 3 }, // スマホでマージン調整
+                  p: { xs: 2, sm: 3 }, // スマホでパディング削減
                   background: 'rgba(76, 175, 80, 0.1)',
                   border: '1px solid rgba(76, 175, 80, 0.3)',
-                  borderRadius: 3
+                  borderRadius: { xs: 2, sm: 3 } // スマホでボーダー半径調整
                 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CheckCircle sx={{ color: '#4CAF50', fontSize: 28 }} />
-                    <Box>
-                      <Typography variant="h6" sx={{ color: '#2e7d32', fontWeight: 'bold', mb: 0.5 }}>
+                  <Box sx={{ 
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' }, // スマホで縦並び、PC版で横並び
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 1.5, sm: 2 }
+                  }}>
+                    {/* タイトル部分 */}
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      width: { xs: '100%', sm: 'auto' }, // スマホで全幅、PC版で自動幅
+                      mb: { xs: 0.5, sm: 0 }
+                    }}>
+                      <CheckCircle sx={{ 
+                        color: '#4CAF50', 
+                        fontSize: { xs: 24, sm: 28 }
+                      }} />
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          color: '#2e7d32', 
+                          fontWeight: 'bold',
+                          fontSize: { xs: '1rem', sm: '1.25rem' }
+                        }}
+                      >
                         AOIRO IDでログイン済み
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>メールアドレス:</strong> {email}
+                    </Box>
+                    
+                    {/* 詳細情報部分 */}
+                    <Box sx={{ 
+                      display: 'flex',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: { xs: 0.5, sm: 3 },
+                      width: { xs: '100%', sm: 'auto' }, // スマホで全幅、PC版で自動幅
+                      pl: { xs: 4, sm: 0 } // スマホでインデント、PC版でなし
+                    }}>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ 
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          wordBreak: { xs: 'break-all', sm: 'normal' }
+                        }}
+                      >
+                        <strong>メール:</strong> {email || 'メールアドレスが取得できませんでした'}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>Discordユーザー名:</strong> {discordUsername}
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ 
+                          fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                          wordBreak: 'break-word'
+                        }}
+                      >
+                        <strong>Discord:</strong> {discordUsername || 'Discordユーザー名が取得できませんでした'}
                       </Typography>
                     </Box>
                   </Box>
                 </Card>
+                )}
 
                 {/* タイトルセクション */}
-                <Box sx={{ textAlign: 'center', mb: 4 }}>
-                  <Typography variant="h5" fontWeight="bold" mb={2} sx={{ color: '#333' }}>
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  mb: { xs: 2, sm: 4 } // スマホでマージン調整
+                }}>
+                  <Typography 
+                    variant="h5" 
+                    fontWeight="bold" 
+                    mb={2} 
+                    sx={{ 
+                      color: '#333',
+                      fontSize: { xs: '1.25rem', sm: '1.5rem' } // スマホで文字サイズ調整
+                    }}
+                  >
                     ESシステム特設ページ
                   </Typography>
                   <Box sx={{ 
-                    p: 3, 
-                    mb: 3, 
+                    p: { xs: 2, sm: 3 }, // スマホでパディング削減
+                    mb: { xs: 2, sm: 3 }, // スマホでマージン調整
                     background: 'rgba(103, 126, 234, 0.1)', 
                     border: '1px solid rgba(103, 126, 234, 0.3)',
-                    borderRadius: 3 
+                    borderRadius: { xs: 2, sm: 3 } // スマホでボーダー半径調整
                   }}>
-                    <Typography sx={{ color: '#333', mb: 2, fontSize: '16px', lineHeight: 1.7, fontWeight: 500 }}>
+                    <Typography sx={{ 
+                      color: '#333', 
+                      mb: 2, 
+                      fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                      lineHeight: 1.6, 
+                      fontWeight: 500 
+                    }}>
                       エントリーシート（ES）とは、個人情報の開示を行なってもらい、審査をして採用するかどうかを判断するシステムです。
                     </Typography>
-                    <Typography sx={{ color: '#333', mb: 2, fontSize: '16px', lineHeight: 1.7, fontWeight: 500 }}>
+                    <Typography sx={{ 
+                      color: '#333', 
+                      mb: 2, 
+                      fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                      lineHeight: 1.6, 
+                      fontWeight: 500 
+                    }}>
                       BC(バックグラウンドチェック)は当鯖の運営が行うものとする。
                     </Typography>
-                    <Typography sx={{ color: '#333', mb: 2, fontSize: '16px', lineHeight: 1.7, fontWeight: 500 }}>
+                    <Typography sx={{ 
+                      color: '#333', 
+                      mb: 2, 
+                      fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                      lineHeight: 1.6, 
+                      fontWeight: 500 
+                    }}>
                       ここで収集された情報は当サーバー内で不正行為があった時の証明として利用されます。
                     </Typography>
-                    <Typography sx={{ color: '#333', mb: 2, fontSize: '16px', lineHeight: 1.7, fontWeight: 500 }}>
+                    <Typography sx={{ 
+                      color: '#333', 
+                      mb: 2, 
+                      fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                      lineHeight: 1.6, 
+                      fontWeight: 500 
+                    }}>
                       審査はES→BCの順で行われます。
                     </Typography>
-                    <Typography sx={{ color: '#333', fontSize: '16px', lineHeight: 1.7, fontWeight: 500 }}>
+                    <Typography sx={{ 
+                      color: '#333', 
+                      fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                      lineHeight: 1.6, 
+                      fontWeight: 500 
+                    }}>
                       また収集した情報は第3者へ共有されません。
                     </Typography>
                   </Box>
-                  <Box sx={{ mb: 3, p: 2, background: 'rgba(103, 126, 234, 0.1)', borderRadius: 2, border: '1px solid rgba(103, 126, 234, 0.3)' }}>
-                    <Typography sx={{ color: '#333', fontSize: '15px', fontWeight: 'bold', mb: 1 }}>
+                  <Box sx={{ 
+                    mb: { xs: 2, sm: 3 }, // スマホでマージン調整
+                    p: { xs: 1.5, sm: 2 }, // スマホでパディング削減
+                    background: 'rgba(103, 126, 234, 0.1)', 
+                    borderRadius: { xs: 1.5, sm: 2 }, // スマホでボーダー半径調整
+                    border: '1px solid rgba(103, 126, 234, 0.3)' 
+                  }}>
+                    <Typography sx={{ 
+                      color: '#333', 
+                      fontSize: { xs: '14px', sm: '15px' }, // スマホで文字サイズ調整
+                      fontWeight: 'bold', 
+                      mb: 1 
+                    }}>
                       Q このシステムはどこで使われるのですか？
                     </Typography>
-                    <Typography sx={{ color: '#666', fontSize: '15px' }}>
+                    <Typography sx={{ 
+                      color: '#666', 
+                      fontSize: { xs: '13px', sm: '15px' }, // スマホで文字サイズ調整
+                      lineHeight: 1.5
+                    }}>
                       A 運営または社員の募集でESシステムが使用されます。
                     </Typography>
                   </Box>
 
                   <Alert 
                     severity="warning" 
-                    icon={<Warning sx={{ fontSize: '24px' }} />}
+                    icon={<Warning sx={{ fontSize: { xs: '20px', sm: '24px' } }} />}
                     sx={{ 
-                      borderRadius: 2, 
-                      mb: 3,
+                      borderRadius: { xs: 1.5, sm: 2 }, // スマホでボーダー半径調整
+                      mb: { xs: 2, sm: 3 }, // スマホでマージン調整
                       '& .MuiAlert-message': {
                         width: '100%'
                       }
                     }}
                   >
                     <Box>
-                      <Typography fontWeight="bold" sx={{ fontSize: '16px', mb: 1 }}>
+                      <Typography 
+                        fontWeight="bold" 
+                        sx={{ 
+                          fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                          mb: 1 
+                        }}
+                      >
                         ⚠️ 警告
                       </Typography>
-                      <Typography sx={{ fontSize: '15px', lineHeight: 1.5 }}>
+                      <Typography sx={{ 
+                        fontSize: { xs: '13px', sm: '15px' }, // スマホで文字サイズ調整
+                        lineHeight: 1.5 
+                      }}>
                         虚偽情報を入力した場合BANさせる可能性があります。
                       </Typography>
                     </Box>
@@ -895,13 +1072,24 @@ export default function ESSystemPage() {
                   disableHoverListener
                   disableTouchListener
                 >
-                  <FormControl fullWidth sx={{ mb: 3 }}>
-                    <InputLabel id="application-type-label">申請種類 *</InputLabel>
+                  <FormControl fullWidth sx={{ mb: { xs: 2, sm: 3 } }}>
+                    <InputLabel 
+                      id="application-type-label" 
+                      sx={{ fontSize: { xs: '14px', sm: '16px' } }}
+                    >
+                      申請種類 *
+                    </InputLabel>
                     <Select
                       labelId="application-type-label"
                       id="application-type-select"
                       value={applicationType}
                       label="申請種類 *"
+                      sx={{
+                        fontSize: { xs: '14px', sm: '16px' },
+                        '& .MuiSelect-select': {
+                          py: { xs: 1.5, sm: 2 }
+                        }
+                      }}
                       onChange={(e) => {
                         const newValue = e.target.value as string;
                         console.log('申請種類選択:', newValue);
@@ -973,9 +1161,23 @@ export default function ESSystemPage() {
                     required
                     error={fieldErrors.minecraftTag}
                     InputProps={{
-                      startAdornment: <Person sx={{ mr: 1, color: '#666' }} />
+                      startAdornment: <Person sx={{ 
+                        mr: 1, 
+                        color: '#666',
+                        fontSize: { xs: '20px', sm: '24px' }
+                      }} />
                     }}
-                    sx={{ mb: 3, borderRadius: 2 }}
+                    sx={{ 
+                      mb: { xs: 2, sm: 3 }, 
+                      borderRadius: 2,
+                      '& .MuiInputLabel-root': {
+                        fontSize: { xs: '14px', sm: '16px' }
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: { xs: '14px', sm: '16px' },
+                        py: { xs: 1.5, sm: 2 }
+                      }
+                    }}
                   />
                 </Tooltip>
 
@@ -1437,16 +1639,31 @@ export default function ESSystemPage() {
                 </Box>
 
                 {/* 送信ボタン */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: { xs: 1.5, sm: 2 }, // スマホでギャップ調整
+                  flexDirection: { xs: 'column', sm: 'row' }, // スマホで縦並び
+                  mt: { xs: 2, sm: 3 }
+                }}>
                   <Button
                     variant="outlined"
                     onClick={() => router.back()}
                     sx={{ 
-                      minWidth: 120,
+                      minWidth: { xs: '100%', sm: 120 }, // スマホで全幅
+                      py: { xs: 1.5, sm: 2 }, // スマホでパディング調整
+                      px: { xs: 3, sm: 4 }, // スマホでパディング調整
                       borderRadius: 2,
+                      fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                      fontWeight: 600,
                       borderColor: '#667eea',
                       color: '#667eea',
-                      '&:hover': { borderColor: '#5a6fd8', backgroundColor: 'rgba(103, 126, 234, 0.1)' }
+                      '&:hover': { 
+                        borderColor: '#5a6fd8', 
+                        backgroundColor: 'rgba(103, 126, 234, 0.1)',
+                        transform: 'translateY(-1px)'
+                      },
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     キャンセル
@@ -1455,13 +1672,21 @@ export default function ESSystemPage() {
                     variant="contained"
                     onClick={handleSubmit}
                     disabled={loading || !agreement || !captchaToken}
-                    startIcon={loading ? null : <Send />}
+                    startIcon={loading ? null : <Send sx={{ fontSize: { xs: '18px', sm: '20px' } }} />}
                     sx={{ 
-                      minWidth: 120,
+                      minWidth: { xs: '100%', sm: 120 }, // スマホで全幅
+                      py: { xs: 1.5, sm: 2 }, // スマホでパディング調整
+                      px: { xs: 3, sm: 4 }, // スマホでパディング調整
                       borderRadius: 2,
+                      fontSize: { xs: '14px', sm: '16px' }, // スマホで文字サイズ調整
+                      fontWeight: 600,
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      '&:hover': { background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)' },
-                      '&:disabled': { background: '#ccc' }
+                      '&:hover': { 
+                        background: 'linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)',
+                        transform: 'translateY(-1px)'
+                      },
+                      '&:disabled': { background: '#ccc' },
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     {loading ? '送信中...' : '提出'}
