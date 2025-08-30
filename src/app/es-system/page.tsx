@@ -194,8 +194,8 @@ export default function ESSystemPage() {
       age: applicationType === "運営申請" ? !age : false,
       email: (applicationType === "運営申請" || applicationType === "クリエイティブ申請") ? !email : false,
       prefecture: applicationType === "運営申請" ? !prefecture : false,
-      device: (applicationType === "運営申請" || applicationType === "クリエイティブ申請" || applicationType === "会社申請") ? !device : false,
-      motivation: (applicationType === "運営申請" || applicationType === "会社申請") ? !motivation : false,
+              device: (applicationType === "運営申請" || applicationType === "クリエイティブ申請" || applicationType === "入社申請") ? !device : false,
+        motivation: (applicationType === "運営申請" || applicationType === "入社申請") ? !motivation : false,
       portfolio: applicationType === "クリエイティブ申請" ? !portfolio : false,
       agreement: !agreement
     };
@@ -236,10 +236,10 @@ export default function ESSystemPage() {
         isValid = applicationType === "運営申請" ? !!value : true;
         break;
       case 'device':
-        isValid = (applicationType === "運営申請" || applicationType === "クリエイティブ申請" || applicationType === "会社申請") ? !!value : true;
+        isValid = (applicationType === "運営申請" || applicationType === "クリエイティブ申請" || applicationType === "入社申請") ? !!value : true;
         break;
       case 'motivation':
-        isValid = (applicationType === "運営申請" || applicationType === "会社申請") ? !!value : true;
+        isValid = (applicationType === "運営申請" || applicationType === "入社申請") ? !!value : true;
         break;
       case 'portfolio':
         isValid = applicationType === "クリエイティブ申請" ? !!value : true;
@@ -266,7 +266,7 @@ export default function ESSystemPage() {
       case 'prefecture':
         return '⚠️ お住まいの都道府県を選択してください';
       case 'device':
-        if (applicationType === "会社申請") {
+        if (applicationType === "入社申請") {
           return '⚠️ 入社したい会社名を入力してください';
         }
         return '⚠️ 使用端末を入力してください';
@@ -1087,8 +1087,10 @@ export default function ESSystemPage() {
                       sx={{
                         fontSize: { xs: '14px', sm: '16px' },
                         '& .MuiSelect-select': {
-                          py: { xs: 1.5, sm: 2 }
-                        }
+                          py: { xs: 1.5, sm: 2 },
+                          paddingLeft: 2
+                        },
+                        borderRadius: 2
                       }}
                       onChange={(e) => {
                         const newValue = e.target.value as string;
@@ -1120,19 +1122,13 @@ export default function ESSystemPage() {
                       onBlur={() => validateField('applicationType', applicationType)}
                       required
                       error={fieldErrors.applicationType}
-                      sx={{ 
-                        borderRadius: 2,
-                        '& .MuiSelect-select': {
-                          paddingLeft: 2
-                        }
-                      }}
                     >
                       <MenuItem value="">
                         <em>選択してください</em>
                       </MenuItem>
                       <MenuItem value="運営申請">運営申請</MenuItem>
                       <MenuItem value="クリエイティブ申請">クリエイティブ申請</MenuItem>
-                      <MenuItem value="会社申請">入社申請</MenuItem>
+                      <MenuItem value="入社申請">入社申請</MenuItem>
                     </Select>
                   </FormControl>
                 </Tooltip>
@@ -1329,7 +1325,7 @@ export default function ESSystemPage() {
                     )}
 
                     {/* 会社名（入社申請のみ） */}
-                    {applicationType === "会社申請" && (
+                    {applicationType === "入社申請" && (
                       <Tooltip
                         title={getErrorMessage('device')}
                         open={fieldErrors.device}
@@ -1362,7 +1358,7 @@ export default function ESSystemPage() {
                     )}
 
                     {/* 意志表明（運営申請・会社申請） */}
-                    {(applicationType === "運営申請" || applicationType === "会社申請") && (
+                    {(applicationType === "運営申請" || applicationType === "入社申請") && (
                       <Tooltip
                         title={getErrorMessage('motivation')}
                         open={fieldErrors.motivation}

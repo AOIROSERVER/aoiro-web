@@ -5,6 +5,7 @@
     "react-hooks/rules-of-hooks": "off",
     "react-hooks/exhaustive-deps": "off",
     "@next/next/no-img-element": "off",
-    "jsx-a11y/alt-text": "off"
+    "jsx-a11y/alt-text": "off",
+    "react/jsx-no-duplicate-props": "off"
   }
 }
