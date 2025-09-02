@@ -305,6 +305,22 @@ function normalizeStationName(name: string): string {
     .replace(/[Ａ-Ｚａ-ｚ０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)); // 全角→半角
 }
 
+// 古い形式のメッセージからタグを生成する関数
+function generateTagFromLineAndDirection(line: string, direction: string): string {
+  // 山手線の場合
+  if (line.includes('山手線')) {
+    if (direction.includes('内回り')) return 'JYI1';
+    if (direction.includes('外回り')) return 'JYO1';
+  }
+  // 京浜東北線の場合
+  if (line.includes('京浜東北線')) {
+    if (direction.includes('上り')) return 'JKU1';
+    if (direction.includes('下り')) return 'JKD1';
+  }
+  // その他の路線はデフォルトタグ
+  return 'UNKNOWN1';
+}
+
 // 均等な高さの定数
 const ROW_HEIGHT = 72;
 
@@ -319,6 +335,7 @@ export default function TrainPositionPage() {
   const [trainState, setTrainState] = useState<'stopped'|'between'>('stopped');
   const [betweenStations, setBetweenStations] = useState<[string, string]|null>(null);
   const [currentDirection, setCurrentDirection] = useState<string>('上り'); // 現在の電車の方向
+  const [trainPositions, setTrainPositions] = useState<any[]>([]); // 電車位置情報を保存
   const lastStationRef = useRef<string|null>(null);
   const timerRef = useRef<any>(null);
   const [moveAnim, setMoveAnim] = useState(false);
@@ -364,21 +381,52 @@ export default function TrainPositionPage() {
     if (!lineName || !lineCode || !direction) return;
     // fetch-discord-messages.jsから列車位置情報を取得
     const fetchTrainPositions = () => {
+      // 前のシステム：Discord APIから直接メッセージを取得
       fetch('/.netlify/functions/fetch-discord-messages')
         .then(res => res.json())
         .then(data => {
           console.log('🚂 APIデータ受信:', data);
           console.log('🚂 trainMessages:', data.trainMessages);
           console.log('🚂 trainMessages数:', data.trainMessages?.length || 0);
-          const filtered = data.trainMessages.filter((msg: any) => {
+          
+          // デバッグ用：trainMessagesの詳細を表示
+          if (data.trainMessages && data.trainMessages.length > 0) {
+            console.log('🚂 最初のmessage:', data.trainMessages[0]);
+            console.log('🚂 content:', data.trainMessages[0].content);
+          }
+          
+          // trainMessagesをpositions形式に変換
+          const positions = data.trainMessages.map((msg: any) => {
             const parts = msg.content.split('/');
-            const msgLine = normalizeStationName(parts[0] || '');
+            const isNewFormat = parts.length === 4; // タグ/〇〇線/〇〇方面/〇〇到着
+            const isOldFormat = parts.length === 3; // 〇〇線/〇〇方面/〇〇到着
+            
+            let tag, line, direction, station;
+            if (isNewFormat) {
+              [tag, line, direction, station] = parts;
+            } else {
+              [line, direction, station] = parts;
+              // 古い形式の場合はタグを生成
+              tag = generateTagFromLineAndDirection(line.trim(), direction.trim());
+            }
+            
+            return {
+              tag: tag.trim(),
+              line: line.trim(),
+              direction: direction.trim(),
+              station: station.replace('到着', '').trim(),
+              timestamp: msg.timestamp
+            };
+          });
+          
+          const filtered = positions.filter((position: any) => {
+            const msgLine = normalizeStationName(position.line || '');
             const viewLine = normalizeStationName(lineName);
-            const msgDir = normalizeStationName(parts[1] || '');
+            const msgDir = normalizeStationName(position.direction || '');
             const viewDir = normalizeStationName(direction);
             
             console.log('フィルタリング詳細:', {
-              message: msg.content,
+              position: position,
               msgLine,
               viewLine,
               msgDir,
@@ -392,18 +440,65 @@ export default function TrainPositionPage() {
               return msgLine.includes(viewLine) || viewLine.includes(msgLine);
             }
             
+            // 山手線の場合は路線名と方向の両方をチェック
+            if (lineName.includes('山手線')) {
+              const lineMatch = msgLine.includes('山手線') || viewLine.includes('山手線');
+              const dirMatch = msgDir.includes(viewDir) || viewDir.includes(msgDir);
+              console.log('山手線フィルタリング:', { lineMatch, dirMatch, result: lineMatch && dirMatch });
+              return lineMatch && dirMatch;
+            }
+            
             return (
               (msgLine.includes(viewLine) || viewLine.includes(msgLine)) &&
               (msgDir.includes(viewDir) || viewDir.includes(msgDir))
             );
           });
           console.log('filtered:', filtered);
-          if (filtered.length > 0) {
-            const latest = filtered[0];
-            const parts = latest.content.split('/');
-            const station = normalizeStationName(parts[2].replace('到着', '').replace(/駅$/, '').trim());
-            const messageDirection = parts[1] || '';
-            console.log('API駅名:', station);
+          
+          // 重複するタグを最新のもののみにフィルタリング
+          const uniqueTrainPositions = filtered.reduce((acc: any[], current: any) => {
+            const existingIndex = acc.findIndex(item => item.tag === current.tag);
+            if (existingIndex === -1) {
+              // 新しいタグの場合は追加
+              console.log(`🚂 新しいタグ追加: ${current.tag} at ${current.station}`);
+              acc.push(current);
+            } else {
+              // 既存のタグの場合は、タイムスタンプが新しい方を残す
+              const existing = acc[existingIndex];
+              const currentTime = new Date(current.timestamp);
+              const existingTime = new Date(existing.timestamp);
+              if (currentTime > existingTime) {
+                console.log(`🚂 タグ更新: ${current.tag} from ${existing.station} to ${current.station} (${existingTime.toISOString()} → ${currentTime.toISOString()})`);
+                acc[existingIndex] = current;
+              } else {
+                console.log(`🚂 タグ保持: ${current.tag} at ${existing.station} (${existingTime.toISOString()} > ${currentTime.toISOString()})`);
+              }
+            }
+            return acc;
+          }, []);
+          
+          console.log('重複除去後の電車位置:', uniqueTrainPositions);
+          
+          // 電車位置情報を状態に保存
+          setTrainPositions(uniqueTrainPositions);
+          
+          // 複数の電車を同時に処理
+          if (uniqueTrainPositions.length > 0) {
+            // 各電車の位置情報を保存
+            const trainPositionsData = uniqueTrainPositions.map((position: any) => ({
+              tag: position.tag,
+              station: normalizeStationName(position.station || ''),
+              direction: position.direction || '',
+              timestamp: position.timestamp
+            }));
+            
+            console.log('複数電車位置情報:', trainPositionsData);
+            
+            // 最新の電車の方向を基準にcurrentDirectionを更新
+            const latest = uniqueTrainPositions[0];
+            const station = normalizeStationName(latest.station || ''); // station変数を復活
+            const messageDirection = latest.direction || '';
+            console.log('API駅名:', trainPositionsData.map((tp: any) => tp.station));
             console.log('メッセージ方向:', messageDirection);
             console.log('現在のcurrentDirection:', currentDirection);
             console.log('路線名:', lineName);
@@ -439,6 +534,17 @@ export default function TrainPositionPage() {
               } else {
                 console.log('京浜東北線: 方向情報が見つからないため、現在の方向を維持:', currentDirection);
               }
+            } else if (lineName.includes('山手線')) {
+              // 山手線の場合の方向判定
+              if (messageDirection.includes('内回り')) {
+                newDirection = '内回り';
+                console.log('山手線内回り方向を検出、currentDirectionを内回りに設定');
+              } else if (messageDirection.includes('外回り')) {
+                newDirection = '外回り';
+                console.log('山手線外回り方向を検出、currentDirectionを外回りに設定');
+              } else {
+                console.log('山手線方向情報が見つからないため、現在の方向を維持:', currentDirection);
+              }
             } else {
               // 他の路線の場合
               if (messageDirection.includes('下り')) {
@@ -466,8 +572,10 @@ export default function TrainPositionPage() {
             }
             
             setCurrentDirection(newDirection);
-            setCurrentStations([station]);
-            console.log('currentStations set:', [station]);
+            
+            // 複数の電車の位置を保存
+            setCurrentStations(trainPositionsData.map((tp: any) => tp.station));
+            console.log('複数電車位置 set:', trainPositionsData.map((tp: any) => tp.station));
             console.log('currentDirection set:', newDirection);
             console.log('電車マーク位置:', newDirection === '下り' ? '右側（下り方向）' : '左側（上り方向）');
             // 駅が変わったら状態遷移
@@ -529,6 +637,79 @@ export default function TrainPositionPage() {
     setModalOpen(true);
   };
 
+  // 駅名から列車番号を取得する関数
+  const getTrainTagFromStation = (stationName: string) => {
+    console.log('🔍 列車番号取得:', {
+      stationName,
+      trainPositions: trainPositions,
+      trainPositionsLength: trainPositions.length
+    });
+    
+    // 現在の電車位置情報から該当する駅のタグを取得
+    const trainPosition = trainPositions.find((pos: any) => {
+      const normalizedPosStation = normalizeStationName(pos.station);
+      const normalizedStationName = normalizeStationName(stationName);
+      const match = normalizedPosStation === normalizedStationName;
+      console.log('🔍 駅名比較:', {
+        posStation: pos.station,
+        normalizedPosStation,
+        stationName,
+        normalizedStationName,
+        match
+      });
+      return match;
+    });
+    
+    console.log('🔍 見つかった電車位置:', trainPosition);
+    const result = trainPosition?.tag || 'UNKNOWN';
+    console.log('🔍 最終結果:', result);
+    return result;
+  };
+
+  // 駅名から到着時間を取得する関数
+  const getArrivalTimeFromStation = (stationName: string) => {
+    console.log('🕐 到着時間取得:', {
+      stationName,
+      trainPositions: trainPositions
+    });
+    
+    const trainPosition = trainPositions.find((pos: any) => {
+      const normalizedPosStation = normalizeStationName(pos.station);
+      const normalizedStationName = normalizeStationName(stationName);
+      const match = normalizedPosStation === normalizedStationName;
+      console.log('🕐 駅名比較:', {
+        posStation: pos.station,
+        normalizedPosStation,
+        stationName,
+        normalizedStationName,
+        match,
+        timestamp: pos.timestamp
+      });
+      return match;
+    });
+    
+    if (trainPosition?.timestamp) {
+      // Discordのタイムスタンプを日本時間に変換
+      const arrivalTime = new Date(trainPosition.timestamp);
+      const japanTime = new Date(arrivalTime.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+      const formattedTime = japanTime.toLocaleTimeString('ja-JP', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      console.log('🕐 到着時間変換:', {
+        originalTimestamp: trainPosition.timestamp,
+        arrivalTime: arrivalTime,
+        japanTime: japanTime,
+        formattedTime: formattedTime
+      });
+      return formattedTime;
+    }
+    
+    console.log('🕐 到着時間が見つからない');
+    return null;
+  };
+
   // モーダルの内容を作成
   const renderModal = () => {
     if (!modalStation) return null;
@@ -538,10 +719,20 @@ export default function TrainPositionPage() {
     const progress = ((stationIndex + 1) / totalStations) * 100;
     // 路線名から画像URLを取得
     const trainImageUrl = TRAIN_IMAGE_URLS[lineName] || DEFAULT_TRAIN_IMAGE_URL;
-    // 駅ごとに路線記号の数字部分を連番で表示
+    // 列車番号を取得
+    const trainTag = getTrainTagFromStation(modalStation);
+    // 到着時間を取得
+    const arrivalTime = getArrivalTimeFromStation(modalStation);
+    console.log('🔍 モーダル列車番号:', {
+      modalStation,
+      trainTag,
+      arrivalTime,
+      lineCode
+    });
     const match = lineCode.match(/^([A-Z]+)/i);
     const lineAlpha = match ? match[1] : lineCode;
-    const lineNum = (stationIndex + 1).toString();
+    const lineNum = trainTag; // 列車番号を表示
+    console.log('🔍 最終的なlineNum:', lineNum);
     // 駅名が長い場合はフォントサイズを小さくする
     const isLongName = modalStation.length >= 8;
     return (
@@ -587,7 +778,9 @@ export default function TrainPositionPage() {
               {/* 停車中/発車・駅名・到着時刻 */}
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Box sx={{ bgcolor: '#b71c1c', color: '#fff', borderRadius: 1, px: 1.5, py: 0.5, fontSize: 14, fontWeight: 700, mr: 2 }}>停車中</Box>
-                <Typography sx={{ fontSize: 16 }}>{modalStation} → {modalTime}</Typography>
+                <Typography sx={{ fontSize: 16 }}>
+                  {modalStation} → {arrivalTime || modalTime}
+                </Typography>
               </Box>
               {/* 情報 */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -601,7 +794,7 @@ export default function TrainPositionPage() {
                 </Box>
                 <Box sx={{ textAlign: 'center' }}>
                   <Typography sx={{ fontSize: 13, color: '#aaa' }}>列車番号</Typography>
-                  <Typography sx={{ fontWeight: 700, fontSize: 16 }}>1234F</Typography>
+                  <Typography sx={{ fontWeight: 700, fontSize: 16 }}>{lineNum}</Typography>
                 </Box>
               </Box>
               {/* 進捗バー */}
