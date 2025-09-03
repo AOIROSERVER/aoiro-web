@@ -1,14 +1,14 @@
 -- ESシステム用のテーブルを作成
 CREATE TABLE es_submissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  application_type VARCHAR(50) NOT NULL, -- '運営申請', 'クリエイティブ申請', '会社申請'
+  application_type VARCHAR(50) NOT NULL, -- '運営申請', '入社申請'
   minecraft_tag VARCHAR(100) NOT NULL,
   age VARCHAR(10), -- 運営申請のみ必須
-  email VARCHAR(255), -- 運営申請・クリエイティブ申請で必須
+  email VARCHAR(255), -- 運営申請で必須
   prefecture VARCHAR(20), -- 運営申請のみ必須
-  device VARCHAR(255), -- 運営申請・クリエイティブ申請で必須
-  motivation TEXT, -- 運営申請・会社申請で必須
-  portfolio_url TEXT, -- ファイルアップロード（任意）
+  device VARCHAR(255), -- 運営申請・入社申請で必須
+  motivation TEXT, -- 運営申請・入社申請で必須
+  portfolio_url TEXT, -- 入社申請で必須、運営申請で任意
   status VARCHAR(20) DEFAULT 'pending', -- 'pending', 'under_review', 'approved', 'rejected'
   reviewed_by UUID REFERENCES auth.users(id), -- 審査者
   review_notes TEXT, -- 審査メモ

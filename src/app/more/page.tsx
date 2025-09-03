@@ -394,7 +394,7 @@ export default function MorePage() {
     console.log('📡 Fetching latest news from AOIROSERVER...');
     try {
       const res = await fetch(
-        `https://aoiroserver.tokyo/wp-json/wp/v2/posts?_embed&per_page=3&orderby=date&order=desc&_=${Date.now()}`,
+        `/api/latest-news?_=${Date.now()}`,
         {
           headers: {
             'Cache-Control': 'no-cache',
@@ -411,162 +411,33 @@ export default function MorePage() {
       console.log('AOIROSERVER公式サイトからの最新情報:', data);
       
       if (Array.isArray(data) && data.length > 0) {
-        const items = await Promise.all(data.map(async (post: any) => {
-          let imageUrl = "";
-          
-          // デバッグ用：投稿データの構造を確認
-          console.log('投稿データ:', {
-            id: post.id,
-            title: post.title.rendered,
-            featured_media: post.featured_media,
-            _embedded: post._embedded ? '存在' : 'なし'
-          });
-          
-          // 方法1: _embeddedから画像を取得
-          if (post._embedded && post._embedded["wp:featuredmedia"] && post._embedded["wp:featuredmedia"].length > 0) {
-            const media = post._embedded["wp:featuredmedia"][0];
-            console.log('埋め込みメディアデータ:', media);
-            
-            // 複数のサイズから最適な画像を選択
-            if (media.media_details && media.media_details.sizes) {
-              imageUrl = 
-                media.media_details.sizes.medium_large?.source_url ||
-                media.media_details.sizes.medium?.source_url ||
-                media.media_details.sizes.thumbnail?.source_url ||
-                media.media_details.sizes.full?.source_url ||
-                "";
-            } else {
-              imageUrl = media.source_url || "";
-            }
-            
-            // URLが相対パスの場合は絶対パスに変換
-            if (imageUrl && !imageUrl.startsWith('http')) {
-              imageUrl = `https://aoiroserver.tokyo${imageUrl}`;
-            }
-            
-            console.log('取得した画像URL:', imageUrl);
-          }
-          
-          // 方法2: featured_media IDから直接画像を取得（_embeddedが失敗した場合）
-          if (!imageUrl && post.featured_media) {
-            console.log('featured_media IDから画像を取得:', post.featured_media);
-            try {
-              const mediaRes = await fetch(
-                `https://aoiroserver.tokyo/wp-json/wp/v2/media/${post.featured_media}?_=${Date.now()}`,
-                {
-                  headers: {
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
-                  }
-                }
-              );
-              
-              if (mediaRes.ok) {
-                const mediaData = await mediaRes.json();
-                console.log('個別メディアデータ:', mediaData);
-                
-                if (mediaData.media_details && mediaData.media_details.sizes) {
-                  imageUrl = 
-                    mediaData.media_details.sizes.medium_large?.source_url ||
-                    mediaData.media_details.sizes.medium?.source_url ||
-                    mediaData.media_details.sizes.thumbnail?.source_url ||
-                    mediaData.media_details.sizes.full?.source_url ||
-                    mediaData.source_url ||
-                    "";
-                } else {
-                  imageUrl = mediaData.source_url || "";
-                }
-                
-                // URLが相対パスの場合は絶対パスに変換
-                if (imageUrl && !imageUrl.startsWith('http')) {
-                  imageUrl = `https://aoiroserver.tokyo${imageUrl}`;
-                }
-                
-                console.log('個別取得した画像URL:', imageUrl);
-              }
-            } catch (error) {
-              console.error('個別メディア取得エラー:', error instanceof Error ? error.message : String(error));
-            }
-          }
-          
-          // 方法3: 投稿の内容から画像を探す（featured_mediaがない場合）
-          if (!imageUrl) {
-            console.log('投稿内容から画像を探す');
-            const content = post.content?.rendered || "";
-            const imgMatch = content.match(/<img[^>]+src="([^"]+)"/);
-            if (imgMatch) {
-              imageUrl = imgMatch[1];
-              // URLが相対パスの場合は絶対パスに変換
-              if (imageUrl && !imageUrl.startsWith('http')) {
-                imageUrl = `https://aoiroserver.tokyo${imageUrl}`;
-              }
-              console.log('投稿内容から取得した画像URL:', imageUrl);
-            }
-          }
-          
-          // 方法4: デフォルト画像を設定（必ず画像を表示）
-          if (!imageUrl || imageUrl === "") {
-            imageUrl = "https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png";
-            console.log('デフォルト画像を使用');
-          }
-          
-          // 画像URLの検証と修正
-          console.log('最終的な画像URL:', imageUrl);
-          console.log('投稿の個別URL:', post.link);
-          
-          // 画像URLが有効かチェック
-          if (imageUrl && imageUrl !== "https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png") {
-            try {
-              const imgCheck = await fetch(imageUrl, { method: 'HEAD' });
-              if (!imgCheck.ok) {
-                console.log('画像URLが無効です。デフォルト画像を使用:', imageUrl);
-                imageUrl = "https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png";
-              }
-            } catch (error) {
-              console.log('画像URLチェックエラー。デフォルト画像を使用:', error instanceof Error ? error.message : String(error));
-              imageUrl = "https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png";
-            }
-          } else if (!imageUrl) {
-            // imageUrlが空の場合はデフォルト画像を設定
-            imageUrl = "https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png";
-            console.log('imageUrlが空のため、デフォルト画像を使用');
-          }
-          
-          return {
-            id: post.id.toString(),
-            title: post.title.rendered,
-            date: new Date(post.date).toLocaleDateString("ja-JP"),
-            imageUrl,
-            url: post.link, // 各投稿の個別ページURL
-          };
-        }));
-        
-        setNews(items);
+        // 新しいAPIエンドポイントは既にフォーマットされたデータを返すので、そのまま使用
+        setNews(data);
         console.log('✅ Latest news updated successfully');
       } else {
         // 公式サイトからデータが取得できない場合のフォールバック
         console.log('AOIROSERVER公式サイトからデータが取得できません。フォールバックデータを表示します。');
         setNews([
           {
-            id: '1',
-            title: '【🚨注意喚起】Discordグループ「OZEU」によるAOIROSERVER Discordの荒らし行為について',
-            date: '2025.07.16',
+            id: '891',
+            title: '浜松駅大改造、くいよが大暴れ！？　　仮称『ハマチカ』',
+            date: '2025.01.31',
             imageUrl: 'https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png',
-            url: 'https://aoiroserver.tokyo/2025/07/16/%e3%80%90%f0%9f%9a%a8%e6%b3%a8%e6%84%8f%e5%96%9a%e8%b5%b7%e3%80%91discord%e3%82%b0%e3%83%ab%e3%83%bc%e3%83%97%e3%80%8cozeu%e3%80%8d%e3%81%ab%e3%82%88%e3%82%8baoiroserver%e3%81%ae%e8%8d%92%e3%82%89/',
+            url: 'https://aoiroserver.tokyo/浜松駅大改造、くいよが大暴れ！？　　仮称『ハマチカ』/'
           },
           {
-            id: '2',
-            title: '浜松駅完成',
-            date: '2025.06.07',
+            id: '890',
+            title: 'AOIROSERVER新機能リリース！',
+            date: '2025.01.30',
             imageUrl: 'https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png',
-            url: 'https://aoiroserver.tokyo/2025/06/07/%e6%b5%9c%e6%9d%be%e9%a7%85%e5%ae%8c%e6%88%90/',
+            url: 'https://aoiroserver.tokyo/aoiroserver新機能リリース/'
           },
           {
-            id: '3',
-            title: '新宿駅作成過程',
-            date: '2025.05.10',
+            id: '889',
+            title: 'メンテナンス完了のお知らせ',
+            date: '2025.01.29',
             imageUrl: 'https://aoiroserver.tokyo/wp-content/uploads/2025/01/aoiroserver-logo.png',
-            url: 'https://aoiroserver.tokyo/2025/05/10/%e6%96%b0%e5%ae%bf%e9%a7%85%e4%bd%9c%e6%88%90%e9%81%8e%e7%a8%8b/',
+            url: 'https://aoiroserver.tokyo/メンテナンス完了のお知らせ/'
           }
         ]);
       }
@@ -2460,7 +2331,7 @@ export default function MorePage() {
               fontWeight: 500,
               fontSize: { xs: '0.9rem', sm: '1rem' }
             }}>
-              運営申請・クリエイティブ申請・入社申請のエントリーシートを提出
+              運営申請・入社申請のエントリーシートを提出
             </Typography>
             
             {/* 申請ボタン */}
@@ -2512,15 +2383,6 @@ export default function MorePage() {
             <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               <Chip 
                 label="運営申請" 
-                size="small" 
-                sx={{ 
-                  backgroundColor: 'rgba(255,255,255,0.2)', 
-                  color: 'white',
-                  fontSize: '0.75rem'
-                }} 
-              />
-              <Chip 
-                label="クリエイティブ申請" 
                 size="small" 
                 sx={{ 
                   backgroundColor: 'rgba(255,255,255,0.2)', 

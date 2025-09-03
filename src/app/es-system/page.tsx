@@ -20,7 +20,9 @@ import {
   FormHelperText,
   Divider,
   CircularProgress,
-  Fade
+  Fade,
+  Modal,
+  Backdrop
 } from "@mui/material";
 import { 
   ArrowBack, 
@@ -44,7 +46,8 @@ import {
   Schedule,
   Drafts,
   Login,
-  Lock
+  Lock,
+  ZoomIn
 } from "@mui/icons-material";
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -70,6 +73,7 @@ export default function ESSystemPage() {
   const [motivation, setMotivation] = useState("");
   const [portfolio, setPortfolio] = useState<File | null>(null);
   const [portfolioPreview, setPortfolioPreview] = useState<string | null>(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
   const [agreement, setAgreement] = useState(false);
   const [captchaToken, setCaptchaToken] = useState("");
   const [sent, setSent] = useState(false);
@@ -192,16 +196,16 @@ export default function ESSystemPage() {
       applicationType: !applicationType,
       minecraftTag: !minecraftTag,
       age: applicationType === "運営申請" ? !age : false,
-      email: (applicationType === "運営申請" || applicationType === "クリエイティブ申請") ? !email : false,
+      email: applicationType === "運営申請" ? !email : false,
       prefecture: applicationType === "運営申請" ? !prefecture : false,
-              device: (applicationType === "運営申請" || applicationType === "クリエイティブ申請" || applicationType === "入社申請") ? !device : false,
-        motivation: (applicationType === "運営申請" || applicationType === "入社申請") ? !motivation : false,
-      portfolio: applicationType === "クリエイティブ申請" ? !portfolio : false,
+      device: (applicationType === "運営申請" || applicationType === "入社申請") ? !device : false,
+      motivation: (applicationType === "運営申請" || applicationType === "入社申請") ? !motivation : false,
+      portfolio: applicationType === "入社申請" ? !portfolio : false,
       agreement: !agreement
     };
 
     // メールアドレスの形式チェック
-    if (email && (applicationType === "運営申請" || applicationType === "クリエイティブ申請")) {
+    if (email && applicationType === "運営申請") {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       errors.email = !emailRegex.test(email);
     }
@@ -225,10 +229,10 @@ export default function ESSystemPage() {
         isValid = applicationType === "運営申請" ? !!value : true;
         break;
       case 'email':
-        if ((applicationType === "運営申請" || applicationType === "クリエイティブ申請") && value) {
+        if (applicationType === "運営申請" && value) {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           isValid = emailRegex.test(value as string);
-        } else if (applicationType === "運営申請" || applicationType === "クリエイティブ申請") {
+        } else if (applicationType === "運営申請") {
           isValid = false;
         }
         break;
@@ -236,13 +240,13 @@ export default function ESSystemPage() {
         isValid = applicationType === "運営申請" ? !!value : true;
         break;
       case 'device':
-        isValid = (applicationType === "運営申請" || applicationType === "クリエイティブ申請" || applicationType === "入社申請") ? !!value : true;
+        isValid = (applicationType === "運営申請" || applicationType === "入社申請") ? !!value : true;
         break;
       case 'motivation':
         isValid = (applicationType === "運営申請" || applicationType === "入社申請") ? !!value : true;
         break;
       case 'portfolio':
-        isValid = applicationType === "クリエイティブ申請" ? !!value : true;
+        isValid = applicationType === "入社申請" ? !!value : true;
         break;
       case 'agreement':
         isValid = !!value;
@@ -798,7 +802,7 @@ export default function ESSystemPage() {
                   
                   <Grid container spacing={3} sx={{ mb: 4 }}>
                     {/* 運営申請 */}
-                    <Grid item xs={12} md={4}>
+                    <Grid item xs={12} md={6}>
                       <Card sx={{ 
                         border: '2px solid #667eea',
                         borderRadius: 3,
@@ -820,29 +824,8 @@ export default function ESSystemPage() {
                       </Card>
                     </Grid>
 
-                    {/* クリエイティブ申請 */}
-                    <Grid item xs={12} md={4}>
-                      <Card sx={{ 
-                        border: '2px solid #7c3aed',
-                        borderRadius: 3,
-                        height: '100%'
-                      }}>
-                        <CardContent>
-                          <Typography variant="h6" fontWeight="bold" mb={2} sx={{ color: '#7c3aed', textAlign: 'center' }}>
-                            クリエイティブ申請必須情報
-                          </Typography>
-                          <Box component="ul" sx={{ color: '#666', pl: 2, fontSize: '14px' }}>
-                            <li>Minecraftゲームタグの提示</li>
-                            <li>メールアドレス</li>
-                            <li>使用端末</li>
-                            <li>証明画像・証明動画</li>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Grid>
-
-                    {/* 会社申請 */}
-                    <Grid item xs={12} md={4}>
+                    {/* 入社申請 */}
+                    <Grid item xs={12} md={6}>
                       <Card sx={{ 
                         border: '2px solid #059669',
                         borderRadius: 3,
@@ -850,12 +833,13 @@ export default function ESSystemPage() {
                       }}>
                         <CardContent>
                           <Typography variant="h6" fontWeight="bold" mb={2} sx={{ color: '#059669', textAlign: 'center' }}>
-                            会社申請必須情報
+                            入社申請必須情報
                           </Typography>
                           <Box component="ul" sx={{ color: '#666', pl: 2, fontSize: '14px' }}>
                             <li>Minecraftゲームタグの提示</li>
                             <li>入社したい会社名</li>
                             <li>意志表明</li>
+                            <li>証明画像・証明動画</li>
                           </Box>
                         </CardContent>
                       </Card>
@@ -1127,7 +1111,7 @@ export default function ESSystemPage() {
                         <em>選択してください</em>
                       </MenuItem>
                       <MenuItem value="運営申請">運営申請</MenuItem>
-                      <MenuItem value="クリエイティブ申請">クリエイティブ申請</MenuItem>
+
                       <MenuItem value="入社申請">入社申請</MenuItem>
                     </Select>
                   </FormControl>
@@ -1219,8 +1203,8 @@ export default function ESSystemPage() {
                       </Tooltip>
                     )}
 
-                    {/* メールアドレス（運営申請・クリエイティブ申請） */}
-                    {(applicationType === "運営申請" || applicationType === "クリエイティブ申請") && (
+                    {/* メールアドレス（運営申請のみ） */}
+                    {applicationType === "運営申請" && (
                       <Tooltip
                         title={getErrorMessage('email')}
                         open={fieldErrors.email}
@@ -1291,8 +1275,8 @@ export default function ESSystemPage() {
                       </Tooltip>
                     )}
 
-                    {/* 使用端末（運営申請・クリエイティブ申請） */}
-                    {(applicationType === "運営申請" || applicationType === "クリエイティブ申請") && (
+                    {/* 使用端末（運営申請のみ） */}
+                    {applicationType === "運営申請" && (
                       <Tooltip
                         title={getErrorMessage('device')}
                         open={fieldErrors.device}
@@ -1326,38 +1310,68 @@ export default function ESSystemPage() {
 
                     {/* 会社名（入社申請のみ） */}
                     {applicationType === "入社申請" && (
-                      <Tooltip
-                        title={getErrorMessage('device')}
-                        open={fieldErrors.device}
-                        placement="top"
-                        arrow
-                        disableFocusListener
-                        disableHoverListener
-                        disableTouchListener
-                      >
-                        <TextField
-                          label="入社したい会社名 *"
-                          value={device}
-                          onChange={(e) => {
-                            setDevice(e.target.value);
-                            if (fieldErrors.device) {
-                              setFieldErrors(prev => ({ ...prev, device: false }));
-                            }
-                          }}
-                          onBlur={() => validateField('device', device)}
-                          fullWidth
-                          required
-                          error={fieldErrors.device}
-                          placeholder="例：AOIRO株式会社"
-                          InputProps={{
-                            startAdornment: <Business sx={{ mr: 1, color: '#666' }} />
-                          }}
-                          sx={{ mb: 3, borderRadius: 2 }}
-                        />
-                      </Tooltip>
+                      <>
+                        <Tooltip
+                          title={getErrorMessage('device')}
+                          open={fieldErrors.device}
+                          placement="top"
+                          arrow
+                          disableFocusListener
+                          disableHoverListener
+                          disableTouchListener
+                        >
+                          <TextField
+                            label="入社したい会社名 *"
+                            value={device}
+                            onChange={(e) => {
+                              setDevice(e.target.value);
+                              if (fieldErrors.device) {
+                                setFieldErrors(prev => ({ ...prev, device: false }));
+                              }
+                            }}
+                            onBlur={() => validateField('device', device)}
+                            fullWidth
+                            required
+                            error={fieldErrors.device}
+                            placeholder="例：M-Dev、葵路市営地下鉄、AOIRO交通局"
+                            InputProps={{
+                              startAdornment: <Business sx={{ mr: 1, color: '#666' }} />
+                            }}
+                            sx={{ mb: 2, borderRadius: 2 }}
+                          />
+                        </Tooltip>
+                        
+                        {/* 建設会社の説明 */}
+                        <Box sx={{ 
+                          mb: 3, 
+                          p: 2, 
+                          background: 'rgba(5, 150, 105, 0.1)', 
+                          border: '1px solid rgba(5, 150, 105, 0.3)',
+                          borderRadius: 2
+                        }}>
+                          <Typography variant="subtitle2" sx={{ 
+                            color: '#059669', 
+                            fontWeight: 'bold', 
+                            mb: 1,
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}>
+                            <Business sx={{ mr: 1, fontSize: 20 }} />
+                            建設会社について
+                          </Typography>
+                          <Typography variant="body2" sx={{ 
+                            color: '#333', 
+                            lineHeight: 1.6,
+                            fontSize: '14px'
+                          }}>
+                            M-Devや葵路市営地下鉄などの建設会社に入社すると、クリエイティブモードを使用して建築を行うことができます。
+                            建設会社では、都市開発やインフラ整備などの大規模なプロジェクトに参加し、サーバーの発展に貢献できます。
+                          </Typography>
+                        </Box>
+                      </>
                     )}
 
-                    {/* 意志表明（運営申請・会社申請） */}
+                    {/* 意志表明（運営申請・入社申請） */}
                     {(applicationType === "運営申請" || applicationType === "入社申請") && (
                       <Tooltip
                         title={getErrorMessage('motivation')}
@@ -1396,7 +1410,7 @@ export default function ESSystemPage() {
                     <Box sx={{ mb: 3 }}>
                       <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold', color: '#333' }}>
                         過去の実績
-                        {applicationType === "クリエイティブ申請" ? (
+                        {applicationType === "入社申請" ? (
                           <span style={{ color: '#d32f2f' }}> *</span>
                         ) : (
                           <span style={{ color: '#666' }}> （任意・画像/動画ファイルを添付）</span>
@@ -1450,22 +1464,54 @@ export default function ESSystemPage() {
                             <Box
                               sx={{
                                 width: '100%',
-                                maxHeight: 300,
+                                maxHeight: 500,
                                 border: '2px solid #667eea',
                                 borderRadius: 2,
                                 overflow: 'hidden',
                                 position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: '#f5f5f5',
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  backgroundColor: '#eeeeee',
+                                  '& .zoom-icon': {
+                                    opacity: 1
+                                  }
+                                }
                               }}
+                              onClick={() => setImageModalOpen(true)}
                             >
                               <img
                                 src={portfolioPreview}
                                 alt="ポートフォリオプレビュー"
                                 style={{
-                                  width: '100%',
+                                  maxWidth: '100%',
+                                  maxHeight: '100%',
+                                  width: 'auto',
                                   height: 'auto',
                                   display: 'block',
+                                  objectFit: 'contain'
                                 }}
                               />
+                              <IconButton
+                                className="zoom-icon"
+                                sx={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                                  color: 'white',
+                                  opacity: 0,
+                                  transition: 'opacity 0.3s ease',
+                                  '&:hover': {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                  }
+                                }}
+                              >
+                                <ZoomIn />
+                              </IconButton>
                             </Box>
                           ) : (
                             <Box
@@ -1512,9 +1558,9 @@ export default function ESSystemPage() {
                         </Box>
                       )}
                       
-                      {!portfolio && applicationType === "クリエイティブ申請" && fieldErrors.portfolio && (
+                      {!portfolio && applicationType === "入社申請" && fieldErrors.portfolio && (
                         <Typography sx={{ mt: 1, color: '#d32f2f', fontSize: '12px' }}>
-                          クリエイティブ申請では証明画像・証明動画のアップロードが必須です
+                          入社申請では証明画像・証明動画のアップロードが必須です
                         </Typography>
                       )}
                     </Box>
@@ -1693,6 +1739,77 @@ export default function ESSystemPage() {
           </CardContent>
         </Card>
 
+        {/* 画像拡大表示Modal */}
+        <Modal
+          open={imageModalOpen}
+          onClose={() => setImageModalOpen(false)}
+          closeAfterTransition
+          BackdropComponent={Backdrop}
+          BackdropProps={{
+            timeout: 500,
+            sx: { backgroundColor: 'rgba(0, 0, 0, 0.9)' }
+          }}
+        >
+          <Fade in={imageModalOpen}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: { xs: '95%', sm: '90%', md: '80%' },
+                height: { xs: '80%', sm: '85%' },
+                maxWidth: '1200px',
+                maxHeight: '800px',
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: 2
+              }}
+            >
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <img
+                  src={portfolioPreview || ''}
+                  alt="ポートフォリオ拡大表示"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+                  }}
+                />
+                <IconButton
+                  onClick={() => setImageModalOpen(false)}
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    }
+                  }}
+                >
+                  <Delete />
+                </IconButton>
+              </Box>
+            </Box>
+          </Fade>
+        </Modal>
 
       </Box>
     </Box>
