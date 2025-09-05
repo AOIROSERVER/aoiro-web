@@ -48,7 +48,11 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
     try {
       const response = await fetch('/api/minecraft-status', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
         signal: AbortSignal.timeout(10000)
       });
       
@@ -64,7 +68,16 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
           console.log('🔍 ServerStatusContext: デバッグ情報:', data.debug);
         }
         
-        setServerStatus({
+        // プレイヤー数デバッグ
+        console.log('🔍 ServerStatusContext: プレイヤー数デバッグ:', {
+          'data.players': data.players,
+          'data.players?.online': data.players?.online,
+          'data.players?.max': data.players?.max,
+          'playerCount設定値': data.players?.online || 0,
+          'maxPlayers設定値': data.players?.max || 0
+        });
+        
+        const newStatus = {
           online: !!data.online,
           responseTime,
           playerCount: data.players?.online || 0,
@@ -72,7 +85,11 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
           version: data.version || null,
           lastUpdated: new Date().toLocaleString('ja-JP'),
           loading: false
-        });
+        };
+        
+        console.log('🔍 ServerStatusContext: 設定する新しいステータス:', newStatus);
+        
+        setServerStatus(newStatus);
       } else {
         const errorText = await response.text();
         console.log('❌ ServerStatusContext: サーバーステータス更新失敗', new Date().toLocaleString('ja-JP'), {
@@ -112,11 +129,11 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
     refreshServerStatus();
     
     const interval = setInterval(() => {
-      console.log('⏰ ServerStatusContext: 5分間隔でのサーバーステータス更新実行', new Date().toLocaleString('ja-JP'));
+      console.log('⏰ ServerStatusContext: 5秒間隔でのサーバーステータス更新実行', new Date().toLocaleString('ja-JP'));
       refreshServerStatus();
-    }, 300000);
+    }, 5000);
     
-    console.log('📅 ServerStatusContext: 5分間隔タイマー設定完了', new Date().toLocaleString('ja-JP'));
+    console.log('📅 ServerStatusContext: 5秒間隔タイマー設定完了', new Date().toLocaleString('ja-JP'));
     
     return () => {
       console.log('🧹 ServerStatusContext: タイマークリーンアップ', new Date().toLocaleString('ja-JP'));

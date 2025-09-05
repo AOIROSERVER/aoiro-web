@@ -6,6 +6,15 @@ import { useServerStatus } from "../contexts/ServerStatusContext";
 
 export default function Footer() {
   const { serverStatus } = useServerStatus();
+  
+  // デバッグログ
+  console.log('🔍 Footer: 現在のserverStatus:', {
+    online: serverStatus.online,
+    playerCount: serverStatus.playerCount,
+    maxPlayers: serverStatus.maxPlayers,
+    version: serverStatus.version,
+    lastUpdated: serverStatus.lastUpdated
+  });
 
   return (
     <>

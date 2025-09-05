@@ -14,9 +14,9 @@ export async function GET(request: NextRequest) {
     console.log(`  - VERCEL_ENV: ${process.env.VERCEL_ENV}`);
     console.log(`  - NETLIFY: ${process.env.NETLIFY}`);
     
-    const apiUrl = `https://api.mcsrvstat.us/bedrock/3/${host}:${port}`;
+    const apiUrl = 'https://api.mcstatus.io/v2/status/bedrock/aoiroserver.com:19138';
     
-    console.log(`Minecraftサーバー接続確認: ${host}:${port}`);
+    console.log(`Minecraftサーバー接続確認: aoiroserver.com:19138`);
     console.log(`API呼び出し時刻: ${new Date().toLocaleString('ja-JP')}`);
     console.log(`実際のAPI URL: ${apiUrl}`);
     
@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'AOIRO-Status-Checker/1.0'
+        'User-Agent': 'AOIRO-Status-Checker/1.0',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
       // タイムアウトを10秒に設定
       signal: AbortSignal.timeout(10000)
@@ -41,22 +43,40 @@ export async function GET(request: NextRequest) {
     console.log('MinecraftサーバーAPIレスポンス:');
     console.log(JSON.stringify(data, null, 2));
     
-    // キャッシュ情報の詳細ログ
-    if (data.debug) {
-      console.log('🔍 デバッグ情報:');
-      console.log(`  - キャッシュヒット: ${data.debug.cachehit}`);
-      console.log(`  - キャッシュ時刻: ${new Date(data.debug.cachetime * 1000).toLocaleString('ja-JP')}`);
-      console.log(`  - キャッシュ期限: ${new Date(data.debug.cacheexpire * 1000).toLocaleString('ja-JP')}`);
-      console.log(`  - APIバージョン: ${data.debug.apiversion}`);
-      
-      if (data.debug.error) {
-        console.log('❌ エラー詳細:', data.debug.error);
+    // mcstatus.io APIのレスポンス形式に合わせて変換
+    const convertedData = {
+      online: data.online,
+      players: {
+        online: data.players?.online || 0,
+        max: data.players?.max || 0
+      },
+      version: data.version?.name || null,
+      motd: data.motd?.clean || null,
+      gamemode: data.gamemode || null,
+      map: null, // mcstatus.ioにはmap情報がない
+      debug: {
+        retrieved_at: data.retrieved_at,
+        expires_at: data.expires_at,
+        server_id: data.server_id,
+        edition: data.edition
       }
-    }
+    };
     
-    console.log(`📊 最終結果: online=${data.online}`);
+    console.log('🔍 プレイヤー数デバッグ:', {
+      'data.players': data.players,
+      'data.players?.online': data.players?.online,
+      'data.players?.max': data.players?.max
+    });
     
-    return NextResponse.json(data);
+    console.log(`📊 最終結果: online=${convertedData.online}, players=${convertedData.players.online}/${convertedData.players.max}`);
+    
+    return NextResponse.json(convertedData, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
   } catch (error) {
     console.error('MinecraftサーバーAPIエラー:', error);
     

@@ -92,9 +92,9 @@ export default function StatusPage() {
       lastChecked: new Date().toISOString(),
       description: 'Minecraft Bedrockサーバー',
       icon: <Cloud />,
-      playerCount: 0,
-      maxPlayers: 20,
-      version: '1.20.0'
+      playerCount: serverStatus.playerCount || 0,
+      maxPlayers: serverStatus.maxPlayers || 0,
+      version: serverStatus.version || '1.21.102'
     },
     {
       name: 'AOIROSERVER公式サイト',
@@ -147,6 +147,23 @@ export default function StatusPage() {
       setLastUpdated(savedLastUpdated);
     }
   }, []);
+
+  // serverStatusが変更された時にサービス定義を更新
+  useEffect(() => {
+    setServices(prevServices => 
+      prevServices.map(service => 
+        service.name === 'AOIROSERVER' 
+          ? {
+              ...service,
+              playerCount: serverStatus.playerCount || 0,
+              maxPlayers: serverStatus.maxPlayers || 0,
+              version: serverStatus.version || '1.21.102',
+              status: serverStatus.online ? 'operational' : 'outage'
+            }
+          : service
+      )
+    );
+  }, [serverStatus.playerCount, serverStatus.maxPlayers, serverStatus.version, serverStatus.online]);
 
   const checkServiceStatus = async () => {
     console.log('🔄 ステータスページ: サービスステータスを更新中...', new Date().toLocaleString('ja-JP'));
