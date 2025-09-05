@@ -70,11 +70,16 @@ export async function GET(request: NextRequest) {
     
     console.log(`📊 最終結果: online=${convertedData.online}, players=${convertedData.players.online}/${convertedData.players.max}`);
     
-    return NextResponse.json(convertedData, {
+    return NextResponse.json({
+      ...convertedData,
+      timestamp: new Date().toISOString(),
+      cache_bust: Date.now()
+    }, {
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        'Last-Modified': new Date().toUTCString()
       }
     });
   } catch (error) {

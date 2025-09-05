@@ -46,7 +46,7 @@ export const ServerStatusProvider: React.FC<{ children: ReactNode }> = ({ childr
     
     const startTime = Date.now();
     try {
-      const response = await fetch('/api/minecraft-status', {
+      const response = await fetch(`/api/minecraft-status?t=${Date.now()}`, {
         method: 'GET',
         headers: { 
           'Content-Type': 'application/json',
