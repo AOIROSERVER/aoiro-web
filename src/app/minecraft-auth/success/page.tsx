@@ -114,8 +114,16 @@ function MinecraftAuthSuccessContent() {
     }
   };
 
-  // Discord通知を送信する関数
+  // Discord通知を送信する関数（重複送信を防ぐ）
   const sendDiscordNotification = async () => {
+    // 既に送信済みの場合は何もしない
+    if (discordNotificationSent) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📢 Discord notification already sent, skipping...');
+      }
+      return;
+    }
+
     setNotificationError(null);
     
     try {
@@ -451,56 +459,13 @@ function MinecraftAuthSuccessContent() {
                 </Alert>
               )}
 
-              {/* Discord通知の状態表示 */}
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  {discordNotificationSent ? 
-                    '✅ Discord通知を送信しました' :
-                    notificationError ?
-                      '❌ Discord通知の送信に失敗しました' :
-                      '📢 Discordサーバーに認証成功通知を送信中...'
-                  }
-                </Typography>
-                
-                {notificationError && (
-                  <Alert severity="error" sx={{ mt: 1 }}>
-                    {notificationError}
-                  </Alert>
-                )}
-              </Box>
+              {/* Discord通知の状態表示（エラーのみ表示） */}
+              {notificationError && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {notificationError}
+                </Alert>
+              )}
               
-              <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
-                {!discordRoleAssigned && !isAssigningRole && !roleAssignmentError && (
-                  <Button
-                    variant="outlined"
-                    onClick={assignDiscordRole}
-                    size="small"
-                  >
-                    手動でロールを付与
-                  </Button>
-                )}
-                
-                {!discordNotificationSent && !notificationError && (
-                  <Button
-                    variant="outlined"
-                    onClick={sendDiscordNotification}
-                    size="small"
-                  >
-                    手動で通知を送信
-                  </Button>
-                )}
-                
-                {notificationError && (
-                  <Button
-                    variant="outlined"
-                    onClick={sendDiscordNotification}
-                    size="small"
-                    color="error"
-                  >
-                    通知を再送信
-                  </Button>
-                )}
-              </Box>
               
             </Card>
           </Box>
