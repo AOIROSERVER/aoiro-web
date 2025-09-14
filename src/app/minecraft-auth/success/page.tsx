@@ -12,12 +12,63 @@ import {
 } from "@mui/material";
 import { CheckCircle, Home, Refresh } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../../contexts/AuthContext";
 
 function MinecraftAuthSuccessContent() {
   const [minecraftId, setMinecraftId] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [discordRoleAssigned, setDiscordRoleAssigned] = useState(false);
+  const [roleAssignmentError, setRoleAssignmentError] = useState<string | null>(null);
+  const [isAssigningRole, setIsAssigningRole] = useState(false);
   const router = useRouter();
+  const { user } = useAuth();
   
+  // Discord IDにロールを付与する関数
+  const assignDiscordRole = async () => {
+    setIsAssigningRole(true);
+    setRoleAssignmentError(null);
+    
+    try {
+      console.log('🔄 Assigning Discord role for Minecraft ID:', minecraftId);
+      
+      // 認証されたユーザーのDiscord IDを取得
+      const discordUserId = user?.user_metadata?.sub || user?.id;
+      
+      if (!discordUserId) {
+        setRoleAssignmentError('Discord IDを取得できませんでした');
+        return;
+      }
+      
+      // 指定されたロールID（認定メンバーロール）を付与
+      const response = await fetch('/api/assign-discord-role', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          discordUserId: discordUserId, // 認証されたユーザーのDiscord ID
+          minecraftId: minecraftId,
+        }),
+      });
+
+      const data = await response.json();
+      console.log('📋 Role assignment response:', data);
+
+      if (response.ok && data.success) {
+        setDiscordRoleAssigned(true);
+        console.log('✅ Discord role assigned successfully');
+      } else {
+        console.error('❌ Failed to assign Discord role:', data.error);
+        setRoleAssignmentError(data.error || 'ロール付与に失敗しました');
+      }
+    } catch (error) {
+      console.error('❌ Error assigning Discord role:', error);
+      setRoleAssignmentError('ロール付与中にエラーが発生しました');
+    } finally {
+      setIsAssigningRole(false);
+    }
+  };
+
   // クライアントサイドでのみsearchParamsを取得
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -28,6 +79,14 @@ function MinecraftAuthSuccessContent() {
     sessionStorage.removeItem('minecraft-auth-flow');
     sessionStorage.setItem('minecraft-auth-completed', 'true');
     console.log('🎮 Minecraft auth flow completed, flags updated');
+    
+    // 認証成功時に自動的にDiscordロールを付与
+    if (searchParams.get('minecraftId')) {
+      console.log('🎮 Auto-assigning Discord role...');
+      setTimeout(() => {
+        assignDiscordRole();
+      }, 2000); // 2秒後にロール付与を実行
+    }
   }, []);
 
   const handleGoHome = () => {
@@ -252,6 +311,57 @@ function MinecraftAuthSuccessContent() {
             <br />
             AOIROSERVERでより多くの機能を利用できるようになりました。
           </Typography>
+
+          {/* Discordロール付与状態の表示 */}
+          <Box sx={{ mb: 4 }}>
+            <Card sx={{ 
+              p: 3, 
+              bgcolor: discordRoleAssigned ? 'success.50' : 'info.50', 
+              border: '1px solid', 
+              borderColor: discordRoleAssigned ? 'success.200' : 'info.200',
+              borderRadius: 3
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                <CheckCircle sx={{ 
+                  color: discordRoleAssigned ? 'success.main' : 'info.main',
+                  fontSize: 24 
+                }} />
+                <Typography variant="h6" sx={{ 
+                  color: discordRoleAssigned ? 'success.dark' : 'info.dark',
+                  fontWeight: 'bold'
+                }}>
+                  {discordRoleAssigned ? 'Discordロール付与完了' : 
+                   isAssigningRole ? 'Discordロール付与中...' : 
+                   'Discordロール付与準備中'}
+                </Typography>
+              </Box>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {discordRoleAssigned ? 
+                  '認定メンバーロールが付与されました！Discordサーバーでより多くの機能を利用できます。' :
+                  isAssigningRole ?
+                  'Discordサーバーに認定メンバーロールを付与しています...' :
+                  '認証完了後、自動的にDiscordロールが付与されます'
+                }
+              </Typography>
+              
+              {roleAssignmentError && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {roleAssignmentError}
+                </Alert>
+              )}
+              
+              {!discordRoleAssigned && !isAssigningRole && !roleAssignmentError && (
+                <Button
+                  variant="outlined"
+                  onClick={assignDiscordRole}
+                  sx={{ mt: 1 }}
+                >
+                  手動でロールを付与
+                </Button>
+              )}
+            </Card>
+          </Box>
 
           {/* アバター画像表示 */}
           {avatarUrl && (

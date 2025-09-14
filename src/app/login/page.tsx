@@ -91,6 +91,13 @@ function LoginContent() {
     const errorParam = searchParams ? searchParams.get('error') : null;
     const messageParam = searchParams ? searchParams.get('message') : null;
     const discordLinkedParam = searchParams ? searchParams.get('discord_linked') : null;
+    const redirectParam = searchParams ? searchParams.get('redirect') : null;
+    
+    // リダイレクトパラメータを保存
+    if (redirectParam) {
+      console.log('🔗 Redirect parameter found:', redirectParam);
+      localStorage.setItem('login_redirect', redirectParam);
+    }
     
     if (errorParam) {
       switch (errorParam) {
@@ -196,7 +203,16 @@ function LoginContent() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('admin', 'true');
         }
-        router.push("/more");
+        
+        // リダイレクトパラメータを確認して適切なページにリダイレクト
+        const redirectPath = localStorage.getItem('login_redirect');
+        if (redirectPath) {
+          console.log('🔗 Redirecting to saved path:', redirectPath);
+          localStorage.removeItem('login_redirect'); // リダイレクトパスをクリア
+          router.push(redirectPath);
+        } else {
+          router.push("/more");
+        }
         return;
       }
       
@@ -233,7 +249,15 @@ function LoginContent() {
       // セッションが確実に設定されるまで少し待つ
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      router.push("/more"); // ログイン成功後、その他ページへ
+      // リダイレクトパラメータを確認して適切なページにリダイレクト
+      const redirectPath = localStorage.getItem('login_redirect');
+      if (redirectPath) {
+        console.log('🔗 Redirecting to saved path:', redirectPath);
+        localStorage.removeItem('login_redirect'); // リダイレクトパスをクリア
+        router.push(redirectPath);
+      } else {
+        router.push("/more"); // デフォルトはその他ページへ
+      }
     } catch (err: any) {
       console.error('❌ Login failed:', err);
       setError(err.error_description || err.message);

@@ -50,9 +50,39 @@ function DiscordAuthContent() {
   const { supabase, user, session } = useAuth();
   const router = useRouter();
 
+  // AOIRO IDログイン必須チェック
+  useEffect(() => {
+    const checkAoiroIdLogin = async () => {
+      console.log('🔍 Checking AOIRO ID login status...');
+      console.log('User:', user);
+      console.log('Session:', session);
+      
+      // AOIRO IDにログインしていない場合はログインページにリダイレクト
+      if (!user || !session) {
+        console.log('❌ AOIRO ID not logged in, redirecting to login page...');
+        setError('MCID認証を利用するには、まずAOIRO IDにログインしてください。');
+        
+        // 2秒後にログインページにリダイレクト
+        setTimeout(() => {
+          router.push('/login?redirect=/minecraft-auth');
+        }, 2000);
+        return;
+      }
+      
+      console.log('✅ AOIRO ID logged in:', user.email);
+    };
+    
+    checkAoiroIdLogin();
+  }, [user, session, router]);
+
   // 認証状態とDiscord連携状態の確認
   useEffect(() => {
     const checkAuthStatus = async () => {
+      // AOIRO IDにログインしていない場合は処理を停止
+      if (!user || !session) {
+        return;
+      }
+      
       console.log('🔍 Checking auth status for Discord auth...');
       console.log('User:', user);
       console.log('Session:', session);
@@ -181,18 +211,27 @@ function DiscordAuthContent() {
         console.log('User metadata:', currentSession.user.user_metadata);
         console.log('App metadata:', currentSession.user.app_metadata);
         
-        // Discord認証済みかチェック
-        if (currentSession.user.user_metadata?.provider === 'discord') {
+        // Discord認証済みかチェック（より柔軟な判定）
+        const isDiscordUser = currentSession.user.user_metadata?.provider === 'discord' ||
+                              currentSession.user.app_metadata?.provider === 'discord' ||
+                              currentSession.user.user_metadata?.full_name ||
+                              currentSession.user.user_metadata?.avatar_url ||
+                              currentSession.user.user_metadata?.name;
+        
+        if (isDiscordUser) {
           console.log('🎯 Discord user already authenticated');
           setIsLinked(true);
           
           // Discordユーザー情報を設定
           if (currentSession.user.user_metadata) {
             setDiscordUser({
-              username: currentSession.user.user_metadata.full_name || currentSession.user.user_metadata.name,
+              username: currentSession.user.user_metadata.full_name || 
+                       currentSession.user.user_metadata.name || 
+                       currentSession.user.user_metadata.preferred_username ||
+                       currentSession.user.email?.split('@')[0] || 'Unknown',
               avatar: currentSession.user.user_metadata.avatar_url,
               discriminator: currentSession.user.user_metadata.discriminator,
-              id: currentSession.user.user_metadata.sub
+              id: currentSession.user.user_metadata.sub || currentSession.user.id
             });
           }
           
@@ -201,7 +240,12 @@ function DiscordAuthContent() {
           }
         } else {
           console.log('❌ User is not Discord authenticated');
+          console.log('User metadata:', currentSession.user.user_metadata);
+          console.log('App metadata:', currentSession.user.app_metadata);
           setIsLinked(false);
+          
+          // AOIRO IDでログインしているがDiscord認証が未完了の場合
+          setError(null); // エラーメッセージをクリア
         }
       } else {
         console.log('❌ No active session found');
@@ -532,12 +576,36 @@ function DiscordAuthContent() {
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent'
             }}>
-              🔐 Discordアカウント連携
+              🔐 MCID認証システム
             </Typography>
             <Typography variant="body1" color="text.secondary">
-              AOIROSERVERの認定メンバーになるために、Discordアカウントを連携してください
+              AOIROSERVERの認定メンバーになるために、AOIRO IDにログインしてDiscordアカウントを連携してください
             </Typography>
           </Box>
+
+          {/* AOIRO IDログイン状態の表示 */}
+          {user && session ? (
+            <Box sx={{ mb: 4 }}>
+              <Card sx={{ 
+                p: 3, 
+                bgcolor: 'success.50', 
+                border: '1px solid', 
+                borderColor: 'success.200',
+                borderRadius: 3,
+                mb: 3
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                  <CheckCircleIcon color="success" sx={{ fontSize: 24 }} />
+                  <Typography variant="h6" color="success.dark" sx={{ fontWeight: 'bold' }}>
+                    AOIRO IDにログイン済み
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  ユーザー: {user.email}
+                </Typography>
+              </Card>
+            </Box>
+          ) : null}
 
           {/* Discord連携状態の表示 */}
           {isLinked && discordUser ? (
@@ -667,8 +735,8 @@ function DiscordAuthContent() {
                 </Box>
                 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                  AOIROSERVERの認定メンバーになるために、まずDiscordアカウントで認証を行ってください。
-                  認証が完了すると、Minecraft ID認証ページに進むことができます。
+                  AOIRO IDにログイン済みです。次に、AOIROSERVERの認定メンバーになるためにDiscordアカウントを連携してください。
+                  連携が完了すると、Minecraft ID認証ページに進むことができます。
                 </Typography>
                 
                 <Box sx={{ textAlign: 'center' }}>

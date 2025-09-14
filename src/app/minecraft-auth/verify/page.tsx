@@ -29,9 +29,39 @@ function MinecraftVerificationContent() {
   const { supabase, user, session } = useAuth();
   const router = useRouter();
 
+  // AOIRO IDログイン必須チェック
+  useEffect(() => {
+    const checkAoiroIdLogin = async () => {
+      console.log('🔍 Checking AOIRO ID login status...');
+      console.log('User:', user);
+      console.log('Session:', session);
+      
+      // AOIRO IDにログインしていない場合はログインページにリダイレクト
+      if (!user || !session) {
+        console.log('❌ AOIRO ID not logged in, redirecting to login page...');
+        setError('MCID認証を利用するには、まずAOIRO IDにログインしてください。');
+        
+        // 2秒後にログインページにリダイレクト
+        setTimeout(() => {
+          router.push('/login?redirect=/minecraft-auth/verify');
+        }, 2000);
+        return;
+      }
+      
+      console.log('✅ AOIRO ID logged in:', user.email);
+    };
+    
+    checkAoiroIdLogin();
+  }, [user, session, router]);
+
   // 改善された認証状態の確認（AICシステムを参考）
   useEffect(() => {
     const checkAuthStatus = async () => {
+      // AOIRO IDにログインしていない場合は処理を停止
+      if (!user || !session) {
+        return;
+      }
+      
       console.log('🔍 Checking auth status for Minecraft verification...');
       console.log('User:', user);
       console.log('Session:', session);
@@ -73,7 +103,8 @@ function MinecraftVerificationContent() {
             const isDiscordUser = currentSession.user.user_metadata?.provider === 'discord' ||
                                   currentSession.user.app_metadata?.provider === 'discord' ||
                                   currentSession.user.user_metadata?.full_name ||
-                                  currentSession.user.user_metadata?.avatar_url;
+                                  currentSession.user.user_metadata?.avatar_url ||
+                                  currentSession.user.user_metadata?.name;
             
             if (isDiscordUser) {
               console.log('🎯 Discord user authenticated for Minecraft verification');
@@ -100,26 +131,28 @@ function MinecraftVerificationContent() {
               }
               
               return true; // 認証成功
-            } else {
-              console.log('❌ User is not Discord authenticated');
-              console.log('Provider metadata:', {
-                userProvider: currentSession.user.user_metadata?.provider,
-                appProvider: currentSession.user.app_metadata?.provider,
-                hasFullName: !!currentSession.user.user_metadata?.full_name,
-                hasAvatar: !!currentSession.user.user_metadata?.avatar_url
-              });
-              
-              // リトライ可能な場合は再試行
-              if (retryCount < 2) {
-                console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
-                setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
-                return false;
               } else {
-                console.log('❌ Max retries reached, redirecting to Discord auth');
-                router.push('/minecraft-auth');
-                return false;
+                console.log('❌ User is not Discord authenticated');
+                console.log('Provider metadata:', {
+                  userProvider: currentSession.user.user_metadata?.provider,
+                  appProvider: currentSession.user.app_metadata?.provider,
+                  hasFullName: !!currentSession.user.user_metadata?.full_name,
+                  hasAvatar: !!currentSession.user.user_metadata?.avatar_url
+                });
+                
+                // AOIRO IDでログインしているがDiscord認証が未完了の場合
+                setError('Discordアカウントの連携が必要です。「Discord認証ページに戻る」ボタンからDiscordアカウントを連携してください。');
+                
+                // リトライ可能な場合は再試行
+                if (retryCount < 2) {
+                  console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
+                  setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
+                  return false;
+                } else {
+                  console.log('❌ Max retries reached, showing Discord auth requirement');
+                  return false;
+                }
               }
-            }
           } else {
             console.log('❌ No active session found');
             
@@ -440,6 +473,28 @@ function MinecraftVerificationContent() {
               Minecraft IDを入力して認証を行ってください
             </Typography>
             
+            {/* AOIRO IDログイン状態の表示 */}
+            {user && session ? (
+              <Box sx={{ 
+                mb: 4, 
+                p: 3, 
+                bgcolor: 'rgba(76, 175, 80, 0.1)', 
+                borderRadius: 2,
+                border: '1px solid rgba(76, 175, 80, 0.3)',
+                backdropFilter: 'blur(10px)'
+              }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
+                  <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 20 }} />
+                  <Typography variant="h6" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                    AOIRO IDにログイン済み
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
+                  ユーザー: {user.email}
+                </Typography>
+              </Box>
+            ) : null}
+
             {/* Discordアカウント連携状態の表示 */}
             {discordUser && (
               <Box sx={{ 

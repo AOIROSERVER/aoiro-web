@@ -189,7 +189,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sessionMinecraftAuth: sessionStorage.getItem('minecraft-auth-flow')
           });
           
-          if (window.location.pathname === '/' && !isMinecraftAuthFlow) {
+          // ログインページで保存されたリダイレクトパラメータを確認
+          const savedRedirectPath = localStorage.getItem('login_redirect');
+          
+          if (savedRedirectPath) {
+            console.log('🔗 Redirecting to saved path from login:', savedRedirectPath);
+            localStorage.removeItem('login_redirect'); // リダイレクトパスをクリア
+            router.push(savedRedirectPath);
+          } else if (window.location.pathname === '/' && !isMinecraftAuthFlow) {
             console.log('🔄 Redirecting to train-status from home page');
             router.push('/train-status');
           } else if (isMinecraftAuthFlow) {
