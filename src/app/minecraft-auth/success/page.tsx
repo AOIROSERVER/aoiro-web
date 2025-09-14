@@ -20,6 +20,8 @@ function MinecraftAuthSuccessContent() {
   const [discordRoleAssigned, setDiscordRoleAssigned] = useState(false);
   const [roleAssignmentError, setRoleAssignmentError] = useState<string | null>(null);
   const [isAssigningRole, setIsAssigningRole] = useState(false);
+  const [discordNotificationSent, setDiscordNotificationSent] = useState(false);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
   const router = useRouter();
   const { user } = useAuth();
   
@@ -32,11 +34,32 @@ function MinecraftAuthSuccessContent() {
       console.log('🔄 Assigning Discord role for Minecraft ID:', minecraftId);
       
       // 認証されたユーザーのDiscord IDを取得
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 User data for Discord ID extraction:', {
+          user: user,
+          userMetadata: user?.user_metadata,
+          userId: user?.id,
+          userMetadataSub: user?.user_metadata?.sub,
+          appMetadata: user?.app_metadata
+        });
+      }
+      
+      // Discord認証の場合、user_metadata.subにDiscord IDが格納される
       const discordUserId = user?.user_metadata?.sub || user?.id;
       
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Discord User ID to assign role to:', discordUserId);
+      }
+      
       if (!discordUserId) {
-        setRoleAssignmentError('Discord IDを取得できませんでした');
+        console.error('❌ Discord User ID not found in user data');
+        setRoleAssignmentError('Discord IDを取得できませんでした。Discord認証でログインしていることを確認してください。');
         return;
+      }
+      
+      // Minecraft IDは不要（Discordユーザーに直接ロール付与）
+      if (process.env.NODE_ENV === 'development') {
+        console.log('ℹ️ Minecraft ID check skipped - assigning role directly to Discord user');
       }
       
       // 指定されたロールID（認定メンバーロール）を付与
@@ -47,27 +70,100 @@ function MinecraftAuthSuccessContent() {
         },
         body: JSON.stringify({
           discordUserId: discordUserId, // 認証されたユーザーのDiscord ID
-          minecraftId: minecraftId,
+          // minecraftIdは省略可能
         }),
       });
 
       const data = await response.json();
-      console.log('📋 Role assignment response:', data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📋 Role assignment response:', {
+          status: response.status,
+          statusText: response.statusText,
+          ok: response.ok,
+          data: data
+        });
+      }
 
       if (response.ok && data.success) {
         setDiscordRoleAssigned(true);
         console.log('✅ Discord role assigned successfully');
       } else {
         console.error('❌ Failed to assign Discord role:', data.error);
-        setRoleAssignmentError(data.error || 'ロール付与に失敗しました');
+        console.error('❌ Full response data:', data);
+        
+        let errorMessage = data.error || 'ロール付与に失敗しました';
+        if (data.details) {
+          errorMessage += ` (詳細: ${data.details})`;
+        }
+        if (data.discordError) {
+          errorMessage += ` (Discord API: ${data.discordError})`;
+        }
+        
+        setRoleAssignmentError(errorMessage);
       }
     } catch (error) {
       console.error('❌ Error assigning Discord role:', error);
-      setRoleAssignmentError('ロール付与中にエラーが発生しました');
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        minecraftId: minecraftId
+      });
+      setRoleAssignmentError(`ロール付与中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsAssigningRole(false);
     }
   };
+
+  // Discord通知を送信する関数
+  const sendDiscordNotification = async () => {
+    setNotificationError(null);
+    
+    try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📢 Sending Discord notification...');
+      }
+      
+      const discordUserId = user?.user_metadata?.sub || user?.id;
+      
+      if (!discordUserId) {
+        setNotificationError('Discord IDを取得できませんでした。');
+        return;
+      }
+
+      const response = await fetch('/api/send-discord-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          discordUserId: discordUserId,
+          minecraftId: minecraftId || null,
+          gamertag: minecraftId || null, // 同じ値をgamertagとして使用
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📋 Discord notification response:', data);
+      }
+
+      if (response.ok && data.success) {
+        setDiscordNotificationSent(true);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Discord notification sent successfully');
+        }
+      } else {
+        setNotificationError(data.error || 'Discord通知の送信に失敗しました');
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Discord notification error:', error);
+      }
+      setNotificationError('Discord通知の送信中にエラーが発生しました');
+    }
+  };
+
 
   // クライアントサイドでのみsearchParamsを取得
   useEffect(() => {
@@ -80,12 +176,15 @@ function MinecraftAuthSuccessContent() {
     sessionStorage.setItem('minecraft-auth-completed', 'true');
     console.log('🎮 Minecraft auth flow completed, flags updated');
     
-    // 認証成功時に自動的にDiscordロールを付与
+    // 認証成功時に自動的にDiscordロールを付与と通知を送信
     if (searchParams.get('minecraftId')) {
-      console.log('🎮 Auto-assigning Discord role...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🎮 Auto-assigning Discord role and sending notification...');
+      }
       setTimeout(() => {
         assignDiscordRole();
-      }, 2000); // 2秒後にロール付与を実行
+        sendDiscordNotification(); // ロール付与と同時に通知も送信
+      }, 2000); // 2秒後に実行
     }
   }, []);
 
@@ -345,21 +444,64 @@ function MinecraftAuthSuccessContent() {
                 }
               </Typography>
               
+              
               {roleAssignmentError && (
                 <Alert severity="error" sx={{ mt: 2 }}>
                   {roleAssignmentError}
                 </Alert>
               )}
+
+              {/* Discord通知の状態表示 */}
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {discordNotificationSent ? 
+                    '✅ Discord通知を送信しました' :
+                    notificationError ?
+                      '❌ Discord通知の送信に失敗しました' :
+                      '📢 Discordサーバーに認証成功通知を送信中...'
+                  }
+                </Typography>
+                
+                {notificationError && (
+                  <Alert severity="error" sx={{ mt: 1 }}>
+                    {notificationError}
+                  </Alert>
+                )}
+              </Box>
               
-              {!discordRoleAssigned && !isAssigningRole && !roleAssignmentError && (
-                <Button
-                  variant="outlined"
-                  onClick={assignDiscordRole}
-                  sx={{ mt: 1 }}
-                >
-                  手動でロールを付与
-                </Button>
-              )}
+              <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
+                {!discordRoleAssigned && !isAssigningRole && !roleAssignmentError && (
+                  <Button
+                    variant="outlined"
+                    onClick={assignDiscordRole}
+                    size="small"
+                  >
+                    手動でロールを付与
+                  </Button>
+                )}
+                
+                {!discordNotificationSent && !notificationError && (
+                  <Button
+                    variant="outlined"
+                    onClick={sendDiscordNotification}
+                    size="small"
+                  >
+                    手動で通知を送信
+                  </Button>
+                )}
+                
+                {notificationError && (
+                  <Button
+                    variant="outlined"
+                    onClick={sendDiscordNotification}
+                    size="small"
+                    color="error"
+                  >
+                    通知を再送信
+                  </Button>
+                )}
+              </Box>
+              
             </Card>
           </Box>
 

@@ -32,13 +32,17 @@ function MinecraftVerificationContent() {
   // AOIRO IDログイン必須チェック
   useEffect(() => {
     const checkAoiroIdLogin = async () => {
-      console.log('🔍 Checking AOIRO ID login status...');
-      console.log('User:', user);
-      console.log('Session:', session);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Checking AOIRO ID login status...');
+        console.log('User:', user);
+        console.log('Session:', session);
+      }
       
       // AOIRO IDにログインしていない場合はログインページにリダイレクト
       if (!user || !session) {
-        console.log('❌ AOIRO ID not logged in, redirecting to login page...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('❌ AOIRO ID not logged in, redirecting to login page...');
+        }
         setError('MCID認証を利用するには、まずAOIRO IDにログインしてください。');
         
         // 2秒後にログインページにリダイレクト
@@ -48,7 +52,9 @@ function MinecraftVerificationContent() {
         return;
       }
       
-      console.log('✅ AOIRO ID logged in:', user.email);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ AOIRO ID logged in:', user.email);
+      }
     };
     
     checkAoiroIdLogin();
@@ -62,23 +68,27 @@ function MinecraftVerificationContent() {
         return;
       }
       
-      console.log('🔍 Checking auth status for Minecraft verification...');
-      console.log('User:', user);
-      console.log('Session:', session);
-      console.log('Current URL:', window.location.href);
-      console.log('Current pathname:', window.location.pathname);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Checking auth status for Minecraft verification...');
+        console.log('User:', user);
+        console.log('Session:', session);
+        console.log('Current URL:', window.location.href);
+        console.log('Current pathname:', window.location.pathname);
+      }
       
       // URLパラメータから認証完了をチェック
       const urlParams = new URLSearchParams(window.location.search);
       const authSuccess = urlParams.get('auth_success');
       const fromParam = urlParams.get('from');
       
-      console.log('🔍 URL parameters in verify page:', {
-        authSuccess,
-        from: fromParam,
-        fullParams: Object.fromEntries(urlParams.entries()),
-        search: window.location.search
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 URL parameters in verify page:', {
+          authSuccess,
+          from: fromParam,
+          fullParams: Object.fromEntries(urlParams.entries()),
+          search: window.location.search
+        });
+      }
       
       // 成功パラメータをクリア（最初に実行）
       if (authSuccess === 'true') {
@@ -90,14 +100,20 @@ function MinecraftVerificationContent() {
       // 即座にセッション状態を確認（タイムアウトを減らす）
       const checkSessionWithRetry = async (retryCount = 0) => {
         try {
-          console.log(`🔍 Checking session state (attempt ${retryCount + 1})...`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`🔍 Checking session state (attempt ${retryCount + 1})...`);
+          }
           const { data: { session: currentSession } } = await supabase.auth.getSession();
-          console.log('Current session:', currentSession);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Current session:', currentSession);
+          }
           
           if (currentSession?.user) {
-            console.log('✅ User is authenticated:', currentSession.user.email);
-            console.log('User metadata:', currentSession.user.user_metadata);
-            console.log('App metadata:', currentSession.user.app_metadata);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ User is authenticated:', currentSession.user.email);
+              console.log('User metadata:', currentSession.user.user_metadata);
+              console.log('App metadata:', currentSession.user.app_metadata);
+            }
             
             // Discord認証済みかチェック（より柔軟な判定）
             const isDiscordUser = currentSession.user.user_metadata?.provider === 'discord' ||
@@ -107,13 +123,15 @@ function MinecraftVerificationContent() {
                                   currentSession.user.user_metadata?.name;
             
             if (isDiscordUser) {
-              console.log('🎯 Discord user authenticated for Minecraft verification');
-              console.log('User details:', {
-                id: currentSession.user.id,
-                email: currentSession.user.email,
-                provider: currentSession.user.app_metadata?.provider,
-                metadata: currentSession.user.user_metadata
-              });
+              if (process.env.NODE_ENV === 'development') {
+                console.log('🎯 Discord user authenticated for Minecraft verification');
+                console.log('User details:', {
+                  id: currentSession.user.id,
+                  email: currentSession.user.email,
+                  provider: currentSession.user.app_metadata?.provider,
+                  metadata: currentSession.user.user_metadata
+                });
+              }
               
               // Discordユーザー情報を設定
               setDiscordUser({
@@ -132,47 +150,63 @@ function MinecraftVerificationContent() {
               
               return true; // 認証成功
               } else {
-                console.log('❌ User is not Discord authenticated');
-                console.log('Provider metadata:', {
-                  userProvider: currentSession.user.user_metadata?.provider,
-                  appProvider: currentSession.user.app_metadata?.provider,
-                  hasFullName: !!currentSession.user.user_metadata?.full_name,
-                  hasAvatar: !!currentSession.user.user_metadata?.avatar_url
-                });
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('❌ User is not Discord authenticated');
+                  console.log('Provider metadata:', {
+                    userProvider: currentSession.user.user_metadata?.provider,
+                    appProvider: currentSession.user.app_metadata?.provider,
+                    hasFullName: !!currentSession.user.user_metadata?.full_name,
+                    hasAvatar: !!currentSession.user.user_metadata?.avatar_url
+                  });
+                }
                 
                 // AOIRO IDでログインしているがDiscord認証が未完了の場合
                 setError('Discordアカウントの連携が必要です。「Discord認証ページに戻る」ボタンからDiscordアカウントを連携してください。');
                 
                 // リトライ可能な場合は再試行
                 if (retryCount < 2) {
-                  console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
+                  }
                   setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
                   return false;
                 } else {
-                  console.log('❌ Max retries reached, showing Discord auth requirement');
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('❌ Max retries reached, showing Discord auth requirement');
+                  }
                   return false;
                 }
               }
           } else {
-            console.log('❌ No active session found');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('❌ No active session found');
+            }
             
             // リトライ可能な場合は再試行
             if (retryCount < 2 && authSuccess === 'true') {
-              console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`🔄 Retrying session check in 2 seconds... (retry ${retryCount + 1}/2)`);
+              }
               setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
               return false;
             } else {
-              console.log('❌ No session found, redirecting to Discord auth');
+              if (process.env.NODE_ENV === 'development') {
+                console.log('❌ No session found, redirecting to Discord auth');
+              }
               router.push('/minecraft-auth');
               return false;
             }
           }
         } catch (err) {
-          console.error('Error checking auth state:', err);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error checking auth state:', err);
+          }
           
           // リトライ可能な場合は再試行
           if (retryCount < 2) {
-            console.log(`🔄 Retrying after error in 2 seconds... (retry ${retryCount + 1}/2)`);
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`🔄 Retrying after error in 2 seconds... (retry ${retryCount + 1}/2)`);
+            }
             setTimeout(() => checkSessionWithRetry(retryCount + 1), 2000);
             return false;
           } else {
@@ -184,11 +218,15 @@ function MinecraftVerificationContent() {
       
       // 認証成功パラメータがある場合は少し待ってから確認
       if (authSuccess === 'true') {
-        console.log('✅ Discord auth success detected, checking session...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Discord auth success detected, checking session...');
+        }
         setTimeout(() => checkSessionWithRetry(), 1000); // 1秒待機（以前の3秒から短縮）
       } else {
         // 通常の確認は即座に実行
-        console.log('ℹ️ No auth success parameters, checking current session...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('ℹ️ No auth success parameters, checking current session...');
+        }
         checkSessionWithRetry();
       }
     };
@@ -199,14 +237,20 @@ function MinecraftVerificationContent() {
   // シンプルな認証状態変更の監視
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔔 Auth state change event:', event);
-      console.log('Session:', session);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔔 Auth state change event:', event);
+        console.log('Session:', session);
+      }
       
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in');
-        console.log('User metadata:', session.user.user_metadata);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ User signed in');
+          console.log('User metadata:', session.user.user_metadata);
+        }
       } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('👋 User signed out');
+        }
       }
     });
     
@@ -226,7 +270,9 @@ function MinecraftVerificationContent() {
     setSuccess(null);
 
     try {
-      console.log('🔄 Starting Minecraft ID verification...');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 Starting Minecraft ID verification...');
+      }
       
       // Minecraft IDの存在確認
       const verifyResponse = await fetch('/api/verify-minecraft-id', {
@@ -240,7 +286,9 @@ function MinecraftVerificationContent() {
       });
 
       const verifyData = await verifyResponse.json();
-      console.log('📋 Verification response:', verifyData);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📋 Verification response:', verifyData);
+      }
 
       if (!verifyResponse.ok) {
         throw new Error(verifyData.error || 'Minecraft ID認証に失敗しました');
@@ -252,20 +300,24 @@ function MinecraftVerificationContent() {
         return;
       }
 
-      console.log('✅ Minecraft ID verified successfully');
-      if (verifyData.xuid) {
-        console.log('📋 XUID:', verifyData.xuid);
-      }
-      if (verifyData.gamertag) {
-        console.log('📋 Gamertag:', verifyData.gamertag);
-      }
-      if (verifyData.avatarUrl) {
-        console.log('📋 Avatar URL:', verifyData.avatarUrl);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Minecraft ID verified successfully');
+        if (verifyData.xuid) {
+          console.log('📋 XUID:', verifyData.xuid);
+        }
+        if (verifyData.gamertag) {
+          console.log('📋 Gamertag:', verifyData.gamertag);
+        }
+        if (verifyData.avatarUrl) {
+          console.log('📋 Avatar URL:', verifyData.avatarUrl);
+        }
       }
 
       // 認証成功時のみGoogle Sheetsに記録
       try {
-        console.log('📝 Recording successful authentication to Google Sheets...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📝 Recording successful authentication to Google Sheets...');
+        }
         const recordResponse = await fetch('/api/record-minecraft-auth', {
           method: 'POST',
           headers: {
@@ -285,7 +337,9 @@ function MinecraftVerificationContent() {
           if (recordData.sheetsError) {
             console.warn('⚠️ Google Sheets recording failed but auth succeeded:', recordData.message);
           } else {
-            console.log('✅ Successfully recorded to Google Sheets');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Successfully recorded to Google Sheets');
+            }
           }
         } else {
           console.warn('⚠️ Google Sheets recording failed:', recordData.error);
@@ -309,7 +363,9 @@ function MinecraftVerificationContent() {
       }, 1000);
 
     } catch (err: any) {
-      console.error('❌ Minecraft auth error:', err);
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Minecraft auth error:', err);
+      }
       setError(err.message);
     } finally {
       setLoading(false);
@@ -565,22 +621,6 @@ function MinecraftVerificationContent() {
               </Box>
             )}
             
-            {/* デバッグ情報 */}
-            {process.env.NODE_ENV === 'development' && (
-              <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1, fontSize: '0.8rem' }}>
-                <Typography variant="caption" color="text.secondary">
-                  User: {user ? 'Authenticated' : 'Not authenticated'}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" display="block">
-                  Session: {session ? 'Active' : 'No session'}
-                </Typography>
-                {user && (
-                  <Typography variant="caption" color="text.secondary" display="block">
-                    User Metadata: {JSON.stringify(user.user_metadata, null, 2)}
-                  </Typography>
-                )}
-              </Box>
-            )}
           </Box>
 
           <TextField

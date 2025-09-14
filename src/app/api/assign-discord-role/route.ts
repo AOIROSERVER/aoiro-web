@@ -9,12 +9,12 @@ export async function POST(request: NextRequest) {
 
     console.log('🔄 Assigning Discord role:', {
       discordUserId: discordUserId?.substring(0, 8) + '...',
-      minecraftId
+      minecraftId: minecraftId || 'N/A'
     });
 
-    if (!discordUserId || !minecraftId) {
+    if (!discordUserId) {
       return NextResponse.json(
-        { error: 'Discord User IDとMinecraft IDが必要です' },
+        { error: 'Discord User IDが必要です' },
         { status: 400 }
       );
     }
@@ -88,6 +88,12 @@ export async function POST(request: NextRequest) {
 
       // ロールを付与
       console.log('🔄 Assigning member role...');
+      
+      // 監査ログの理由を安全にエンコード（英語のみ、特殊文字なし）
+      const auditReason = minecraftId ? 
+        `MCID Auth Complete - ${minecraftId}` : 
+        'MCID Auth System';
+      
       const roleAssignResponse = await fetch(
         `https://discord.com/api/v10/guilds/${serverId}/members/${discordUserId}/roles/${memberRoleId}`,
         {
@@ -96,7 +102,7 @@ export async function POST(request: NextRequest) {
             'Authorization': `Bot ${botToken}`,
             'Content-Type': 'application/json',
             'User-Agent': 'AOIROSERVER/1.0',
-            'X-Audit-Log-Reason': `Minecraft ID認証完了: ${minecraftId}`
+            'X-Audit-Log-Reason': auditReason
           }
         }
       );
