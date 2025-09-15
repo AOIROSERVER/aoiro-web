@@ -574,11 +574,18 @@ function DiscordAuthContent() {
               background: 'linear-gradient(45deg, #667eea, #764ba2)',
               backgroundClip: 'text',
               WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
+              WebkitTextFillColor: 'transparent',
+              fontSize: { xs: '1.5rem', sm: '2.125rem' },
+              lineHeight: { xs: 1.2, sm: 1.3 },
+              wordBreak: 'keep-all'
             }}>
               🔐 MCID認証システム
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" sx={{
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              lineHeight: { xs: 1.4, sm: 1.5 },
+              px: { xs: 1, sm: 0 }
+            }}>
               AOIROSERVERの認定メンバーになるために、AOIRO IDにログインしてDiscordアカウントを連携してください
             </Typography>
           </Box>
@@ -587,20 +594,33 @@ function DiscordAuthContent() {
           {user && session ? (
             <Box sx={{ mb: 4 }}>
               <Card sx={{ 
-                p: 3, 
+                p: { xs: 2, sm: 3 }, 
                 bgcolor: 'success.50', 
                 border: '1px solid', 
                 borderColor: 'success.200',
                 borderRadius: 3,
                 mb: 3
               }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <CheckCircleIcon color="success" sx={{ fontSize: 24 }} />
-                  <Typography variant="h6" color="success.dark" sx={{ fontWeight: 'bold' }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: { xs: 1.5, sm: 2 }, 
+                  mb: 2,
+                  flexWrap: 'wrap'
+                }}>
+                  <CheckCircleIcon color="success" sx={{ fontSize: { xs: 20, sm: 24 } }} />
+                  <Typography variant="h6" color="success.dark" sx={{ 
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    wordBreak: 'keep-all'
+                  }}>
                     AOIRO IDにログイン済み
                   </Typography>
                 </Box>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  wordBreak: 'break-all'
+                }}>
                   ユーザー: {user.email}
                 </Typography>
               </Card>
@@ -618,20 +638,22 @@ function DiscordAuthContent() {
                 borderRadius: 3,
                 boxShadow: '0 8px 24px rgba(76, 175, 80, 0.15)'
               }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <CheckCircleIcon color="success" sx={{ fontSize: 36 }} />
-                    <Typography variant="h5" color="success.dark" sx={{ fontWeight: 'bold' }}>
-                      Discordアカウントが連携されています
-                    </Typography>
-                  </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                  <CheckCircleIcon color="success" sx={{ fontSize: { xs: 24, sm: 36 } }} />
+                  <Typography variant="h5" color="success.dark" sx={{ 
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1.1rem', sm: '1.5rem' },
+                    wordBreak: 'keep-all'
+                  }}>
+                    Discordアカウント
+                  </Typography>
                   <Chip 
                     icon={<LinkIcon />} 
                     label="連携済み" 
                     color="success" 
                     variant="outlined"
                     sx={{ 
-                      fontSize: '0.9rem',
+                      fontSize: { xs: '0.7rem', sm: '0.9rem' },
                       fontWeight: 'bold',
                       borderWidth: '2px'
                     }}
@@ -643,18 +665,23 @@ function DiscordAuthContent() {
                 <Box sx={{ 
                   bgcolor: 'white', 
                   borderRadius: 3, 
-                  p: 3,
+                  p: { xs: 2, sm: 3 },
                   border: '1px solid',
                   borderColor: 'success.100',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
                 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    gap: { xs: 2, sm: 3 }
+                  }}>
                     <Avatar 
                       src={discordUser.avatar} 
                       alt={discordUser.username}
                       sx={{ 
-                        width: 80, 
-                        height: 80,
+                        width: { xs: 50, sm: 80 }, 
+                        height: { xs: 50, sm: 80 },
                         border: '4px solid',
                         borderColor: 'success.main',
                         boxShadow: '0 6px 16px rgba(0,0,0,0.2)'
@@ -668,8 +695,8 @@ function DiscordAuthContent() {
                           const fallbackText = document.createElement('div');
                           fallbackText.textContent = discordUser.username.charAt(0).toUpperCase();
                           fallbackText.style.cssText = `
-                            width: 80px;
-                            height: 80px;
+                            width: ${window.innerWidth < 600 ? '50px' : '80px'};
+                            height: ${window.innerWidth < 600 ? '50px' : '80px'};
                             border: 4px solid #4CAF50;
                             border-radius: 50%;
                             background: linear-gradient(45deg, #7289DA, #5865F2);
@@ -677,7 +704,7 @@ function DiscordAuthContent() {
                             display: flex;
                             align-items: center;
                             justify-content: center;
-                            font-size: 32px;
+                            font-size: ${window.innerWidth < 600 ? '20px' : '32px'};
                             font-weight: bold;
                             box-shadow: 0 6px 16px rgba(0,0,0,0.2);
                           `;
@@ -685,15 +712,37 @@ function DiscordAuthContent() {
                         }
                       }}
                     />
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'success.dark', mb: 1 }}>
+                    <Box sx={{ 
+                      textAlign: 'center',
+                      minWidth: 0
+                    }}>
+                      <Typography variant="h5" sx={{ 
+                        fontWeight: 'bold', 
+                        color: 'success.dark', 
+                        mb: 1,
+                        fontSize: { xs: '0.9rem', sm: '1.5rem' },
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
                         {discordUser.username}
                       </Typography>
-                      <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                      <Typography variant="body1" color="text.secondary" sx={{ 
+                        mb: 1,
+                        fontSize: { xs: '0.7rem', sm: '1rem' },
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
                         Discord ID: {discordUser.id}
                       </Typography>
                       {discordUser.discriminator && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" color="text.secondary" sx={{
+                          fontSize: { xs: '0.6rem', sm: '0.875rem' },
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis'
+                        }}>
                           #{discordUser.discriminator}
                         </Typography>
                       )}
@@ -713,13 +762,13 @@ function DiscordAuthContent() {
                       },
                       px: 5,
                       py: 2,
-                      fontSize: '1.1rem',
+                      fontSize: { xs: '0.9rem', sm: '1.1rem' },
                       fontWeight: 'bold',
                       borderRadius: 2,
                       boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)'
                     }}
                   >
-                    🎮 Minecraft ID認証に進む
+                    🎮 MCID認証に進む
                   </Button>
                 </Box>
               </Card>
@@ -736,7 +785,7 @@ function DiscordAuthContent() {
                 
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                   AOIRO IDにログイン済みです。次に、AOIROSERVERの認定メンバーになるためにDiscordアカウントを連携してください。
-                  連携が完了すると、Minecraft ID認証ページに進むことができます。
+                  連携が完了すると、MCID認証ページに進むことができます。
                 </Typography>
                 
                 <Box sx={{ textAlign: 'center' }}>

@@ -518,34 +518,63 @@ function MinecraftVerificationContent() {
               WebkitTextFillColor: 'transparent',
               textShadow: '0 0 30px rgba(102, 126, 234, 0.3)',
               animation: 'glow 3s ease-in-out infinite alternate',
-              mb: 3
+              mb: 3,
+              fontSize: { xs: '1.5rem', sm: '3rem' },
+              lineHeight: { xs: 1.2, sm: 1.3 },
+              wordBreak: 'keep-all'
             }}>
-              🎮 Minecraft ID認証
+              🎮 MCID認証
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" sx={{
+              fontSize: { xs: '0.9rem', sm: '1rem' },
+              lineHeight: { xs: 1.4, sm: 1.5 },
+              px: { xs: 1, sm: 0 }
+            }}>
               AOIROSERVERの認定メンバーになろう
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-              Minecraft IDを入力して認証を行ってください
+            <Typography variant="body2" color="text.secondary" sx={{ 
+              mb: 4,
+              fontSize: { xs: '0.8rem', sm: '0.875rem' },
+              lineHeight: { xs: 1.4, sm: 1.5 },
+              px: { xs: 1, sm: 0 }
+            }}>
+              MCIDを入力して認証を行ってください
             </Typography>
             
             {/* AOIRO IDログイン状態の表示 */}
             {user && session ? (
               <Box sx={{ 
                 mb: 4, 
-                p: 3, 
+                p: { xs: 2, sm: 3 }, 
                 bgcolor: 'rgba(76, 175, 80, 0.1)', 
                 borderRadius: 2,
                 border: '1px solid rgba(76, 175, 80, 0.3)',
                 backdropFilter: 'blur(10px)'
               }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
-                  <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 20 }} />
-                  <Typography variant="h6" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: { xs: 1.5, sm: 2 }, 
+                  mb: 2,
+                  flexWrap: 'wrap'
+                }}>
+                  <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: { xs: 18, sm: 20 } }} />
+                  <Typography variant="h6" sx={{ 
+                    color: '#4CAF50', 
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    wordBreak: 'keep-all'
+                  }}>
                     AOIRO IDにログイン済み
                   </Typography>
                 </Box>
-                <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ 
+                  color: 'rgba(255,255,255,0.8)', 
+                  textAlign: 'center',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  wordBreak: 'break-all'
+                }}>
                   ユーザー: {user.email}
                 </Typography>
               </Box>
@@ -561,19 +590,48 @@ function MinecraftVerificationContent() {
                 border: '1px solid rgba(255,255,255,0.2)',
                 backdropFilter: 'blur(10px)'
               }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
-                  <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />
-                  <Typography variant="h6" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
-                    Discordアカウント連携済み
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: { xs: 1.5, sm: 2 }, 
+                  mb: 2,
+                  flexWrap: 'wrap'
+                }}>
+                  <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: { xs: 20, sm: 24 } }} />
+                  <Typography variant="h6" sx={{ 
+                    color: '#4CAF50', 
+                    fontWeight: 'bold',
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    wordBreak: 'keep-all'
+                  }}>
+                    Discordアカウント
                   </Typography>
+                  <Chip 
+                    icon={<LinkIcon />} 
+                    label="連携済み" 
+                    color="success" 
+                    variant="outlined"
+                    sx={{ 
+                      fontSize: { xs: '0.6rem', sm: '0.8rem' },
+                      fontWeight: 'bold',
+                      borderWidth: '1px',
+                      height: { xs: 24, sm: 32 }
+                    }}
+                  />
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: { xs: 2, sm: 3 }
+                }}>
                   <Avatar 
                     src={discordUser.avatar} 
                     alt={discordUser.username}
                     sx={{ 
-                      width: 64, 
-                      height: 64,
+                      width: { xs: 40, sm: 64 }, 
+                      height: { xs: 40, sm: 64 },
                       border: '3px solid',
                       borderColor: '#4CAF50',
                       boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)'
@@ -587,8 +645,8 @@ function MinecraftVerificationContent() {
                         const fallbackText = document.createElement('div');
                         fallbackText.textContent = discordUser.username.charAt(0).toUpperCase();
                         fallbackText.style.cssText = `
-                          width: 64px;
-                          height: 64px;
+                          width: ${window.innerWidth < 600 ? '40px' : '64px'};
+                          height: ${window.innerWidth < 600 ? '40px' : '64px'};
                           border: 3px solid #4CAF50;
                           border-radius: 50%;
                           background: linear-gradient(45deg, #7289DA, #5865F2);
@@ -596,7 +654,7 @@ function MinecraftVerificationContent() {
                           display: flex;
                           align-items: center;
                           justify-content: center;
-                          font-size: 24px;
+                          font-size: ${window.innerWidth < 600 ? '16px' : '24px'};
                           font-weight: bold;
                           box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
                         `;
@@ -604,15 +662,39 @@ function MinecraftVerificationContent() {
                       }
                     }}
                   />
-                  <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold', mb: 0.5 }}>
+                  <Box sx={{ 
+                    textAlign: 'center',
+                    minWidth: 0
+                  }}>
+                    <Typography variant="h6" sx={{ 
+                      color: 'white', 
+                      fontWeight: 'bold', 
+                      mb: 0.5,
+                      fontSize: { xs: '0.8rem', sm: '1.25rem' },
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
                       {discordUser.username}
                     </Typography>
-                    <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mb: 0.5 }}>
+                    <Typography variant="body2" sx={{ 
+                      color: 'rgba(255,255,255,0.8)', 
+                      mb: 0.5,
+                      fontSize: { xs: '0.6rem', sm: '0.875rem' },
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}>
                       Discord ID: {discordUser.id}
                     </Typography>
                     {discordUser.discriminator && (
-                      <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.6)' }}>
+                      <Typography variant="caption" sx={{ 
+                        color: 'rgba(255,255,255,0.6)',
+                        fontSize: { xs: '0.5rem', sm: '0.75rem' },
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
                         #{discordUser.discriminator}
                       </Typography>
                     )}

@@ -323,7 +323,7 @@ function MinecraftAuthSuccessContent() {
           <Box sx={{ mb: 3, position: 'relative' }}>
             <CheckCircle 
               sx={{ 
-                fontSize: 100, 
+                fontSize: { xs: 60, sm: 100 }, 
                 color: '#4CAF50',
                 filter: 'drop-shadow(0 0 20px rgba(76, 175, 80, 0.6))',
                 animation: 'successPulse 2s ease-in-out infinite'
@@ -335,8 +335,8 @@ function MinecraftAuthSuccessContent() {
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: 120,
-              height: 120,
+              width: { xs: 80, sm: 120 },
+              height: { xs: 80, sm: 120 },
               borderRadius: '50%',
               border: '3px solid rgba(76, 175, 80, 0.3)',
               animation: 'successRing 2s ease-in-out infinite',
@@ -347,8 +347,8 @@ function MinecraftAuthSuccessContent() {
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: 140,
-              height: 140,
+              width: { xs: 100, sm: 140 },
+              height: { xs: 100, sm: 140 },
               borderRadius: '50%',
               border: '2px solid rgba(76, 175, 80, 0.2)',
               animation: 'successRing 2s ease-in-out infinite 0.5s',
@@ -365,13 +365,22 @@ function MinecraftAuthSuccessContent() {
             WebkitTextFillColor: 'transparent',
             textShadow: '0 0 30px rgba(76, 175, 80, 0.3)',
             animation: 'glow 3s ease-in-out infinite alternate',
-            mb: 3
+            mb: 3,
+            fontSize: { xs: '1.5rem', sm: '3rem' },
+            lineHeight: { xs: 1.2, sm: 1.3 },
+            wordBreak: 'keep-all'
           }}>
             🎉 認証完了！
           </Typography>
 
           {/* サブタイトル */}
-          <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ 
+            mb: 3,
+            fontSize: { xs: '1rem', sm: '1.25rem' },
+            lineHeight: { xs: 1.4, sm: 1.5 },
+            wordBreak: 'keep-all',
+            px: { xs: 1, sm: 0 }
+          }}>
             AOIROSERVERの認定メンバーになりました
           </Typography>
 
@@ -402,7 +411,11 @@ function MinecraftAuthSuccessContent() {
                 color: 'rgba(255,255,255,0.9)',
                 textAlign: 'center',
                 position: 'relative',
-                zIndex: 1
+                zIndex: 1,
+                fontSize: { xs: '1rem', sm: '1.25rem' },
+                lineHeight: { xs: 1.3, sm: 1.4 },
+                wordBreak: 'break-all',
+                px: { xs: 1, sm: 0 }
               }}>
                 🎮 Minecraft ID: <span style={{ 
                   color: '#4CAF50',
@@ -413,7 +426,13 @@ function MinecraftAuthSuccessContent() {
           )}
 
           {/* 完了メッセージ */}
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ 
+            mb: 4,
+            fontSize: { xs: '0.9rem', sm: '1rem' },
+            lineHeight: { xs: 1.5, sm: 1.6 },
+            px: { xs: 1, sm: 0 },
+            textAlign: 'center'
+          }}>
             おめでとうございます！Minecraft IDの認証が完了しました。
             <br />
             AOIROSERVERでより多くの機能を利用できるようになりました。
@@ -513,7 +532,13 @@ function MinecraftAuthSuccessContent() {
           )}
 
           {/* アクションボタン */}
-          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: { xs: 1.5, sm: 2 }, 
+            justifyContent: 'center', 
+            flexWrap: 'wrap',
+            flexDirection: { xs: 'column', sm: 'row' }
+          }}>
             <Button
               variant="contained"
               size="large"
@@ -524,9 +549,9 @@ function MinecraftAuthSuccessContent() {
                 backgroundSize: '200% 200%',
                 animation: 'gradientShift 3s ease infinite',
                 borderRadius: 3,
-                px: 4,
-                py: 2,
-                fontSize: '1.1rem',
+                px: { xs: 3, sm: 4 },
+                py: { xs: 1.5, sm: 2 },
+                fontSize: { xs: '0.9rem', sm: '1.1rem' },
                 fontWeight: 'bold',
                 boxShadow: '0 8px 25px rgba(33, 150, 243, 0.3)',
                 transition: 'all 0.3s ease',
@@ -549,9 +574,9 @@ function MinecraftAuthSuccessContent() {
                 backgroundSize: '200% 200%',
                 animation: 'gradientShift 3s ease infinite 0.5s',
                 borderRadius: 3,
-                px: 4,
-                py: 2,
-                fontSize: '1.1rem',
+                px: { xs: 3, sm: 4 },
+                py: { xs: 1.5, sm: 2 },
+                fontSize: { xs: '0.9rem', sm: '1.1rem' },
                 fontWeight: 'bold',
                 boxShadow: '0 8px 25px rgba(114, 137, 218, 0.3)',
                 transition: 'all 0.3s ease',
@@ -573,9 +598,9 @@ function MinecraftAuthSuccessContent() {
                 borderColor: '#4CAF50',
                 color: '#4CAF50',
                 borderRadius: 3,
-                px: 4,
-                py: 2,
-                fontSize: '1.1rem',
+                px: { xs: 3, sm: 4 },
+                py: { xs: 1.5, sm: 2 },
+                fontSize: { xs: '0.9rem', sm: '1.1rem' },
                 fontWeight: 'bold',
                 borderWidth: 2,
                 transition: 'all 0.3s ease',
