@@ -1,7 +1,7 @@
 "use client";
 import { Box, Card, Typography, Avatar, IconButton } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { Train, DirectionsBus, DirectionsWalk, MoreHoriz, ArrowBack } from "@mui/icons-material";
+import { Train, DirectionsBus, DirectionsWalk, MoreHoriz, ArrowBack, CreditCard } from "@mui/icons-material";
 import { ReactElement } from "react";
 
 interface CardData {
@@ -33,6 +33,13 @@ const CARD_DATA: CardData[] = [
     icon: <DirectionsBus sx={{ fontSize: { xs: 24, sm: 32 }, color: '#fff' }} />,
     color: "#050045",
     route: "/road-status",
+  },
+  {
+    id: "aic",
+    title: "AIC",
+    icon: <CreditCard sx={{ fontSize: { xs: 24, sm: 32 }, color: '#fff' }} />,
+    color: "#FF6B35",
+    route: "/aic-intro",
   },
   {
     id: "more",
