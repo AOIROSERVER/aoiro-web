@@ -362,7 +362,7 @@ const RotatingAICCard = ({ scrollProgress, isVisible }: { scrollProgress: number
                 letterSpacing: '1px',
                 fontFamily: 'monospace'
               }}>
-                0001 7557 0909 5079
+                0001 7559 5451 2607         
               </Typography>
               <Box sx={{ 
                 width: 24, 
@@ -416,7 +416,7 @@ const RotatingAICCard = ({ scrollProgress, isVisible }: { scrollProgress: number
                 letterSpacing: '0.5px',
                 fontFamily: 'monospace'
               }}>
-                EMP095079
+                EMP01
               </Typography>
             </Box>
             <Box sx={{ textAlign: 'center', flex: 1 }}>
@@ -434,7 +434,7 @@ const RotatingAICCard = ({ scrollProgress, isVisible }: { scrollProgress: number
                 letterSpacing: '0.5px',
                 fontFamily: 'monospace'
               }}>
-                27/08
+                30/08
               </Typography>
             </Box>
             <Box sx={{ textAlign: 'center', flex: 1 }}>
