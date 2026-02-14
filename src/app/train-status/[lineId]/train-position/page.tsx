@@ -381,8 +381,11 @@ export default function TrainPositionPage() {
     if (!lineName || !lineCode || !direction) return;
     // fetch-discord-messages.jsから列車位置情報を取得
     const fetchTrainPositions = () => {
-      // 前のシステム：Discord APIから直接メッセージを取得
-      fetch('/.netlify/functions/fetch-discord-messages')
+      // 開発環境では /api/netlify/functions/ を使用、本番環境では /.netlify/functions/ を使用
+      const apiPath = process.env.NODE_ENV === 'development' 
+        ? '/api/netlify/functions/fetch-discord-messages'
+        : '/.netlify/functions/fetch-discord-messages';
+      fetch(apiPath)
         .then(res => res.json())
         .then(data => {
           console.log('🚂 APIデータ受信:', data);

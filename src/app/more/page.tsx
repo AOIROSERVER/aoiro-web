@@ -2300,31 +2300,39 @@ export default function MorePage() {
           }} />
           
           <Box sx={{ 
-            position: 'relative', 
-            zIndex: 1, 
             p: { xs: 3, sm: 4 }, 
-            display: 'flex', 
-            flexDirection: 'column',
-            alignItems: 'flex-start'
+            textAlign: 'center', 
+            position: 'relative', 
+            zIndex: 1 
           }}>
-            {/* アイコンとタイトル */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ 
+              width: { xs: 50, sm: 60 }, 
+              height: { xs: 50, sm: 60 }, 
+              mb: { xs: 2, sm: 3 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: '50%',
+              backdropFilter: 'blur(10px)'
+            }}>
               <Security sx={{ 
-                fontSize: { xs: 32, sm: 40 }, 
-                mr: 2,
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))'
+                fontSize: { xs: 30, sm: 36 }, 
+                color: 'white',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
               }} />
-              <Typography variant="h5" fontWeight="bold" sx={{
-                background: 'linear-gradient(45deg, #ffffff 30%, #f0f0f0 90%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                fontSize: { xs: '1.2rem', sm: '1.5rem' }
-              }}>
-                ESシステム
-              </Typography>
             </Box>
+            <Typography variant="h5" fontWeight="bold" mb={2} sx={{ 
+              background: 'linear-gradient(45deg, #fff, #f0f0f0)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              textShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              fontSize: { xs: '1.2rem', sm: '1.5rem' }
+            }}>
+              ESシステム
+            </Typography>
             <Typography variant="body1" sx={{ 
               mb: { xs: 2, sm: 3 }, 
               opacity: 0.9, 
@@ -2380,7 +2388,7 @@ export default function MorePage() {
             </Button>
             
             {/* 申請種類の説明 */}
-            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
               <Chip 
                 label="運営申請" 
                 size="small" 
