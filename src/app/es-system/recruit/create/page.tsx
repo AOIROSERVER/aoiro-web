@@ -84,7 +84,10 @@ export default function RecruitCreatePage() {
           body: fd,
         });
         const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) throw new Error(uploadData.error || "画像のアップロードに失敗しました");
+        if (!uploadRes.ok) {
+          const msg = uploadData.detail ? `${uploadData.error || "画像のアップロードに失敗しました"}（${uploadData.detail}）` : (uploadData.error || "画像のアップロードに失敗しました");
+          throw new Error(msg);
+        }
         imageUrls = [uploadData.url];
         setUploading(false);
       }
@@ -261,21 +264,30 @@ export default function RecruitCreatePage() {
               </div>
 
               <hr className="detail-divider" />
-              <div className="detail-section-title">応募フォーム定義（JSON・GASに保存）</div>
+              <div className="detail-section-title">応募フォーム定義（JSON）</div>
+              <p className="apply-login-required-text" style={{ marginBottom: 12, fontSize: 13 }}>
+                応募時に表示する入力項目をJSONで定義します。未入力の場合はデフォルト（Minecraftゲームタグ・志望理由）が使われます。GASにも同じ内容が保存されます。
+              </p>
+              <label className="detail-section-title" style={{ display: "block", marginBottom: 6, fontSize: 14 }}>
+                フォーム定義 JSON
+              </label>
               <textarea
                 value={form.formSchemaJson}
                 onChange={(e) => setForm((p) => ({ ...p, formSchemaJson: e.target.value }))}
-                rows={12}
+                rows={14}
                 style={{
                   width: "100%",
-                  fontFamily: "monospace",
+                  fontFamily: "ui-monospace, monospace",
                   fontSize: 13,
-                  padding: 12,
-                  border: "1px solid var(--color-border)",
-                  borderRadius: 8,
+                  padding: 14,
+                  border: "2px solid var(--color-border)",
+                  borderRadius: 10,
                   marginBottom: 24,
+                  resize: "vertical",
+                  minHeight: 200,
                 }}
-                placeholder='{"fields":[{"id":"minecraft_tag","label":"Minecraftタグ","type":"text","required":true},...]}'
+                placeholder={`{\n  "fields": [\n    { "id": "minecraft_tag", "label": "Minecraftゲームタグ", "type": "text", "required": true },\n    { "id": "motivation", "label": "志望理由", "type": "textarea", "required": true }\n  ]\n}`}
+                aria-label="応募フォーム定義（JSON）"
               />
 
               <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
