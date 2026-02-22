@@ -16,7 +16,6 @@ const DEFAULT_FORM_SCHEMA = {
 export default function RecruitCreatePage() {
   const router = useRouter();
   const { user, session, loading: authLoading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
   const [adminCheckDone, setAdminCheckDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -34,19 +33,9 @@ export default function RecruitCreatePage() {
   });
 
   useEffect(() => {
-    if (authLoading || !user) return;
-    fetch("/api/check-admin-role", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setIsAdmin(!!data.isAdmin);
-        setAdminCheckDone(true);
-        if (!data.isAdmin) router.push("/es-system/companies");
-      })
-      .catch(() => setAdminCheckDone(true));
+    if (authLoading) return;
+    setAdminCheckDone(true);
+    if (!user) router.push("/es-system/companies");
   }, [user, authLoading, router]);
 
   const handleEyecatchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +128,7 @@ export default function RecruitCreatePage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!user) {
     return null;
   }
 

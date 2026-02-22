@@ -116,6 +116,56 @@ export async function getCompanyByIdFromSheets(companyId: string): Promise<Compa
   return list.find((c) => c.id === companyId) || null;
 }
 
+/** 会社の作成者ID（created_by）を取得。L列 */
+export async function getCompanyCreatedBy(companyId: string): Promise<string | null> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key) return null;
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${COMPANIES_SHEET}!A2:L`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const row = rows.find((r) => r[0] === companyId);
+    return row && row[11] ? row[11] : null;
+  } catch {
+    return null;
+  }
+}
+
+/** 指定ユーザーが作成した会社一覧（created_by 列でフィルタ）。L列 = created_by */
+export async function getMyCompaniesFromSheets(userId: string): Promise<Company[]> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key || !userId) return [];
+
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${COMPANIES_SHEET}!A2:L`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    return rows
+      .filter((r) => r[0] && r[1] && (r[11] || '') === userId)
+      .map((r) => rowToCompany(r))
+      .filter((c) => c.active);
+  } catch (e) {
+    console.error('getMyCompaniesFromSheets error:', e);
+    return [];
+  }
+}
+
 /** 会社を1件追加。id は自動生成。戻り値: 作成した会社の id */
 export async function addCompanyToSheets(company: {
   name: string;
@@ -126,6 +176,7 @@ export async function addCompanyToSheets(company: {
   formSchema?: Record<string, unknown> | null;
   maxParticipants?: number;
   imageUrls?: string[];
+  createdBy?: string;
 }): Promise<string> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!key) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
@@ -147,10 +198,10 @@ export async function addCompanyToSheets(company: {
     if (!headerRes.data.values || headerRes.data.values.length === 0) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${COMPANIES_SHEET}!A1:K1`,
+        range: `${COMPANIES_SHEET}!A1:L1`,
         valueInputOption: 'RAW',
         requestBody: {
-          values: [['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active']],
+          values: [['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active', 'created_by']],
         },
       });
     }
@@ -161,6 +212,7 @@ export async function addCompanyToSheets(company: {
   const tagsStr = (company.tags || []).join(',');
   const formJson = company.formSchema ? JSON.stringify(company.formSchema) : '';
   const imageUrlsStr = (company.imageUrls || []).join(',');
+  const createdBy = company.createdBy ?? '';
   const values = [[
     id,
     company.name,
@@ -173,11 +225,12 @@ export async function addCompanyToSheets(company: {
     imageUrlsStr,
     new Date().toISOString(),
     '1',
+    createdBy,
   ]];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: COMPANIES_RANGE,
+    range: `${COMPANIES_SHEET}!A2:L`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values },
@@ -194,6 +247,24 @@ function generateId(): string {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
+  });
+}
+
+/** シートが存在しなければ作成する */
+async function ensureApplicationsSheetExists(sheets: ReturnType<typeof google.sheets>, spreadsheetId: string): Promise<void> {
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties.title',
+  });
+  const exists = meta.data.sheets?.some(
+    (s) => (s.properties?.title ?? '') === APPLICATIONS_SHEET
+  );
+  if (exists) return;
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{ addSheet: { properties: { title: APPLICATIONS_SHEET } } }],
+    },
   });
 }
 
@@ -218,6 +289,8 @@ export async function appendCompanyApplication(row: {
   const sheets = google.sheets({ version: 'v4', auth });
   const spreadsheetId = GOOGLE_SHEETS_ID;
 
+  await ensureApplicationsSheetExists(sheets, spreadsheetId);
+
   try {
     const headerRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
@@ -233,8 +306,8 @@ export async function appendCompanyApplication(row: {
         },
       });
     }
-  } catch {
-    // シートが無い場合は手動で「CompanyApplications」シートを追加してください
+  } catch (e) {
+    console.error('CompanyApplications header check/update error:', e);
   }
 
   const values = [[

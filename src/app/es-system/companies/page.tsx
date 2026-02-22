@@ -22,8 +22,9 @@ type Company = {
 
 export default function CompaniesPage() {
   const router = useRouter();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [companies, setCompanies] = useState<Company[]>([]);
+  const avatarUrl = user?.user_metadata?.picture ?? user?.user_metadata?.avatar_url ?? null;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
@@ -101,11 +102,21 @@ export default function CompaniesPage() {
               検索
             </button>
           </div>
-          {isAdmin && (
-            <Link href="/es-system/recruit/create" className="recruit-create-btn">
-              <span aria-hidden>➕</span>
-              募集作成
-            </Link>
+          {user && (
+            <>
+              <Link href="/es-system/recruit/create" className="recruit-create-btn">
+                <span aria-hidden>➕</span>
+                募集作成
+              </Link>
+              <Link href="/es-system/recruit/my" className="recruit-create-btn" style={{ background: "var(--color-bg)", borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" width={20} height={20} style={{ borderRadius: "50%", objectFit: "cover" }} />
+                ) : (
+                  <span aria-hidden>👤</span>
+                )}
+                過去の投稿一覧
+              </Link>
+            </>
           )}
         </div>
       </div>
