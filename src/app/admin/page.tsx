@@ -16,7 +16,8 @@ import {
   CreditCard,
   People,
   Settings,
-  Dashboard
+  Dashboard,
+  Business,
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -107,6 +108,13 @@ export default function AdminDashboardPage() {
       icon: <Settings sx={{ fontSize: 40, color: '#f57c00' }} />,
       path: '/admin/settings',
       color: '#fff3e0'
+    },
+    {
+      title: '入社申請・カンパニー管理',
+      description: '会社の登録、フォーム紐づけ、申請の許可・拒否',
+      icon: <Business sx={{ fontSize: 40, color: '#059669' }} />,
+      path: '/es-system/company-admin',
+      color: '#ecfdf5'
     }
   ];
 

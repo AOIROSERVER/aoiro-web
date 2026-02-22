@@ -49,6 +49,7 @@ import {
   Inventory,
   CreditCard,
   Security,
+  Business,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../contexts/AuthContext";
@@ -2260,6 +2261,108 @@ export default function MorePage() {
                 </>
               )}
             </Box>
+          </Box>
+        </Card>
+
+        {/* 入社申請 */}
+        <Typography variant="subtitle1" fontWeight="bold" mb={2} sx={{ color: '#212529', mt: 4 }}>
+          入社申請
+        </Typography>
+        <Card sx={{
+          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+          color: 'white',
+          borderRadius: 4,
+          cursor: 'pointer',
+          position: 'relative',
+          overflow: 'hidden',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 12px 40px rgba(5, 150, 105, 0.4)',
+            '& .nyusha-glow': {
+              opacity: 1,
+              transform: 'scale(1.1)'
+            }
+          },
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          mb: 3
+        }} onClick={() => router.push('/es-system/companies')}>
+          <Box className="nyusha-glow" sx={{
+            position: 'absolute',
+            top: -50,
+            right: -50,
+            width: 100,
+            height: 100,
+            background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
+            borderRadius: '50%',
+            opacity: 0,
+            transition: 'all 0.4s ease'
+          }} />
+          <Box sx={{
+            p: { xs: 3, sm: 4 },
+            textAlign: 'center',
+            position: 'relative',
+            zIndex: 1
+          }}>
+            <Box sx={{
+              width: { xs: 50, sm: 60 },
+              height: { xs: 50, sm: 60 },
+              mb: { xs: 2, sm: 3 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              background: 'rgba(255,255,255,0.15)',
+              borderRadius: '50%',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <Business sx={{
+                fontSize: { xs: 30, sm: 36 },
+                color: 'white',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
+              }} />
+            </Box>
+            <Typography variant="h5" fontWeight="bold" mb={2} sx={{
+              background: 'linear-gradient(45deg, #fff, #d1fae8)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontSize: { xs: '1.2rem', sm: '1.5rem' }
+            }}>
+              入社申請
+            </Typography>
+            <Typography variant="body1" sx={{
+              mb: { xs: 2, sm: 3 },
+              opacity: 0.9,
+              fontWeight: 500,
+              fontSize: { xs: '0.9rem', sm: '1rem' }
+            }}>
+              建設会社などを探して、入社申請ができます
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={(e) => { e.stopPropagation(); router.push('/es-system/companies'); }}
+              sx={{
+                background: 'linear-gradient(45deg, rgba(255,255,255,0.25), rgba(255,255,255,0.15))',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.35)',
+                borderRadius: '25px',
+                px: { xs: 3, sm: 4 },
+                py: { xs: 1, sm: 1.5 },
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                textTransform: 'none',
+                '&:hover': {
+                  background: 'linear-gradient(45deg, rgba(255,255,255,0.35), rgba(255,255,255,0.25))',
+                  transform: 'scale(1.05)',
+                  boxShadow: '0 8px 25px rgba(255,255,255,0.3)'
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              startIcon={<Launch sx={{ fontSize: { xs: 16, sm: 18 } }} />}
+            >
+              会社を探す
+            </Button>
           </Box>
         </Card>
 
