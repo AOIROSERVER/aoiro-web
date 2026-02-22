@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -7,24 +9,43 @@ const BUCKET = 'recruit-eyecatch';
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
+export const dynamic = 'force-dynamic';
+
 /**
  * 募集のアイキャッチ画像を Supabase Storage にアップロードするAPI
  * POST: multipart/form-data で file を送信 → 公開URLを返す
- * 管理者のみ（Authorization: Bearer で判定）
+ * ログイン済みユーザーなら誰でもアップロード可（recruit-eyecatch バケット）
+ * 認証: Authorization Bearer または Cookie のセッション
  */
 export async function POST(request: NextRequest) {
   try {
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('es-upload-image: SUPABASE_URL or SERVICE_ROLE_KEY is missing');
+      return NextResponse.json({ error: 'アップロードの設定がありません' }, { status: 500 });
+    }
+
+    let user: { id: string } | null = null;
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.replace(/Bearer\s+/i, '');
-    if (!token || !supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    if (token) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: { user: u }, error: authError } = await supabase.auth.getUser(token);
+      if (!authError && u) user = u;
     }
+    if (!user) {
+      try {
+        const supabaseCookie = createRouteHandlerClient({ cookies });
+        const { data: { user: u } } = await supabaseCookie.auth.getUser();
+        if (u) user = u;
+      } catch {
+        // cookie 取得失敗時はそのまま 401
+      }
+    }
+    if (!user) {
+      return NextResponse.json({ error: '認証が必要です。ログインしてください。' }, { status: 401 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: { user } } = await supabase.auth.getUser(token);
-    const isAdmin = user?.email === 'aoiroserver.m@gmail.com' || user?.email === process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
-    if (!isAdmin) {
-      return NextResponse.json({ error: '管理者のみアップロードできます' }, { status: 403 });
-    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
