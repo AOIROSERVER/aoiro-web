@@ -37,7 +37,7 @@ export default function ApplyPage() {
   const params = useParams();
   const router = useRouter();
   const { user, session, loading: authLoading } = useAuth();
-  const companyId = params.companyId as string;
+  const companyId = params?.companyId != null ? String(params.companyId) : null;
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [formValues, setFormValues] = useState<Record<string, string>>({});
@@ -106,6 +106,20 @@ export default function ApplyPage() {
       setSubmitting(false);
     }
   };
+
+  if (!companyId) {
+    return (
+      <div className="apply-login-required-wrap">
+        <div className="apply-login-required-card">
+          <p className="apply-login-required-title">会社が見つかりません</p>
+          <p className="apply-login-required-text">URLが正しいか確認するか、会社一覧から再度お選びください。</p>
+          <Link href="/es-system/companies" className="apply-login-required-btn">
+            会社一覧へ戻る
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading || loading) {
     return (
