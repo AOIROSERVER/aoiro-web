@@ -1,17 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { getCompaniesFromSheets, getMyCompaniesFromSheets, addCompanyToSheets, SEED_COMPANY } from '@/lib/es-companies-sheets';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-async function isAdmin(request: NextRequest): Promise<boolean> {
+/** Authorization Bearer または Cookie からユーザーを取得 */
+async function getAuthenticatedUser(request: NextRequest): Promise<{ id: string; email?: string } | null> {
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.replace(/Bearer\s+/i, '');
-  if (!token || !supabaseUrl || !supabaseServiceKey) return false;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-  const { data: { user } } = await supabase.auth.getUser(token);
-  return user?.email === 'aoiroserver.m@gmail.com' || user?.email === process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
+  if (token && supabaseUrl && supabaseServiceKey) {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (user) return user;
+  }
+  try {
+    const supabaseCookie = createRouteHandlerClient({ cookies });
+    const { data: { user } } = await supabaseCookie.auth.getUser();
+    if (user) return user;
+  } catch {
+    // cookie 取得失敗時は null
+  }
+  return null;
+}
+
+async function isAdmin(request: NextRequest): Promise<boolean> {
+  const user = await getAuthenticatedUser(request);
+  return user?.email === 'aoiroserver.m@gmail.com' || user?.email === process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL || false;
 }
 
 export async function GET(request: NextRequest) {
@@ -19,13 +36,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mine = searchParams.get('mine');
     if (mine === '1') {
-      const authHeader = request.headers.get('authorization');
-      const token = authHeader?.replace(/Bearer\s+/i, '');
-      if (!token || !supabaseUrl || !supabaseServiceKey) {
-        return NextResponse.json([]);
-      }
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      const { data: { user } } = await supabase.auth.getUser(token);
+      const user = await getAuthenticatedUser(request);
       if (!user) return NextResponse.json([]);
       const list = await getMyCompaniesFromSheets(user.id);
       return NextResponse.json(list);
@@ -45,13 +56,7 @@ export async function GET(request: NextRequest) {
 /** ログイン済みユーザー: 募集（会社・プロジェクト）を新規登録 */
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace(/Bearer\s+/i, '');
-    if (!token || !supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
-    }
-    const supabaseAuth = createClient(supabaseUrl, supabaseServiceKey);
-    const { data: { user } } = await supabaseAuth.auth.getUser(token);
+    const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
     }
