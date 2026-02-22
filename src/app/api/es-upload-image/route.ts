@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { isGarageConfigured, uploadRecruitEyecatchToGarage } from '@/lib/garage-storage';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -14,9 +15,9 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 /**
- * 募集のアイキャッチ画像を Supabase Storage にアップロードするAPI
- * POST: multipart/form-data で file を送信 → 公開URLを返す
- * ログイン済みユーザーなら誰でもアップロード可（recruit-eyecatch バケット）
+ * 募集のアイキャッチ画像をアップロードするAPI
+ * - GARAGE_* が設定されていれば NAS（Garage/MinIO）に保存
+ * - 未設定なら Supabase Storage（recruit-eyecatch）に保存
  * 認証: Authorization Bearer または Cookie のセッション
  */
 export async function POST(request: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('es-upload-image: SUPABASE_URL or SERVICE_ROLE_KEY is missing');
-      return fail('アップロードの設定がありません', 500);
+      return fail('認証の設定がありません', 500);
     }
 
     let user: { id: string } | null = null;
@@ -82,8 +83,26 @@ export async function POST(request: NextRequest) {
       return fail('ファイルの読み取りに失敗しました', 500, String(e));
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const ext = file.name.split('.').pop() || 'jpg';
+
+    // NAS（Garage）が設定されていればそちらに保存
+    if (isGarageConfigured()) {
+      try {
+        const { url, path: garagePath } = await uploadRecruitEyecatchToGarage(
+          buffer,
+          file.type,
+          ext
+        );
+        return NextResponse.json({ url, path: garagePath });
+      } catch (e) {
+        const err = e instanceof Error ? e : new Error(String(e));
+        console.error('es-upload-image Garage upload error:', err);
+        return fail('NASへのアップロードに失敗しました', 500, err.message);
+      }
+    }
+
+    // Garage 未設定時は Supabase Storage に保存
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
 
     const { data, error } = await supabase.storage
