@@ -35,6 +35,7 @@ export default function RecruitMyPage() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterCompanyId, setFilterCompanyId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !session?.access_token) {
@@ -62,11 +63,31 @@ export default function RecruitMyPage() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error("更新に失敗しました");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "更新に失敗しました");
       const list = await fetch("/api/es-companies/applications", { headers: { Authorization: `Bearer ${session.access_token}` }, credentials: "include" }).then((r) => r.json());
       setApplications(Array.isArray(list) ? list : []);
-    } catch {
-      alert("ステータスの更新に失敗しました");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "ステータスの更新に失敗しました");
+    }
+  };
+
+  const deleteCompany = async (companyId: string) => {
+    if (!session?.access_token || !confirm("この募集を削除（非表示）にしますか？")) return;
+    setDeletingId(companyId);
+    try {
+      const res = await fetch(`/api/es-companies/${companyId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "削除に失敗しました");
+      setCompanies((prev) => prev.filter((c) => c.id !== companyId));
+      setApplications((prev) => prev.filter((a) => a.companyId !== companyId));
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "削除に失敗しました");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -123,14 +144,27 @@ export default function RecruitMyPage() {
                           <strong>{c.name}</strong>
                           <span style={{ marginLeft: 8, fontSize: 13, color: "var(--color-text-muted)" }}>{c.location || "—"}</span>
                         </div>
-                        <button
-                          type="button"
-                          className="recruit-create-btn"
-                          style={{ fontSize: 12, padding: "6px 12px" }}
-                          onClick={() => setFilterCompanyId(filterCompanyId === c.id ? null : c.id)}
-                        >
-                          {filterCompanyId === c.id ? "すべて表示" : "この募集の申請のみ"}
-                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                          <Link href={`/es-system/recruit/edit/${c.id}`} className="recruit-create-btn" style={{ fontSize: 12, padding: "6px 12px", textDecoration: "none" }}>
+                            編集
+                          </Link>
+                          <button
+                            type="button"
+                            className="recruit-create-btn"
+                            style={{ fontSize: 12, padding: "6px 12px" }}
+                            onClick={() => setFilterCompanyId(filterCompanyId === c.id ? null : c.id)}
+                          >
+                            {filterCompanyId === c.id ? "すべて表示" : "この募集の申請のみ"}
+                          </button>
+                          <button
+                            type="button"
+                            style={{ fontSize: 12, padding: "6px 12px", color: "#c62828", background: "none", border: "1px solid #c62828", borderRadius: 4, cursor: "pointer" }}
+                            onClick={() => deleteCompany(c.id)}
+                            disabled={deletingId === c.id}
+                          >
+                            {deletingId === c.id ? "削除中..." : "削除"}
+                          </button>
+                        </div>
                       </div>
                     </li>
                   ))}

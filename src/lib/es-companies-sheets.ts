@@ -151,8 +151,8 @@ export async function getCompanyCreatorIds(companyId: string): Promise<{
   }
 }
 
-/** 指定ユーザーが作成した会社一覧（created_by 列でフィルタ）。L列 = created_by */
-export async function getMyCompaniesFromSheets(userId: string): Promise<Company[]> {
+/** 指定ユーザーが作成した会社一覧。L列(created_by)またはM列(created_by_discord_id)で一致。discordId を渡すと両方で照合 */
+export async function getMyCompaniesFromSheets(userId: string, discordId?: string | null): Promise<Company[]> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!key || !userId) return [];
 
@@ -169,7 +169,12 @@ export async function getMyCompaniesFromSheets(userId: string): Promise<Company[
     });
     const rows = (res.data.values || []) as string[][];
     return rows
-      .filter((r) => r[0] && r[1] && (r[11] || '') === userId)
+      .filter((r) => {
+        if (!r[0] || !r[1]) return false;
+        const matchL = (r[11] || '').trim() === userId;
+        const matchM = discordId && (r[12] || '').trim() === discordId;
+        return matchL || matchM;
+      })
       .map((r) => rowToCompany(r))
       .filter((c) => c.active);
   } catch (e) {
@@ -259,6 +264,101 @@ export async function addCompanyToSheets(company: {
     requestBody: { values },
   });
   return id;
+}
+
+/** 会社1件を更新（作成者または管理者のみ）。id は変更不可。 */
+export async function updateCompanyInSheets(
+  companyId: string,
+  updates: {
+    name?: string;
+    description?: string;
+    location?: string;
+    employmentType?: string;
+    tags?: string[];
+    formSchema?: Record<string, unknown> | null;
+    maxParticipants?: number;
+    imageUrls?: string[];
+  }
+): Promise<boolean> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key) return false;
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${COMPANIES_SHEET}!A2:O`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const rowIndex = rows.findIndex((r) => r[0] === companyId);
+    if (rowIndex < 0) return false;
+    const row = rows[rowIndex] || [];
+    const name = updates.name !== undefined ? updates.name : (row[1] || '');
+    const description = updates.description !== undefined ? updates.description : (row[2] || '');
+    const location = updates.location !== undefined ? updates.location : (row[3] || '');
+    const employmentType = updates.employmentType !== undefined ? updates.employmentType : (row[4] || '正社員');
+    const tagsStr = updates.tags !== undefined ? updates.tags.join(',') : (row[5] || '');
+    const formJson = updates.formSchema !== undefined ? JSON.stringify(updates.formSchema) : (row[6] || '');
+    const maxParticipants = updates.maxParticipants !== undefined ? String(updates.maxParticipants) : (row[7] || '0');
+    const imageUrlsStr = updates.imageUrls !== undefined ? updates.imageUrls.join(',') : (row[8] || '');
+    const created_at = row[9] || '';
+    const active = row[10] ?? '1';
+    const createdBy = row[11] || '';
+    const discordId = row[12] || '';
+    const discordUsername = row[13] || '';
+    const companyDetail = `${name}${description ? ` | ${description.replace(/\s+/g, ' ').trim().slice(0, 100)}${description.length > 100 ? '…' : ''}` : ''}`;
+    const range = `${COMPANIES_SHEET}!A${rowIndex + 2}:O${rowIndex + 2}`;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range,
+      valueInputOption: 'RAW',
+      requestBody: {
+        values: [[
+          companyId, name, description, location, employmentType, tagsStr, formJson, maxParticipants, imageUrlsStr, created_at, active, createdBy, discordId, discordUsername, companyDetail,
+        ]],
+      },
+    });
+    return true;
+  } catch (e) {
+    console.error('updateCompanyInSheets error:', e);
+    return false;
+  }
+}
+
+/** 会社を無効化（論理削除）。active を 0 にする。 */
+export async function setCompanyActiveInSheets(companyId: string, active: boolean): Promise<boolean> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key) return false;
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${COMPANIES_SHEET}!A2:K`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const rowIndex = rows.findIndex((r) => r[0] === companyId);
+    if (rowIndex < 0) return false;
+    const range = `${COMPANIES_SHEET}!K${rowIndex + 2}`;
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[active ? '1' : '0']] },
+    });
+    return true;
+  } catch (e) {
+    console.error('setCompanyActiveInSheets error:', e);
+    return false;
+  }
 }
 
 /** 入社申請を「CompanyApplications」シートに追加。列: 申請ID, 申請日時, 会社ID, 会社名, メール, Discord, Discord ID, Minecraftタグ, 志望理由, ステータス, user_id（AIC所属更新用） */

@@ -5,14 +5,16 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { getCompaniesFromSheets, getMyCompaniesFromSheets, addCompanyToSheets, SEED_COMPANY } from '@/lib/es-companies-sheets';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-/** Authorization Bearer または Cookie からユーザーを取得（user_metadata 含む） */
+/** Authorization Bearer または Cookie からユーザーを取得（SERVICE_ROLE_KEY がなくても anon で検証） */
 async function getAuthenticatedUser(request: NextRequest): Promise<{ id: string; email?: string; user_metadata?: Record<string, unknown> } | null> {
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.replace(/Bearer\s+/i, '');
-  if (token && supabaseUrl && supabaseServiceKey) {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const key = supabaseServiceKey || supabaseAnonKey;
+  if (token && supabaseUrl && key) {
+    const supabase = createClient(supabaseUrl, key);
     const { data: { user } } = await supabase.auth.getUser(token);
     if (user) return user;
   }
@@ -47,7 +49,8 @@ export async function GET(request: NextRequest) {
     if (mine === '1') {
       const user = await getAuthenticatedUser(request);
       if (!user) return NextResponse.json([]);
-      const list = await getMyCompaniesFromSheets(user.id);
+      const discordId = getDiscordFromUser(user).id || null;
+      const list = await getMyCompaniesFromSheets(user.id, discordId || undefined);
       return NextResponse.json(list);
     }
     const companies = await getCompaniesFromSheets();

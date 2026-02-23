@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { updateApplicationStatus, getApplicationsFromSheets, getCompanyCreatorIds, setAICCompanyForUser } from '@/lib/es-companies-sheets';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 function getDiscordIdFromUser(user: { user_metadata?: Record<string, unknown> }): string | null {
   const m = user.user_metadata || {};
@@ -11,19 +14,33 @@ function getDiscordIdFromUser(user: { user_metadata?: Record<string, unknown> })
   return id != null ? String(id).trim() || null : null;
 }
 
-async function canManageApplication(request: NextRequest, applicationCompanyId: string): Promise<boolean> {
+async function getAuthenticatedUser(request: NextRequest): Promise<{ id: string; email?: string; user_metadata?: Record<string, unknown> } | null> {
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.replace(/Bearer\s+/i, '');
-  if (!token || !supabaseUrl || !supabaseServiceKey) return false;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  if (!token || !supabaseUrl) return null;
+  const key = supabaseServiceKey || supabaseAnonKey;
+  if (!key) return null;
+  const supabase = createClient(supabaseUrl, key);
   const { data: { user } } = await supabase.auth.getUser(token);
+  if (user) return user;
+  try {
+    const supabaseCookie = createRouteHandlerClient({ cookies });
+    const { data: { user: u } } = await supabaseCookie.auth.getUser();
+    return u;
+  } catch {
+    return null;
+  }
+}
+
+async function canManageApplication(request: NextRequest, applicationCompanyId: string): Promise<boolean> {
+  const user = await getAuthenticatedUser(request);
   if (!user) return false;
   const isAdmin = user.email === 'aoiroserver.m@gmail.com' || user.email === process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
   if (isAdmin) return true;
   const { createdBy, createdByDiscordId } = await getCompanyCreatorIds(applicationCompanyId);
-  if (createdBy === user.id) return true;
+  if (createdBy && createdBy === user.id) return true;
   const discordId = getDiscordIdFromUser(user);
-  if (discordId && createdByDiscordId === discordId) return true;
+  if (discordId && createdByDiscordId && createdByDiscordId === discordId) return true;
   return false;
 }
 
