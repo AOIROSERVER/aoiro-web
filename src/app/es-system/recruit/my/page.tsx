@@ -36,6 +36,9 @@ export default function RecruitMyPage() {
   const [loading, setLoading] = useState(true);
   const [filterCompanyId, setFilterCompanyId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [aicMainCompany, setAicMainCompany] = useState<string | null>(null);
+  const [aicPartTimeCompanies, setAicPartTimeCompanies] = useState<string[]>([]);
+  const [resigning, setResigning] = useState(false);
 
   useEffect(() => {
     if (!user || !session?.access_token) {
@@ -51,7 +54,17 @@ export default function RecruitMyPage() {
     fetch("/api/es-companies/applications", { headers, credentials: "include" })
       .then((r) => r.json())
       .then((list) => setApplications(Array.isArray(list) ? list : []))
-      .catch(() => setApplications([]))
+      .catch(() => setApplications([]));
+    fetch("/api/aic-company", { headers, credentials: "include" })
+      .then((r) => r.json())
+      .then((d: { mainCompanyName?: string | null; partTimeCompanyNames?: string[] }) => {
+        setAicMainCompany(d.mainCompanyName ?? null);
+        setAicPartTimeCompanies(Array.isArray(d.partTimeCompanyNames) ? d.partTimeCompanyNames : []);
+      })
+      .catch(() => {
+        setAicMainCompany(null);
+        setAicPartTimeCompanies([]);
+      })
       .finally(() => setLoading(false));
   }, [user, session?.access_token]);
 
@@ -69,6 +82,26 @@ export default function RecruitMyPage() {
       setApplications(Array.isArray(list) ? list : []);
     } catch (e) {
       alert(e instanceof Error ? e.message : "ステータスの更新に失敗しました");
+    }
+  };
+
+  const resign = async () => {
+    if (!session?.access_token || !confirm("現在の所属（正社員・アルバイト）をすべて退職しますか？AICカードの表示も更新されます。")) return;
+    setResigning(true);
+    try {
+      const res = await fetch("/api/aic-company/resign", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "退職に失敗しました");
+      setAicMainCompany(null);
+      setAicPartTimeCompanies([]);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "退職に失敗しました");
+    } finally {
+      setResigning(false);
     }
   };
 
@@ -130,6 +163,42 @@ export default function RecruitMyPage() {
             <p className="section-sub" style={{ marginBottom: 24 }}>
               自分が作成した募集と、その申請一覧です。申請の許可・拒否ができます。
             </p>
+
+            <div className="detail-section-title">現在の所属</div>
+            {aicMainCompany || aicPartTimeCompanies.length > 0 ? (
+              <div className="info-item" style={{ marginBottom: 24 }}>
+                {aicMainCompany && (
+                  <p style={{ margin: "0 0 4px 0", fontSize: 15 }}>
+                    <strong>正社員:</strong> {aicMainCompany}
+                  </p>
+                )}
+                {aicPartTimeCompanies.length > 0 && (
+                  <p style={{ margin: "0 0 12px 0", fontSize: 14, color: "var(--color-text-secondary)" }}>
+                    アルバイト中: {aicPartTimeCompanies.join("、")}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={resign}
+                  disabled={resigning}
+                  style={{
+                    fontSize: 13,
+                    padding: "6px 14px",
+                    color: "#c62828",
+                    background: "none",
+                    border: "1px solid #c62828",
+                    borderRadius: 6,
+                    cursor: resigning ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {resigning ? "処理中..." : "退職する"}
+                </button>
+              </div>
+            ) : (
+              <p className="section-sub" style={{ marginBottom: 24 }}>現在、所属している会社はありません。</p>
+            )}
+
+            <hr className="detail-divider" />
 
             {companies.length === 0 ? (
               <p className="apply-login-required-text">まだ募集を作成していません。<Link href="/es-system/recruit/create" className="apply-login-required-back">募集を作成</Link></p>

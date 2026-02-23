@@ -30,15 +30,48 @@
 
 ## 手順 2: Interactions Endpoint URL を設定する（ボタンで許可/拒否するため必須）
 
-1. 開発者ポータルの **「General Information」** の下の方に **「Interactions Endpoint URL」** があります。
-2. 本番で使う URL を入力します。  
-   - 例: `https://あなたのドメイン/api/discord-interaction`  
-   - ローカルで試す場合は ngrok などで HTTPS の URL を用意し、その URL を登録します。
-3. **「Save Changes」** を押すと、Discord がその URL に **PING** を送って確認します。  
-   - このサイト側の `/api/discord-interaction` が **PONG** を返すと「Valid」と表示されます。
-   - 失敗する場合は、URL が正しいか・サーバーが起動しているか・`DISCORD_APPLICATION_PUBLIC_KEY` が正しく設定されているかを確認してください。
+### 何を入力するか
 
-これで、社長が DM 内の「許可」「拒否」ボタンを押したときに、Discord がこの URL にリクエストを送り、サイト側で申請ステータスを更新できます。
+**Interactions Endpoint URL** には、**あなたのサイトの本番URL + `/api/discord-interaction`** を入力します。
+
+- **形式**: `https://あなたのドメイン/api/discord-interaction`
+- **例（Netlify の場合）**: `https://あなたのサイト名.netlify.app/api/discord-interaction`
+- **例（独自ドメイン）**: `https://aoiro.example.com/api/discord-interaction`
+- **注意**: 末尾にスラッシュ（`/`）は付けません。`/api/discord-interaction` までで止めます。
+
+### 入力の手順
+
+1. Discord 開発者ポータルで **「General Information」** を開く。
+2. 下の方にある **「Interactions Endpoint URL」** の入力欄をクリックする。
+3. 上記の形式で URL を**1文字も間違えず**に貼り付ける（`https` 必須・スペースや改行が入らないようにする）。
+4. **「Save Changes」** を押す。
+5. Discord がその URL に **PING** を送って検証する。成功すると「Valid」と表示される。
+
+### 「Error submitting form. Please try again, or click here to contact support.」が出る場合
+
+このメッセージは、**Save を押したあと Discord があなたの URL に PING を送ったが、正しい応答が返ってこなかった**ときに表示されます。
+
+**確認すること（順に試してください）**:
+
+1. **URL が本番で動いているか**  
+   ブラウザで `https://あなたのドメイン/api/discord-interaction` を **POST** で開くことはできないので、代わりに **サイトのトップ**（例: `https://あなたのドメイン/`）が開くか確認する。トップが開く = デプロイされている。
+
+2. **URL の typo**  
+   - `https` になっているか  
+   - ドメインのあとに `/api/discord-interaction` が**必ず**続いているか  
+   - 末尾に余計な `/` やスペースが付いていないか  
+
+3. **環境変数が本番に入っているか**  
+   Netlify などでは、**本番の Environment variables** に `DISCORD_APPLICATION_PUBLIC_KEY` が設定されていないと、PING への応答（署名検証）が失敗し、Discord が「Valid」にしません。  
+   → Netlify の **Site settings → Environment variables** で、**Production** に `DISCORD_APPLICATION_PUBLIC_KEY` が入っているか確認する。
+
+4. **保存してから再度デプロイ**  
+   環境変数を追加・変更したあとは **「Trigger deploy」などで再デプロイ**しないと反映されません。再デプロイ後に、もう一度 Interactions Endpoint URL を開いて **Save Changes** を押し直す。
+
+5. **しばらく待ってから再度 Save**  
+   デプロイ直後は CDN の反映で数分かかることがあります。数分後に再度 Save を試す。
+
+正しく設定できていると、Save 後に **「Valid」** と表示され、社長が DM の「許可」「拒否」ボタンを押したときに、この URL へリクエストが送られ、申請ステータスが更新されます。
 
 ---
 
@@ -97,9 +130,26 @@
 
 ### DM が届かない
 
-- **社長と Bot が同じサーバーにいるか** 確認してください。いないと Bot から DM を送れない場合があります。
-- 社長が **「サーバーからの DM」** を許可しているか、Discord のプライバシー設定を確認してください。
-- ログに `Discord create DM failed` が出ていないか確認し、失敗している場合はレスポンス内容（403 など）で原因を切り分けます。
+1. **社長の Discord ID が保存されていない**
+   - 募集は **Discord でログインしたユーザー**が「募集作成」で作った場合だけ、`created_by_discord_id` が Google スプレッドシート（Companies シートの M 列）に保存されます。
+   - 昔作った募集や、Discord 以外でログインして作った募集では M 列が空のため、**DM は送られません**（申請自体は受け付けられ、申請一覧には出ます）。
+   - **対処**: その募集を一度「編集」して保存し直すか、スプレッドシートで該当会社の M 列に社長の Discord ユーザーID を手動で入れてください。
+
+2. **社長と Bot が同じサーバーにいるか**
+   - Bot と社長が**同じ Discord サーバー**にいないと、Bot から社長へ DM を送れないことがあります。
+   - **対処**: Bot を社長のいるサーバーに招待してください。
+
+3. **Discord の DM 設定**
+   - 社長が **「サーバーからの DM」** を拒否していると届きません。Discord のプライバシー設定を確認してください。
+
+4. **サーバーログで原因を確認**
+   - デプロイ先のログに次のメッセージが出ていないか確認してください。
+   - `[es-apply] 社長のDiscord IDがありません` → 上記 1 のとおり、M 列（created_by_discord_id）が空です。
+   - `[es-apply] Discord create DM failed:` → Discord API が DM 作成を拒否（403 が多い）。上記 2・3 を確認。
+   - `[es-apply] Discord send message failed:` → DM は開けたがメッセージ送信に失敗。レスポンス本文で理由を確認。
+
+5. **申請は成功しているが DM だけ届かない場合**
+   - 申請完了画面で「社長へのDiscord通知は送れていません。申請は管理者・社長が申請一覧から確認できます。」と出る場合、申請は受け付け済みです。社長は「過去の投稿一覧」→ 該当募集の「申請一覧」で許可・拒否できます。
 
 ### ボタンを押しても反応しない / エラーになる
 
@@ -111,6 +161,12 @@
 
 - 応募画面で **技術確認用画像** を添付して送信しているか確認してください。
 - 画像は **8MB 以下** を推奨です（Discord の制限）。
+
+### 「Error submitting form. Please try again, or click here to contact support.」（dis.gd/contact）
+
+- このメッセージは **Discord 側**のエラーです（ログインや埋め込みなどで Discord がエラーを返したときに表示されます）。
+- 入社申請フォームそのもののエラーではありません。申請が送信できているかは、画面に「申請を送信しました」と出るか、申請一覧にその申請が並ぶかで確認してください。
+- DM が届かない場合は、上記「DM が届かない」を参照してください。
 
 ---
 

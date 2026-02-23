@@ -35,6 +35,7 @@ export default function ApplyPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const [dmSent, setDmSent] = useState<boolean | null>(null);
 
   const skillImageField = company?.formSchema?.fields?.find((f) => f.id === "skill_image") as FormField | undefined;
   const skillImageRequired = skillImageField?.required === true;
@@ -107,6 +108,7 @@ export default function ApplyPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "送信に失敗しました");
       setSent(true);
+      setDmSent(data.dmSent === true ? true : data.dmSent === false ? false : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "送信に失敗しました");
     } finally {
@@ -177,6 +179,11 @@ export default function ApplyPage() {
           <p className="text">
             {company.name} への入社申請を受け付けました。審査結果はしばらくお待ちください。
           </p>
+          {dmSent === false && (
+            <p className="text" style={{ marginTop: 12, fontSize: 13, color: "var(--color-text-secondary)" }}>
+              社長へのDiscord通知は送れていません。申請は管理者・社長が申請一覧から確認できます。
+            </p>
+          )}
           <Link href="/es-system/companies" className="btn-back">会社一覧へ戻る</Link>
         </div>
       </div>

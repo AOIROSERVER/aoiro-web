@@ -25,21 +25,22 @@ function getMotivationOnly(formData: Record<string, unknown> | undefined): strin
   return typeof v === 'string' ? v.trim() : '';
 }
 
-/** 社長のDiscord DMに「〇〇さんが入社申請をしています」+ 画像(任意) + 許可/拒否ボタンを送る */
+/** 社長のDiscord DMに「〇〇さんが入社申請をしています」+ メンション + 志望理由 + 画像(任意) + 許可/拒否ボタンを送る。戻り値: 送信できたか。 */
 async function sendApplicationDmToOwner(params: {
   ownerDiscordId: string;
   applicantName: string;
   companyName: string;
   applicationId: string;
+  motivation: string;
   imageBuffer?: Buffer;
   imageFileName?: string;
-}): Promise<void> {
+}): Promise<{ sent: boolean; error?: string }> {
   const botToken = process.env.DISCORD_BOT_TOKEN;
   if (!botToken) {
-    console.warn('DISCORD_BOT_TOKEN not set, skipping DM');
-    return;
+    console.warn('[es-apply] DISCORD_BOT_TOKEN not set, skipping DM');
+    return { sent: false, error: 'DISCORD_BOT_TOKEN not set' };
   }
-  const { ownerDiscordId, applicantName, companyName, applicationId, imageBuffer, imageFileName } = params;
+  const { ownerDiscordId, applicantName, companyName, applicationId, motivation, imageBuffer, imageFileName } = params;
   const headers: Record<string, string> = {
     Authorization: `Bot ${botToken}`,
     'User-Agent': 'AOIROSERVER/1.0 (ApplyDM)',
@@ -50,13 +51,21 @@ async function sendApplicationDmToOwner(params: {
     headers: { ...headers, 'Content-Type': 'application/json' },
     body: JSON.stringify({ recipient_id: ownerDiscordId }),
   });
+  const createDmBody = await createDmRes.text();
   if (!createDmRes.ok) {
-    const err = await createDmRes.text();
-    console.error('Discord create DM failed:', createDmRes.status, err);
-    return;
+    console.error('[es-apply] Discord create DM failed:', createDmRes.status, createDmBody);
+    let errMsg = createDmBody;
+    try {
+      const j = JSON.parse(createDmBody) as { message?: string };
+      if (j.message) errMsg = j.message;
+    } catch {
+      // use raw
+    }
+    return { sent: false, error: errMsg };
   }
-  const dmChannel = (await createDmRes.json()) as { id: string };
-  const content = `${applicantName} さんが **${companyName}** への入社申請をしています。\n下のボタンで許可または拒否してください。`;
+  const dmChannel = JSON.parse(createDmBody) as { id: string };
+  const motivationText = motivation ? `\n**志望理由:**\n${motivation.slice(0, 1500)}${motivation.length > 1500 ? '…' : ''}` : '';
+  const content = `<@${ownerDiscordId}> ${applicantName} さんが **${companyName}** への入社申請をしています。${motivationText}\n\n下のボタンで許可または拒否してください。`;
   const components = [
     {
       type: 1,
@@ -77,15 +86,24 @@ async function sendApplicationDmToOwner(params: {
       headers: { Authorization: `Bot ${botToken}`, 'User-Agent': 'AOIROSERVER/1.0 (ApplyDM)' },
       body: form,
     });
-    if (!msgRes.ok) console.error('Discord send message with image failed:', await msgRes.text());
+    const msgBody = await msgRes.text();
+    if (!msgRes.ok) {
+      console.error('[es-apply] Discord send message with image failed:', msgRes.status, msgBody);
+      return { sent: false, error: msgBody };
+    }
   } else {
     const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({ content, components }),
     });
-    if (!msgRes.ok) console.error('Discord send message failed:', await msgRes.text());
+    const msgBody = await msgRes.text();
+    if (!msgRes.ok) {
+      console.error('[es-apply] Discord send message failed:', msgRes.status, msgBody);
+      return { sent: false, error: msgBody };
+    }
   }
+  return { sent: true };
 }
 
 /** POST: 入社申請を送信。body: JSON { companyId, minecraftTag, formData } または FormData（+ skillImage 任意） */
@@ -187,6 +205,7 @@ export async function POST(request: NextRequest) {
 
     const { createdByDiscordId } = await getCompanyCreatorIds(companyId);
     const applicantName = discordUsername || minecraftTag || '応募者';
+    let dmSent = false;
     if (createdByDiscordId) {
       let imageBuffer: Buffer | undefined;
       let imageFileName: string | undefined;
@@ -195,19 +214,27 @@ export async function POST(request: NextRequest) {
         imageBuffer = Buffer.from(ab);
         imageFileName = skillImageFile.name || 'skill-image.png';
       }
-      await sendApplicationDmToOwner({
+      const dmResult = await sendApplicationDmToOwner({
         ownerDiscordId: createdByDiscordId,
         applicantName,
         companyName: company.name,
         applicationId,
+        motivation,
         imageBuffer,
         imageFileName,
       });
+      dmSent = dmResult.sent;
+      if (!dmSent && dmResult.error) {
+        console.warn('[es-apply] DM not sent:', dmResult.error);
+      }
+    } else {
+      console.warn('[es-apply] 社長のDiscord IDがありません。会社ID:', companyId, '会社名:', company.name, '（募集作成時にDiscordでログインしたユーザーで作成するとDMが送れます）');
     }
 
     return NextResponse.json({
       message: '入社申請を送信しました',
       timestamp: new Date().toISOString(),
+      dmSent,
     });
   } catch (e) {
     console.error('es-apply POST error:', e);

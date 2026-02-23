@@ -726,3 +726,36 @@ export async function getAICCompanyForUser(userId: string): Promise<string | nul
   const { mainCompanyName } = await getAICCompaniesForUser(userId);
   return mainCompanyName;
 }
+
+/** ユーザーのAIC所属を退職（正社員・アルバイトともクリア）する。 */
+export async function resignAICForUser(userId: string): Promise<boolean> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key || !userId) return false;
+
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${AIC_COMPANY_SHEET}!A2:D`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const rowIndex = rows.findIndex((r) => r[0] === userId);
+    if (rowIndex < 0) return true;
+    const now = new Date().toISOString();
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${AIC_COMPANY_SHEET}!B${rowIndex + 2}:D${rowIndex + 2}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [['', '[]', now]] },
+    });
+    return true;
+  } catch (e) {
+    console.error('resignAICForUser error:', e);
+    return false;
+  }
+}

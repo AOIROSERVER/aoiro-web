@@ -1,23 +1,43 @@
 #!/usr/bin/env node
 /**
  * Netlify のサーバーレス関数に渡る環境変数の合計サイズを概算します。
- * Netlify は約 4KB (4096 bytes) の制限があります。
+ * Netlify は ___netlify-server-handler に渡す環境変数合計に約 4KB (4096 bytes) の制限があります。
  *
  * 使い方:
- *   node -r dotenv/config scripts/measure-env-size.js
- *   （.env.local を読む場合） dotenv の path を指定:
- *   node -r dotenv/config scripts/measure-env-size.js
- *   事前に: export $(cat .env.local | xargs) && node scripts/measure-env-size.js
- *
- * .env.local を読み込む場合（dotenv が path をサポートしている場合）:
  *   node scripts/measure-env-size.js
- * スクリプト内で .env.local を手動で読み込む場合は、dotenv の path オプションを使用してください。
+ *     → .env.local を読み、全変数を測定（ローカルは PATH 等も含むため参考値）
+ *   node scripts/measure-env-size.js .env.netlify
+ *     → 指定ファイルの変数のみ測定（Netlify に設定している変数だけのファイルで 4KB チェックに最適）
+ *
+ * Netlify 実サイズに近づけるには:
+ *   Netlify の「Environment variables」の変数名一覧をコピーし、.env.netlify に KEY=ダミー値 で長さを再現して保存してから
+ *   node scripts/measure-env-size.js .env.netlify を実行してください。
  */
 
-require('dotenv').config();
-require('dotenv').config({ path: '.env.local' }); // .env.local があれば上書き
+const fs = require('fs');
+const path = require('path');
 
-const env = process.env;
+let env = {};
+const envFile = process.argv[2];
+
+if (envFile) {
+  const fullPath = path.resolve(process.cwd(), envFile);
+  if (!fs.existsSync(fullPath)) {
+    console.error(`File not found: ${fullPath}`);
+    process.exit(1);
+  }
+  const content = fs.readFileSync(fullPath, 'utf8');
+  for (const line of content.split('\n')) {
+    const m = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/);
+    if (m) env[m[1]] = m[2].replace(/^["']|["']$/g, '').replace(/\\n/g, '\n');
+  }
+  console.log(`\n※ 対象: ${envFile} の変数のみ（${Object.keys(env).length} 件）\n`);
+} else {
+  require('dotenv').config();
+  require('dotenv').config({ path: '.env.local' });
+  env = process.env;
+}
+
 const entries = [];
 let total = 0;
 
@@ -26,7 +46,7 @@ for (const [k, v] of Object.entries(env)) {
   const entry = `${k}=${v}`;
   const size = Buffer.byteLength(entry, 'utf8');
   total += size;
-  entries.push({ key: k, size, valuePreview: String(v).slice(0, 30) + (String(v).length > 30 ? '...' : '') });
+  entries.push({ key: k, size });
 }
 
 entries.sort((a, b) => b.size - a.size);
@@ -40,6 +60,5 @@ entries.slice(0, 30).forEach((e, i) => {
   const bar = total > 0 ? '#'.repeat(Math.round((e.size / total) * 40)) : '';
   console.log(`  ${String(i + 1).padStart(2)}. ${e.key.padEnd(35)} ${String(e.size).padStart(5)} bytes ${bar}`);
 });
-console.log('\n※ 値のプレビューは表示していません（秘密情報のため）。');
-console.log('※ Netlify の「Environment variables」で不要な変数を削除するか、長い秘密は外部シークレットに移してください。');
-console.log('※ ローカル実行時は PATH 等のシステム変数が含まれるため、Netlify 実機より多くなることがあります。');
+console.log('\n※ Netlify で「Build」スコープにできる変数は関数に渡らないため 4KB に含まれません。');
+console.log('※ 不要な変数は削除し、長い秘密は外部シークレット化を検討してください。');
