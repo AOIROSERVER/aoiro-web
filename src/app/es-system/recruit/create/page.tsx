@@ -226,7 +226,7 @@ export default function RecruitCreatePage() {
                   />
                 </div>
                 <div className="info-item">
-                  <div className="info-item-label">説明（GASに保存）</div>
+                  <div className="info-item-label">説明</div>
                   <textarea
                     value={form.description}
                     onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
@@ -276,9 +276,9 @@ export default function RecruitCreatePage() {
               </div>
 
               <hr className="detail-divider" />
-              <div className="detail-section-title">アイキャッチ画像（クエストと同じ・Supabaseに保存）</div>
+              <div className="detail-section-title">アイキャッチ画像</div>
               <p className="section-sub" style={{ marginBottom: 12 }}>
-                1枚まで。JPEG/PNG/GIF/WebP、5MB以下。クエスト作成と同じ方式でSupabaseに保存され、URLがスプレッドシートに記録されます。
+                1枚まで。JPEG/PNG/GIF/WebP、5MB以下
               </p>
               <div className="info-item" style={{ marginBottom: 16 }}>
                 <input
@@ -314,12 +314,12 @@ export default function RecruitCreatePage() {
                 <span>技術確認用画像を必須にする</span>
               </label>
               <p className="section-sub" style={{ marginTop: 8, fontSize: 13, color: "var(--color-text-muted)" }}>
-                応募者はMCID認証済みならゲームタグが自動入力されます。技術確認用画像は社長のDiscord DMに送られ、許可/拒否をDMで操作できます。
+                応募者はMCID認証済みならゲームタグが自動入力されます。技術確認用画像は社長のDiscord DMに送られ、ダッシュボード（自分の投稿）で許可・拒否できます。
               </p>
 
               <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 24 }}>
                 <button type="submit" className="btn-apply" disabled={submitting || uploading}>
-                  {uploading ? "画像アップロード中..." : submitting ? "保存中..." : "募集を作成（GASに保存）"}
+                  {uploading ? "画像アップロード中..." : submitting ? "保存中..." : "募集を作成"}
                 </button>
                 <Link href="/es-system/companies" className="apply-login-required-back">
                   キャンセル

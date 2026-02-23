@@ -332,22 +332,24 @@ export default function CompanyAdminPage() {
                         </td>
                         <td className="p-3">
                           {a.status === "pending" && (
-                            <>
+                            <div className="flex flex-col gap-1 items-start">
                               <button
                                 type="button"
+                                title="許可"
                                 onClick={() => updateStatus(a.id, "approved")}
-                                className="mr-2 text-green-600 hover:underline font-medium"
+                                className="text-green-600 hover:opacity-80 font-medium text-lg leading-none p-0.5 bg-transparent border-none cursor-pointer"
                               >
-                                許可
+                                ✅
                               </button>
                               <button
                                 type="button"
+                                title="拒否"
                                 onClick={() => updateStatus(a.id, "rejected")}
-                                className="text-red-600 hover:underline font-medium"
+                                className="text-red-600 hover:opacity-80 font-medium text-lg leading-none p-0.5 bg-transparent border-none cursor-pointer"
                               >
-                                拒否
+                                ❌
                               </button>
-                            </>
+                            </div>
                           )}
                         </td>
                       </tr>

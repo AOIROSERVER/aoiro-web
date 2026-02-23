@@ -274,10 +274,10 @@ export default function RecruitMyPage() {
                             </td>
                             <td style={{ padding: 8 }}>
                               {a.status === "pending" && (
-                                <>
-                                  <button type="button" style={{ marginRight: 8, color: "#1e7e45", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }} onClick={() => updateStatus(a.id, "approved")}>許可</button>
-                                  <button type="button" style={{ color: "#c62828", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }} onClick={() => updateStatus(a.id, "rejected")}>拒否</button>
-                                </>
+                                <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                                  <button type="button" title="許可" style={{ color: "#1e7e45", background: "none", border: "none", cursor: "pointer", fontSize: 18, padding: 2, lineHeight: 1 }} onClick={() => updateStatus(a.id, "approved")}>✅</button>
+                                  <button type="button" title="拒否" style={{ color: "#c62828", background: "none", border: "none", cursor: "pointer", fontSize: 18, padding: 2, lineHeight: 1 }} onClick={() => updateStatus(a.id, "rejected")}>❌</button>
+                                </div>
                               )}
                             </td>
                           </tr>

@@ -66,13 +66,14 @@ async function sendApplicationDmToOwner(params: {
   }
   const dmChannel = JSON.parse(createDmBody) as { id: string };
   const motivationText = motivation ? `\n**志望理由:**\n${motivation.slice(0, 1500)}${motivation.length > 1500 ? '…' : ''}` : '';
-  const content = `<@${ownerDiscordId}> ${applicantName} さんが **${companyName}** への入社申請をしています。${motivationText}\n\n下のボタンで許可または拒否してください。`;
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://aoiroserver.site').replace(/\/$/, '');
+  const dashboardUrl = `${baseUrl}/es-system/recruit/my/`;
+  const content = `<@${ownerDiscordId}> ${applicantName} さんが **${companyName}** への入社申請をしています。${motivationText}\n\nダッシュボードで許可・拒否できます。下のボタンからアクセスしてください。`;
   const components = [
     {
       type: 1,
       components: [
-        { type: 2, style: 3, label: '許可', custom_id: `apply_approve:${applicationId}` },
-        { type: 2, style: 4, label: '拒否', custom_id: `apply_reject:${applicationId}` },
+        { type: 2, style: 5, label: 'ダッシュボードにアクセスする', url: dashboardUrl },
       ],
     },
   ];
@@ -109,7 +110,7 @@ async function sendApplicationDmToOwner(params: {
 
 const ADMIN_BACKUP_EMAIL = 'aoiroserver.m@gmail.com';
 
-/** 念のため aoiroserver.m@gmail.com に全ユーザーの入社申請（応募者名・会社名・志望理由・画像）をメールで送る。 */
+/** 念のため aoiroserver.m@gmail.com に全ユーザーの入社申請（応募者名・会社名・志望理由・画像）をメールで送る。ESシステムの sendNotificationEmail と同じ方式。 */
 async function sendApplicationEmailToAdmin(params: {
   applicantName: string;
   companyName: string;
@@ -118,48 +119,96 @@ async function sendApplicationEmailToAdmin(params: {
   imageBuffer?: Buffer;
   imageFileName?: string;
 }): Promise<void> {
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
-  if (!gmailUser || !gmailAppPassword) {
-    console.warn('[es-apply] GMAIL_USER/GMAIL_APP_PASSWORD not set, skipping admin backup email');
-    return;
-  }
-  const { applicantName, companyName, applicationId, motivation, imageBuffer, imageFileName } = params;
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: gmailUser, pass: gmailAppPassword },
-  });
-  const motivationText = motivation ? motivation.slice(0, 2000) + (motivation.length > 2000 ? '…' : '') : '（未記入）';
-  const attachments: { filename: string; content: Buffer }[] = [];
-  if (imageBuffer && imageFileName) {
-    attachments.push({ filename: imageFileName, content: imageBuffer });
-  }
-  const mailOptions = {
-    from: process.env.FROM_EMAIL || gmailUser,
-    to: ADMIN_BACKUP_EMAIL,
-    subject: `[入社申請] ${companyName} - ${applicantName} (${applicationId})`,
-    text: [
-      `応募者: ${applicantName}`,
-      `会社: ${companyName}`,
-      `申請ID: ${applicationId}`,
-      '',
-      '志望理由:',
-      motivationText,
-    ].join('\n'),
-    html: [
-      '<p><strong>応募者:</strong> ' + escapeHtml(applicantName) + '</p>',
-      '<p><strong>会社:</strong> ' + escapeHtml(companyName) + '</p>',
-      '<p><strong>申請ID:</strong> ' + escapeHtml(applicationId) + '</p>',
-      '<p><strong>志望理由:</strong></p><pre style="white-space:pre-wrap;">' + escapeHtml(motivationText) + '</pre>',
-      attachments.length ? '<p>※ 画像は添付ファイルをご確認ください。</p>' : '',
-    ].join(''),
-    attachments,
-  };
   try {
-    await transporter.sendMail(mailOptions);
-    console.log('[es-apply] Admin backup email sent to', ADMIN_BACKUP_EMAIL);
+    // Gmail SMTP設定（es-submit と同じ。EMAIL_USER/EMAIL_PASS もフォールバック）
+    const gmailUser = process.env.GMAIL_USER || process.env.EMAIL_USER;
+    const gmailAppPassword = process.env.GMAIL_APP_PASSWORD || process.env.EMAIL_PASS;
+    const fromEmail = process.env.FROM_EMAIL || 'noreply@aoiroserver.site';
+
+    console.log('[es-apply] Gmail SMTP設定確認:', {
+      hasGmailUser: !!gmailUser,
+      hasGmailAppPassword: !!gmailAppPassword,
+      fromEmail,
+    });
+
+    if (!gmailUser || !gmailAppPassword) {
+      console.warn('[es-apply] GMAIL_USER/GMAIL_APP_PASSWORD（または EMAIL_USER/EMAIL_PASS）が不足しています。運営メール送信をスキップします。');
+      return;
+    }
+
+    const { applicantName, companyName, applicationId, motivation, imageBuffer, imageFileName } = params;
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user: gmailUser, pass: gmailAppPassword },
+    });
+
+    const motivationText = motivation ? motivation.slice(0, 2000) + (motivation.length > 2000 ? '…' : '') : '（未記入）';
+    const attachments: { filename: string; content: Buffer; contentType?: string }[] = [];
+    if (imageBuffer && imageFileName) {
+      const ext = imageFileName.split('.').pop()?.toLowerCase() || 'png';
+      attachments.push({
+        filename: imageFileName,
+        content: imageBuffer,
+        contentType: `image/${ext}`,
+      });
+    }
+
+    const mailOptions = {
+      from: fromEmail,
+      to: ADMIN_BACKUP_EMAIL,
+      subject: `[入社申請] ${companyName} - ${applicantName} (${applicationId})`,
+      text: [
+        `応募者: ${applicantName}`,
+        `会社: ${companyName}`,
+        `申請ID: ${applicationId}`,
+        '',
+        '志望理由:',
+        motivationText,
+      ].join('\n'),
+      html: `
+        <!DOCTYPE html>
+        <html lang="ja">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>入社申請通知</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+            <div style="background-color: #667eea; padding: 32px 24px; color: white;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 600;">📩 新しい入社申請が届きました</h1>
+              <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">AOIROSERVER 入社申請（運営控え）</p>
+            </div>
+            <div style="padding: 32px 24px;">
+              <div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                <h2 style="margin: 0 0 16px 0; font-size: 18px; font-weight: 600; color: #333;">申請詳細</h2>
+                <table style="width: 100%; border-collapse: collapse;">
+                  <tr style="border-bottom: 1px solid #dee2e6;"><td style="padding: 12px 8px; font-weight: 600; color: #495057; width: 120px;">応募者</td><td style="padding: 12px 8px; color: #212529;">${escapeHtml(applicantName)}</td></tr>
+                  <tr style="border-bottom: 1px solid #dee2e6;"><td style="padding: 12px 8px; font-weight: 600; color: #495057;">会社</td><td style="padding: 12px 8px; color: #212529;">${escapeHtml(companyName)}</td></tr>
+                  <tr style="border-bottom: 1px solid #dee2e6;"><td style="padding: 12px 8px; font-weight: 600; color: #495057;">申請ID</td><td style="padding: 12px 8px; color: #212529;">${escapeHtml(applicationId)}</td></tr>
+                  <tr style="border-bottom: 1px solid #dee2e6;"><td style="padding: 12px 8px; font-weight: 600; color: #495057;">志望理由</td><td style="padding: 12px 8px; color: #212529; word-break: break-word; white-space: pre-wrap;">${escapeHtml(motivationText)}</td></tr>
+                  ${attachments.length ? `<tr><td style="padding: 12px 8px; font-weight: 600; color: #495057;">技術確認用画像</td><td style="padding: 12px 8px; color: #212529;">📎 ${escapeHtml(imageFileName ?? 'image')}（添付）</td></tr>` : ''}
+                </table>
+              </div>
+              <div style="text-align: center;">
+                <a href="https://aoiroserver.site/es-system/recruit/my/" style="display: inline-block; background-color: #667eea; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600;">📊 自分の投稿（申請一覧）を開く</a>
+              </div>
+            </div>
+            <div style="background-color: #f8f9fa; padding: 16px 24px; text-align: center; border-top: 1px solid #e9ecef;">
+              <p style="margin: 0; font-size: 12px; color: #6c757d;">AOIROSERVER 入社申請</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      attachments,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('[es-apply] 運営控えメール送信成功:', info.messageId, '→', ADMIN_BACKUP_EMAIL);
   } catch (err) {
-    console.error('[es-apply] Admin backup email failed:', err);
+    console.error('[es-apply] 運営控えメール送信エラー:', err);
   }
 }
 
