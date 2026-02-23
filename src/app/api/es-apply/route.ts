@@ -70,7 +70,8 @@ async function sendApplicationDmToOwner(params: {
   if (imageBuffer && imageFileName) {
     const form = new FormData();
     form.append('payload_json', JSON.stringify({ content, components }));
-    form.append('files[0]', new Blob([imageBuffer]), imageFileName);
+    const uint8 = new Uint8Array(imageBuffer);
+    form.append('files[0]', new Blob([uint8]), imageFileName);
     const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bot ${botToken}`, 'User-Agent': 'AOIROSERVER/1.0 (ApplyDM)' },
