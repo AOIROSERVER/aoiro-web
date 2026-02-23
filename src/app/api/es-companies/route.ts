@@ -82,6 +82,8 @@ export async function POST(request: NextRequest) {
       formSchema,
       maxParticipants,
       imageUrls,
+      hourlyWage,
+      monthlySalary,
     } = body as {
       name: string;
       description?: string;
@@ -91,9 +93,17 @@ export async function POST(request: NextRequest) {
       formSchema?: Record<string, unknown>;
       maxParticipants?: number;
       imageUrls?: string[];
+      hourlyWage?: string;
+      monthlySalary?: string;
     };
     if (!name || !name.trim()) {
       return NextResponse.json({ error: '会社名は必須です' }, { status: 400 });
+    }
+    if (!hourlyWage || !String(hourlyWage).trim()) {
+      return NextResponse.json({ error: '時給は必須です' }, { status: 400 });
+    }
+    if (!monthlySalary || !String(monthlySalary).trim()) {
+      return NextResponse.json({ error: '月給は必須です' }, { status: 400 });
     }
     const { id: discordId, username: discordUsername } = getDiscordFromUser(user);
     const id = await addCompanyToSheets({
@@ -108,6 +118,8 @@ export async function POST(request: NextRequest) {
       createdBy: user.id,
       createdByDiscordId: discordId,
       createdByDiscordUsername: discordUsername,
+      hourlyWage: String(hourlyWage).trim(),
+      monthlySalary: String(monthlySalary).trim(),
     });
     return NextResponse.json({ id, message: '会社を登録しました' });
   } catch (e) {

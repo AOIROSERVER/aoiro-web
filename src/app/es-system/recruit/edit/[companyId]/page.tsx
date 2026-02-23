@@ -28,6 +28,8 @@ type Company = {
   tags: string[];
   maxParticipants: number;
   imageUrls: string[];
+  hourlyWage?: string;
+  monthlySalary?: string;
 };
 
 export default function RecruitEditPage() {
@@ -48,6 +50,8 @@ export default function RecruitEditPage() {
     location: "",
     tags: "",
     maxParticipants: "0",
+    hourlyWage: "",
+    monthlySalary: "",
   });
 
   useEffect(() => {
@@ -63,6 +67,8 @@ export default function RecruitEditPage() {
           location: data.location ?? "",
           tags: Array.isArray(data.tags) ? data.tags.join(", ") : "",
           maxParticipants: String(data.maxParticipants ?? 0),
+          hourlyWage: data.hourlyWage ?? "",
+          monthlySalary: data.monthlySalary ?? "",
         });
         setRecruitmentKind(data.employmentType === "正社員" ? "正社員" : "アルバイト");
       })
@@ -126,6 +132,8 @@ export default function RecruitEditPage() {
           tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
           maxParticipants: parseInt(form.maxParticipants, 10) || 0,
           imageUrls,
+          hourlyWage: form.hourlyWage.trim() || undefined,
+          monthlySalary: form.monthlySalary.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -247,6 +255,28 @@ export default function RecruitEditPage() {
                     value={form.maxParticipants}
                     onChange={(e) => setForm((p) => ({ ...p, maxParticipants: e.target.value }))}
                     style={{ width: "100%", border: "none", background: "transparent", padding: 0, fontFamily: "inherit" }}
+                  />
+                </div>
+                <div className="info-item">
+                  <div className="info-item-label">時給 *</div>
+                  <input
+                    type="text"
+                    value={form.hourlyWage}
+                    onChange={(e) => setForm((p) => ({ ...p, hourlyWage: e.target.value }))}
+                    placeholder="例: 1000円"
+                    className="info-item-value"
+                    style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
+                  />
+                </div>
+                <div className="info-item">
+                  <div className="info-item-label">月給 *</div>
+                  <input
+                    type="text"
+                    value={form.monthlySalary}
+                    onChange={(e) => setForm((p) => ({ ...p, monthlySalary: e.target.value }))}
+                    placeholder="例: 20万円"
+                    className="info-item-value"
+                    style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
                   />
                 </div>
               </div>

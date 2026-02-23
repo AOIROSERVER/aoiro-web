@@ -1,13 +1,13 @@
 /**
  * ESシステム・入社申請用：Googleスプレッドシート「Companies」シートの読み書き
  * シート名: Companies
- * 列: A=id, B=name, C=description, D=location, E=employment_type, F=tags, G=form_json, H=max_participants, I=image_urls, J=created_at, K=active, L=created_by, M=created_by_discord_id, N=created_by_discord_username, O=会社詳細
+ * 列: A=id, B=name, C=description, D=location, E=employment_type, F=tags, G=form_json, H=max_participants, I=image_urls, J=created_at, K=active, L=created_by, M=created_by_discord_id, N=created_by_discord_username, O=会社詳細, P=時給, Q=月給
  */
 import { google } from 'googleapis';
 
 const GOOGLE_SHEETS_ID = process.env.GOOGLE_SHEETS_ID || '17oFiF5pvclax-RM38DEREfa1EFKFpzQ9y0lCgizJFE8';
 const COMPANIES_SHEET = 'Companies';
-const COMPANIES_RANGE = `${COMPANIES_SHEET}!A2:K`;
+const COMPANIES_RANGE = `${COMPANIES_SHEET}!A2:Q`;
 
 export type CompanyRow = {
   id: string;
@@ -35,6 +35,10 @@ export type Company = {
   imageUrls: string[];
   createdAt: string;
   active: boolean;
+  /** 時給（表示用・例: 1000円） */
+  hourlyWage?: string;
+  /** 月給（表示用・例: 20万円） */
+  monthlySalary?: string;
 };
 
 /** 架空のデフォルト会社（スプレッドシートに0件のときも一覧に表示） */
@@ -56,6 +60,8 @@ export const SEED_COMPANY: Company = {
   imageUrls: [],
   createdAt: new Date().toISOString(),
   active: true,
+  hourlyWage: '',
+  monthlySalary: '',
 };
 
 function rowToCompany(row: string[]): Company {
@@ -79,6 +85,8 @@ function rowToCompany(row: string[]): Company {
     imageUrls,
     createdAt: row[9] || '',
     active: (row[10] || '1') === '1' || (row[10] || '').toLowerCase() === 'true',
+    hourlyWage: (row[15] || '').trim() || undefined,
+    monthlySalary: (row[16] || '').trim() || undefined,
   };
 }
 
@@ -167,7 +175,7 @@ export async function getMyCompaniesFromSheets(userId: string, discordId?: strin
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${COMPANIES_SHEET}!A2:O`,
+      range: `${COMPANIES_SHEET}!A2:Q`,
     });
     const rows = (res.data.values || []) as string[][];
     return rows
@@ -198,6 +206,10 @@ export async function addCompanyToSheets(company: {
   createdBy?: string;
   createdByDiscordId?: string;
   createdByDiscordUsername?: string;
+  /** 時給（必須・例: 1000円） */
+  hourlyWage: string;
+  /** 月給（必須・例: 20万円） */
+  monthlySalary: string;
 }): Promise<string> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!key) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
@@ -213,16 +225,17 @@ export async function addCompanyToSheets(company: {
 
   await ensureCompaniesSheetExists(sheets, spreadsheetId);
 
-  const headerRow = ['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active', 'created_by', 'created_by_discord_id', 'created_by_discord_username', '会社詳細'];
+  const headerRow = ['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active', 'created_by', 'created_by_discord_id', 'created_by_discord_username', '会社詳細', '時給', '月給'];
   try {
     const headerRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${COMPANIES_SHEET}!A1:O1`,
+      range: `${COMPANIES_SHEET}!A1:Q1`,
     });
-    if (!headerRes.data.values || headerRes.data.values.length === 0) {
+    const existingHeader = (headerRes.data.values || [])[0] as string[] | undefined;
+    if (!existingHeader || existingHeader.length < 17) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${COMPANIES_SHEET}!A1:O1`,
+        range: `${COMPANIES_SHEET}!A1:Q1`,
         valueInputOption: 'RAW',
         requestBody: { values: [headerRow] },
       });
@@ -239,6 +252,8 @@ export async function addCompanyToSheets(company: {
   const discordUsername = company.createdByDiscordUsername ?? '';
   const desc = (company.description || '').replace(/\s+/g, ' ').trim();
   const companyDetail = `${company.name}${desc ? ` | ${desc.slice(0, 100)}${desc.length > 100 ? '…' : ''}` : ''}`;
+  const hourlyWage = (company.hourlyWage ?? '').trim();
+  const monthlySalary = (company.monthlySalary ?? '').trim();
 
   const values = [[
     id,
@@ -256,11 +271,13 @@ export async function addCompanyToSheets(company: {
     discordId,
     discordUsername,
     companyDetail,
+    hourlyWage,
+    monthlySalary,
   ]];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${COMPANIES_SHEET}!A2:O`,
+    range: `${COMPANIES_SHEET}!A2:Q`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values },
@@ -280,6 +297,8 @@ export async function updateCompanyInSheets(
     formSchema?: Record<string, unknown> | null;
     maxParticipants?: number;
     imageUrls?: string[];
+    hourlyWage?: string;
+    monthlySalary?: string;
   }
 ): Promise<boolean> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -293,7 +312,7 @@ export async function updateCompanyInSheets(
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${COMPANIES_SHEET}!A2:O`,
+      range: `${COMPANIES_SHEET}!A2:Q`,
     });
     const rows = (res.data.values || []) as string[][];
     const rowIndex = rows.findIndex((r) => r[0] === companyId);
@@ -313,14 +332,16 @@ export async function updateCompanyInSheets(
     const discordId = row[12] || '';
     const discordUsername = row[13] || '';
     const companyDetail = `${name}${description ? ` | ${description.replace(/\s+/g, ' ').trim().slice(0, 100)}${description.length > 100 ? '…' : ''}` : ''}`;
-    const range = `${COMPANIES_SHEET}!A${rowIndex + 2}:O${rowIndex + 2}`;
+    const hourlyWage = updates.hourlyWage !== undefined ? String(updates.hourlyWage).trim() : (row[15] || '').trim();
+    const monthlySalary = updates.monthlySalary !== undefined ? String(updates.monthlySalary).trim() : (row[16] || '').trim();
+    const range = `${COMPANIES_SHEET}!A${rowIndex + 2}:Q${rowIndex + 2}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId: GOOGLE_SHEETS_ID,
       range,
       valueInputOption: 'RAW',
       requestBody: {
         values: [[
-          companyId, name, description, location, employmentType, tagsStr, formJson, maxParticipants, imageUrlsStr, created_at, active, createdBy, discordId, discordUsername, companyDetail,
+          companyId, name, description, location, employmentType, tagsStr, formJson, maxParticipants, imageUrlsStr, created_at, active, createdBy, discordId, discordUsername, companyDetail, hourlyWage, monthlySalary,
         ]],
       },
     });

@@ -21,6 +21,8 @@ type Company = {
   createdByDiscordId?: string;
   createdByDiscordUsername?: string;
   members?: { discordId: string; discordUsername: string }[];
+  hourlyWage?: string;
+  monthlySalary?: string;
 };
 
 type DiscordUser = { avatarUrl: string; displayName: string };
@@ -462,6 +464,14 @@ export default function CompaniesPage() {
                   <div className="info-item">
                     <div className="info-item-label">雇用形態</div>
                     <div className="info-item-value">{detailCompany.employmentType}</div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-item-label">時給</div>
+                    <div className="info-item-value">{detailCompany.hourlyWage || "—"}</div>
+                  </div>
+                  <div className="info-item">
+                    <div className="info-item-label">月給</div>
+                    <div className="info-item-value">{detailCompany.monthlySalary || "—"}</div>
                   </div>
                   <div className="info-item">
                     <div className="info-item-label">参加可能人数</div>

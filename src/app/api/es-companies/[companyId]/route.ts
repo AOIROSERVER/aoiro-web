@@ -113,6 +113,8 @@ export async function PATCH(
     if (body.maxParticipants !== undefined) updates.maxParticipants = Number(body.maxParticipants) || 0;
     if (body.imageUrls !== undefined) updates.imageUrls = Array.isArray(body.imageUrls) ? body.imageUrls.map(String) : [];
     if (body.formSchema !== undefined) updates.formSchema = body.formSchema as Record<string, unknown> | null;
+    if (body.hourlyWage !== undefined) updates.hourlyWage = String(body.hourlyWage);
+    if (body.monthlySalary !== undefined) updates.monthlySalary = String(body.monthlySalary);
     const ok = await updateCompanyInSheets(companyId, updates);
     if (!ok) return NextResponse.json({ error: '会社の更新に失敗しました' }, { status: 500 });
     return NextResponse.json({ message: '更新しました' });

@@ -54,6 +54,8 @@ export default function RecruitCreatePage() {
     employmentType: "正社員",
     tags: "",
     maxParticipants: "0",
+    hourlyWage: "",
+    monthlySalary: "",
   });
 
   useEffect(() => {
@@ -88,6 +90,14 @@ export default function RecruitCreatePage() {
     setMessage(null);
     if (!form.name.trim()) {
       setMessage({ type: "error", text: "会社名・プロジェクト名を入力してください" });
+      return;
+    }
+    if (!form.hourlyWage.trim()) {
+      setMessage({ type: "error", text: "時給を入力してください" });
+      return;
+    }
+    if (!form.monthlySalary.trim()) {
+      setMessage({ type: "error", text: "月給を入力してください" });
       return;
     }
     if (!session?.access_token) {
@@ -129,12 +139,14 @@ export default function RecruitCreatePage() {
           maxParticipants: parseInt(form.maxParticipants, 10) || 0,
           imageUrls,
           formSchema: buildFormSchema(skillImageRequired),
+          hourlyWage: form.hourlyWage.trim(),
+          monthlySalary: form.monthlySalary.trim(),
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "保存に失敗しました");
       setMessage({ type: "ok", text: `募集を作成しました（ID: ${data.id}）。会社一覧に反映されます。` });
-      setForm({ ...form, name: "", description: "", location: "" });
+      setForm({ ...form, name: "", description: "", location: "", hourlyWage: "", monthlySalary: "" });
       setEyecatchDataUrl(null);
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "保存に失敗しました" });
@@ -271,6 +283,28 @@ export default function RecruitCreatePage() {
                     value={form.maxParticipants}
                     onChange={(e) => setForm((p) => ({ ...p, maxParticipants: e.target.value }))}
                     style={{ width: "100%", border: "none", background: "transparent", padding: 0, fontFamily: "inherit" }}
+                  />
+                </div>
+                <div className="info-item">
+                  <div className="info-item-label">時給 *</div>
+                  <input
+                    type="text"
+                    value={form.hourlyWage}
+                    onChange={(e) => setForm((p) => ({ ...p, hourlyWage: e.target.value }))}
+                    placeholder="例: 1000円"
+                    className="info-item-value"
+                    style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
+                  />
+                </div>
+                <div className="info-item">
+                  <div className="info-item-label">月給 *</div>
+                  <input
+                    type="text"
+                    value={form.monthlySalary}
+                    onChange={(e) => setForm((p) => ({ ...p, monthlySalary: e.target.value }))}
+                    placeholder="例: 20万円"
+                    className="info-item-value"
+                    style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
                   />
                 </div>
               </div>
