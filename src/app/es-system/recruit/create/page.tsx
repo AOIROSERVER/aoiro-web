@@ -20,12 +20,19 @@ function dataURLtoBlob(dataUrl: string): { blob: Blob; ext: string } {
   return { blob: new Blob([u8], { type: mime }), ext };
 }
 
-const DEFAULT_FORM_SCHEMA = {
-  fields: [
-    { id: "minecraft_tag", label: "Minecraftゲームタグ", type: "text", required: true },
-    { id: "motivation", label: "志望理由・意志表明", type: "textarea", required: true },
-  ],
-};
+const BASE_FORM_FIELDS = [
+  { id: "minecraft_tag", label: "Minecraftゲームタグ", type: "text", required: true },
+  { id: "motivation", label: "志望理由・意志表明", type: "textarea", required: true },
+] as const;
+
+function buildFormSchema(skillImageRequired: boolean) {
+  return {
+    fields: [
+      ...BASE_FORM_FIELDS,
+      { id: "skill_image", label: "技術確認用画像（技術レベル確認用）", type: "image", required: skillImageRequired },
+    ],
+  };
+}
 
 export default function RecruitCreatePage() {
   const router = useRouter();
@@ -38,6 +45,8 @@ export default function RecruitCreatePage() {
   const [eyecatchDataUrl, setEyecatchDataUrl] = useState<string | null>(null);
   /** 募集種別: 正社員 or アルバイト・プロジェクト（雇用形態の元になる） */
   const [recruitmentKind, setRecruitmentKind] = useState<"正社員" | "アルバイト">("正社員");
+  /** 技術確認用画像を必須にするか（応募作成で変更可能） */
+  const [skillImageRequired, setSkillImageRequired] = useState(false);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -119,7 +128,7 @@ export default function RecruitCreatePage() {
           tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
           maxParticipants: parseInt(form.maxParticipants, 10) || 0,
           imageUrls,
-          formSchema: DEFAULT_FORM_SCHEMA,
+          formSchema: buildFormSchema(skillImageRequired),
         }),
       });
       const data = await res.json();
@@ -292,8 +301,20 @@ export default function RecruitCreatePage() {
                 )}
               </div>
 
+              <div className="detail-section-title" style={{ marginTop: 16 }}>応募フォーム設定</div>
+              <p className="section-sub" style={{ marginBottom: 12 }}>
+                応募フォームには「Minecraftゲームタグ」「志望理由・意志表明」に加え、技術レベル確認用の画像アップロードを追加できます。
+              </p>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={skillImageRequired}
+                  onChange={(e) => setSkillImageRequired(e.target.checked)}
+                />
+                <span>技術確認用画像を必須にする</span>
+              </label>
               <p className="section-sub" style={{ marginTop: 8, fontSize: 13, color: "var(--color-text-muted)" }}>
-                応募フォームは「Minecraftゲームタグ」「志望理由・意志表明」の2項目で固定です。応募者はMCID認証済みならゲームタグが自動入力されます。
+                応募者はMCID認証済みならゲームタグが自動入力されます。技術確認用画像は社長のDiscord DMに送られ、許可/拒否をDMで操作できます。
               </p>
 
               <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 24 }}>

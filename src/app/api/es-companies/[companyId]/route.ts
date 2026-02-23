@@ -5,6 +5,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import {
   getCompanyByIdFromSheets,
   getCompanyCreatorIds,
+  getApplicationsFromSheets,
   updateCompanyInSheets,
   setCompanyActiveInSheets,
   SEED_COMPANY,
@@ -66,7 +67,20 @@ export async function GET(
     if (!company) {
       return NextResponse.json({ error: '会社が見つかりません' }, { status: 404 });
     }
-    return NextResponse.json(company);
+    const { createdByDiscordId, createdByDiscordUsername } = await getCompanyCreatorIds(companyId);
+    const applications = await getApplicationsFromSheets(companyId);
+    const members = applications
+      .filter((a) => (a.status || '').toLowerCase() === 'approved')
+      .map((a) => ({ discordId: a.discordId || '', discordUsername: a.discord || '' }))
+      .filter((m) => m.discordId || m.discordUsername);
+
+    const withOwnerAndMembers = {
+      ...company,
+      createdByDiscordId: createdByDiscordId ?? undefined,
+      createdByDiscordUsername: createdByDiscordUsername ?? undefined,
+      members,
+    };
+    return NextResponse.json(withOwnerAndMembers);
   } catch (e) {
     console.error('es-companies [companyId] GET error:', e);
     return NextResponse.json(

@@ -82,15 +82,171 @@
   border-color: var(--color-primary-hover);
   color: var(--color-primary-hover);
 }
+.companies-joblist .search-bar-wrapper-inner .search-bar {
+  min-height: 42px;
+}
+.companies-joblist .search-bar-wrapper-inner .recruit-create-btn {
+  height: 42px;
+  padding: 0 20px;
+  align-items: center;
+}
+
+/* 読み込みスピナー */
+.companies-joblist .companies-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: companies-spin 0.8s linear infinite;
+}
+@keyframes companies-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 社長（作成者）表示 */
+.companies-joblist .detail-owner-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.companies-joblist .detail-owner-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-bg);
+}
+.companies-joblist .detail-owner-name {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+/* メンバー一覧 */
+.companies-joblist .detail-members-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.companies-joblist .detail-member-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-bg);
+  border-radius: 20px;
+  padding: 6px 12px;
+}
+.companies-joblist .detail-member-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-border);
+}
+.companies-joblist .detail-member-name {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.companies-joblist .detail-members-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.companies-joblist .detail-members-more:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+/* メンバー全員ポップアップ */
+.companies-joblist .detail-members-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.companies-joblist .detail-members-modal {
+  background: var(--color-surface);
+  border-radius: var(--detail-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.companies-joblist .detail-members-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.companies-joblist .detail-members-modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.companies-joblist .detail-members-modal-close {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.companies-joblist .detail-members-modal-close:hover {
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+}
+.companies-joblist .detail-members-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.companies-joblist .detail-members-modal-body .detail-member-row {
+  padding: 8px 12px;
+}
 .companies-joblist .search-bar {
   display: flex;
   gap: 0;
   width: 100%;
   border: 2px solid var(--color-border);
-  border-radius: 50px;
+  border-radius: 8px;
   overflow: hidden;
   background: #fff;
   transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 42px;
+  align-items: stretch;
 }
 .companies-joblist .search-bar:focus-within {
   border-color: var(--color-primary);
@@ -382,6 +538,14 @@
   font-size: 18px;
 }
 .companies-joblist .btn-icon:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-light); }
+.companies-joblist .btn-icon.btn-share {
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0;
+  font-size: 18px;
+  cursor: pointer;
+}
 
 .companies-joblist .detail-divider { border: none; border-top: 1px solid var(--color-border); margin: 18px 0; }
 
@@ -473,7 +637,8 @@
 @media (max-width: 900px) {
   .companies-joblist .sidebar { width: 100%; }
   .companies-joblist .main { flex-direction: column; padding: 16px; }
-  .companies-joblist .detail-panel { position: relative; top: 0; max-height: none; }
+  .companies-joblist .main .detail-wrap { width: 100%; min-width: 0; }
+  .companies-joblist .detail-panel { position: relative; top: 0; max-height: none; width: 100%; box-sizing: border-box; }
   .companies-joblist .search-bar-wrapper-inner { flex-direction: column; align-items: stretch; }
   .companies-joblist .search-bar-wrapper-inner .search-bar { max-width: none; }
 }

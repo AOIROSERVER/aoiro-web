@@ -18,7 +18,12 @@ type Company = {
   imageUrls: string[];
   createdAt: string;
   active: boolean;
+  createdByDiscordId?: string;
+  createdByDiscordUsername?: string;
+  members?: { discordId: string; discordUsername: string }[];
 };
+
+type DiscordUser = { avatarUrl: string; displayName: string };
 
 export default function CompaniesPage() {
   const router = useRouter();
@@ -26,6 +31,12 @@ export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const avatarUrl = user?.user_metadata?.picture ?? user?.user_metadata?.avatar_url ?? null;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailCompany, setDetailCompany] = useState<Company | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [discordUsers, setDiscordUsers] = useState<Record<string, DiscordUser>>({});
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  /** カードに表示するメンバー数（幅に応じて1〜3） */
+  const [visibleMemberCount, setVisibleMemberCount] = useState(3);
   const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
@@ -52,7 +63,7 @@ export default function CompaniesPage() {
     const loc = locationFilter.toLowerCase();
     const matchKw = !kw || c.name.toLowerCase().includes(kw) || (c.description || "").toLowerCase().includes(kw) || c.tags.some((t) => t.toLowerCase().includes(kw));
     const matchLoc = !loc || (c.location || "").toLowerCase().includes(loc);
-    const matchChip = filterChip === "all" || c.employmentType === filterChip || (filterChip === "remote" && c.tags.some((t) => /リモート|remote/i.test(t)));
+    const matchChip = filterChip === "all" || c.employmentType === filterChip;
     return matchTab && matchKw && matchLoc && matchChip;
   });
 
@@ -64,9 +75,85 @@ export default function CompaniesPage() {
     }
   }, [filtered, selectedId]);
 
+  useEffect(() => {
+    const updateVisibleMembers = () => {
+      const w = typeof window !== "undefined" ? window.innerWidth : 1280;
+      setVisibleMemberCount(w < 400 ? 1 : w < 600 ? 2 : 3);
+    };
+    updateVisibleMembers();
+    window.addEventListener("resize", updateVisibleMembers);
+    return () => window.removeEventListener("resize", updateVisibleMembers);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setDetailCompany(null);
+      setDiscordUsers({});
+      setShowMembersModal(false);
+      return;
+    }
+    setDetailLoading(true);
+    setDetailCompany(null);
+    setDiscordUsers({});
+    setShowMembersModal(false);
+    fetch(`/api/es-companies/${selectedId}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.error) throw new Error(data.error);
+        setDetailCompany(data);
+        const ids = new Set<string>();
+        if (data.createdByDiscordId) ids.add(data.createdByDiscordId);
+        (data.members || []).forEach((m: { discordId: string }) => m.discordId && ids.add(m.discordId));
+        if (ids.size === 0) return;
+        Promise.all(
+          Array.from(ids).map((id) =>
+            fetch(`/api/discord-user/${id}`)
+              .then((res) => res.json())
+              .then((u) => ({ id, ...u }))
+              .catch(() => ({ id, avatarUrl: null, username: null, globalName: null }))
+          )
+        ).then((results) => {
+          const next: Record<string, DiscordUser> = {};
+          results.forEach((r) => {
+            const displayName = r.globalName || r.username || "";
+            next[r.id] = {
+              avatarUrl: r.avatarUrl || "https://cdn.discordapp.com/embed/avatars/0.png",
+              displayName: displayName || "—",
+            };
+          });
+          setDiscordUsers((prev) => ({ ...prev, ...next }));
+        });
+      })
+      .catch(() => setDetailCompany(null))
+      .finally(() => setDetailLoading(false));
+  }, [selectedId]);
+
+  const handleShare = async () => {
+    if (!displayDetail) return;
+    const url = typeof window !== "undefined" ? `${window.location.origin}/es-system/apply/${displayDetail.id}` : "";
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: displayDetail.name,
+          text: `${displayDetail.name} への応募`,
+          url,
+        });
+      } else {
+        await navigator.clipboard?.writeText(url);
+        alert("リンクをコピーしました");
+      }
+    } catch (e) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url);
+        alert("リンクをコピーしました");
+      }
+    }
+  };
+
   if (loading && companies.length === 0) {
     return (
-      <div className="companies-joblist" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+      <div className="companies-joblist" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16 }}>
+        <div className="companies-loading-spinner" aria-hidden />
         <p style={{ color: "var(--color-text-muted)" }}>読み込み中...</p>
       </div>
     );
@@ -122,10 +209,6 @@ export default function CompaniesPage() {
             </>
           )}
         </div>
-      </div>
-
-      <div className="back-link">
-        <Link href="/more">← もっとへ戻る</Link>
       </div>
 
       <div className="recruitment-tabs" style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "2px solid var(--color-border)", paddingLeft: 0 }}>
@@ -186,9 +269,6 @@ export default function CompaniesPage() {
             <div className={`chip ${filterChip === "契約社員" ? "active" : ""}`} onClick={() => setFilterChip("契約社員")}>
               契約社員
             </div>
-            <div className={`chip ${filterChip === "remote" ? "active" : ""}`} onClick={() => setFilterChip("remote")}>
-              リモート可
-            </div>
           </div>
 
           {filtered.length === 0 ? (
@@ -237,51 +317,143 @@ export default function CompaniesPage() {
           )}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="detail-wrap" style={{ flex: 1, minWidth: 0 }}>
           {!displayDetail ? (
             <div className="empty-state">
               <div className="icon">🔍</div>
               <p>会社を選択すると詳細が表示されます</p>
             </div>
+          ) : detailLoading ? (
+            <div className="detail-panel" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 280 }}>
+              <div className="companies-loading-spinner" aria-hidden />
+            </div>
+          ) : !detailCompany ? (
+            <div className="empty-state">
+              <p>詳細を読み込めませんでした</p>
+            </div>
           ) : (
             <div className="detail-panel">
               <div className="detail-hero">
-                {displayDetail.imageUrls[0] ? (
-                  <img src={displayDetail.imageUrls[0]} alt="" />
+                {detailCompany.imageUrls[0] ? (
+                  <img src={detailCompany.imageUrls[0]} alt="" />
                 ) : (
                   <div className="detail-hero-placeholder">🏢</div>
                 )}
               </div>
               <div className="detail-body">
-                <div className="detail-title">{displayDetail.name}</div>
-                <div className="detail-company">{displayDetail.name}</div>
+                <div className="detail-title">{detailCompany.name}</div>
+                <div className="detail-company">{detailCompany.name}</div>
                 <div className="detail-location-row">
                   <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
-                  {displayDetail.location || "—"}
+                  {detailCompany.location || "—"}
                 </div>
                 <div className="detail-salary">
-                  {displayDetail.employmentType}
-                  {displayDetail.maxParticipants > 0 ? ` ・ 参加可能人数: ${displayDetail.maxParticipants}名` : ""}
+                  {detailCompany.employmentType}
+                  {detailCompany.maxParticipants > 0 ? ` ・ 参加可能人数: ${detailCompany.maxParticipants}名` : ""}
                 </div>
+                {(detailCompany.createdByDiscordUsername || detailCompany.createdByDiscordId) && (
+                  <div className="detail-owner-row">
+                    <img
+                      src={
+                        detailCompany.createdByDiscordId && discordUsers[detailCompany.createdByDiscordId]
+                          ? discordUsers[detailCompany.createdByDiscordId].avatarUrl
+                          : "https://cdn.discordapp.com/embed/avatars/0.png"
+                      }
+                      alt=""
+                      className="detail-owner-avatar"
+                    />
+                    <span className="detail-owner-name">
+                      {detailCompany.createdByDiscordId && discordUsers[detailCompany.createdByDiscordId]
+                        ? discordUsers[detailCompany.createdByDiscordId].displayName
+                        : detailCompany.createdByDiscordUsername || "社長"}
+                    </span>
+                  </div>
+                )}
 
                 <div className="detail-actions">
                   <button
                     type="button"
                     className="btn-apply"
-                    onClick={() => router.push(`/es-system/apply/${displayDetail.id}`)}
+                    onClick={() => router.push(`/es-system/apply/${detailCompany.id}`)}
                   >
                     応募画面に進む
                   </button>
-                  <div className="btn-icon" title="保存">
-                    🔖
-                  </div>
-                  <div className="btn-icon" title="シェア">
+                  <button type="button" className="btn-icon btn-share" title="リンクを共有" onClick={handleShare}>
                     ↗
-                  </div>
+                  </button>
                 </div>
+
+                {(detailCompany.members?.length ?? 0) > 0 && (
+                  <>
+                    <hr className="detail-divider" />
+                    <div className="detail-section-title">👥 メンバー一覧</div>
+                    <div className="detail-members-list">
+                      {detailCompany.members!.slice(0, visibleMemberCount).map((m, i) => (
+                        <div key={m.discordId || m.discordUsername || `m-${i}`} className="detail-member-row">
+                          <img
+                            src={
+                              m.discordId && discordUsers[m.discordId]
+                                ? discordUsers[m.discordId].avatarUrl
+                                : "https://cdn.discordapp.com/embed/avatars/0.png"
+                            }
+                            alt=""
+                            className="detail-member-avatar"
+                          />
+                          <span className="detail-member-name">
+                            {m.discordId && discordUsers[m.discordId]
+                              ? discordUsers[m.discordId].displayName
+                              : m.discordUsername || "—"}
+                          </span>
+                        </div>
+                      ))}
+                      {detailCompany.members!.length >= 1 && (
+                        <button
+                          type="button"
+                          className="detail-members-more"
+                          onClick={() => setShowMembersModal(true)}
+                          title="メンバー全員を表示"
+                        >
+                          ›
+                        </button>
+                      )}
+                    </div>
+                    {showMembersModal && detailCompany.members && detailCompany.members.length > 0 && (
+                      <div className="detail-members-overlay" onClick={() => setShowMembersModal(false)}>
+                        <div className="detail-members-modal" onClick={(e) => e.stopPropagation()}>
+                          <div className="detail-members-modal-header">
+                            <h3>👥 メンバー一覧</h3>
+                            <button type="button" className="detail-members-modal-close" onClick={() => setShowMembersModal(false)} aria-label="閉じる">
+                              ×
+                            </button>
+                          </div>
+                          <div className="detail-members-modal-body">
+                            {detailCompany.members.map((m, i) => (
+                              <div key={m.discordId || m.discordUsername || `m-${i}`} className="detail-member-row">
+                                <img
+                                  src={
+                                    m.discordId && discordUsers[m.discordId]
+                                      ? discordUsers[m.discordId].avatarUrl
+                                      : "https://cdn.discordapp.com/embed/avatars/0.png"
+                                  }
+                                  alt=""
+                                  className="detail-member-avatar"
+                                />
+                                <span className="detail-member-name">
+                                  {m.discordId && discordUsers[m.discordId]
+                                    ? discordUsers[m.discordId].displayName
+                                    : m.discordUsername || "—"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <hr className="detail-divider" />
 
@@ -289,11 +461,11 @@ export default function CompaniesPage() {
                 <div className="detail-info-grid">
                   <div className="info-item">
                     <div className="info-item-label">雇用形態</div>
-                    <div className="info-item-value">{displayDetail.employmentType}</div>
+                    <div className="info-item-value">{detailCompany.employmentType}</div>
                   </div>
                   <div className="info-item">
                     <div className="info-item-label">参加可能人数</div>
-                    <div className="info-item-value">{displayDetail.maxParticipants || "—"}名</div>
+                    <div className="info-item-value">{detailCompany.maxParticipants || "—"}名</div>
                   </div>
                 </div>
 
@@ -303,18 +475,18 @@ export default function CompaniesPage() {
                 <div
                   className="detail-description"
                   dangerouslySetInnerHTML={{
-                    __html: displayDetail.description
-                      ? displayDetail.description.replace(/\n/g, "<br/>")
+                    __html: detailCompany.description
+                      ? detailCompany.description.replace(/\n/g, "<br/>")
                       : "説明はありません。",
                   }}
                 />
 
-                {displayDetail.tags.length > 0 && (
+                {detailCompany.tags.length > 0 && (
                   <>
                     <hr className="detail-divider" />
                     <div className="detail-section-title">✅ タグ</div>
                     <div className="detail-tags">
-                      {displayDetail.tags.map((t) => (
+                      {detailCompany.tags.map((t) => (
                         <span key={t} className="detail-tag">
                           {t}
                         </span>

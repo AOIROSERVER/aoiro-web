@@ -122,13 +122,14 @@ export async function getCompanyCreatedBy(companyId: string): Promise<string | n
   return createdBy;
 }
 
-/** 会社の作成者情報を取得。L=created_by（Supabase user.id）, M=created_by_discord_id。申請の権限判定で両方使う */
+/** 会社の作成者情報を取得。L=created_by, M=created_by_discord_id, N=created_by_discord_username */
 export async function getCompanyCreatorIds(companyId: string): Promise<{
   createdBy: string | null;
   createdByDiscordId: string | null;
+  createdByDiscordUsername: string | null;
 }> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!key) return { createdBy: null, createdByDiscordId: null };
+  if (!key) return { createdBy: null, createdByDiscordId: null, createdByDiscordUsername: null };
   try {
     const serviceAccountKey = JSON.parse(key);
     const auth = new google.auth.GoogleAuth({
@@ -142,12 +143,13 @@ export async function getCompanyCreatorIds(companyId: string): Promise<{
     });
     const rows = (res.data.values || []) as string[][];
     const row = rows.find((r) => r[0] === companyId);
-    if (!row) return { createdBy: null, createdByDiscordId: null };
+    if (!row) return { createdBy: null, createdByDiscordId: null, createdByDiscordUsername: null };
     const createdBy = (row[11] || '').trim() || null;
     const createdByDiscordId = (row[12] || '').trim() || null;
-    return { createdBy, createdByDiscordId };
+    const createdByDiscordUsername = (row[13] || '').trim() || null;
+    return { createdBy, createdByDiscordId, createdByDiscordUsername };
   } catch {
-    return { createdBy: null, createdByDiscordId: null };
+    return { createdBy: null, createdByDiscordId: null, createdByDiscordUsername: null };
   }
 }
 

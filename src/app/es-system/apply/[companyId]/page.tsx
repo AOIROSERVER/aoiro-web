@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import "@/app/es-system/companies/joblist.css";
 
+type FormField = { id: string; type: string; required?: boolean; label?: string };
 type Company = {
   id: string;
   name: string;
@@ -13,7 +14,7 @@ type Company = {
   location: string;
   employmentType: string;
   tags: string[];
-  formSchema: { fields?: unknown[] } | null;
+  formSchema: { fields?: FormField[] } | null;
   maxParticipants: number;
   imageUrls: string[];
   createdAt: string;
@@ -30,9 +31,13 @@ export default function ApplyPage() {
   const [mcid, setMcid] = useState<string | null>(null);
   const [mcidLoading, setMcidLoading] = useState(true);
   const [motivation, setMotivation] = useState("");
+  const [skillImageFile, setSkillImageFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+
+  const skillImageField = company?.formSchema?.fields?.find((f) => f.id === "skill_image") as FormField | undefined;
+  const skillImageRequired = skillImageField?.required === true;
 
   useEffect(() => {
     if (!companyId) return;
@@ -78,20 +83,26 @@ export default function ApplyPage() {
       setError("志望理由・意志表明を入力してください。");
       return;
     }
+    if (skillImageRequired && !skillImageFile) {
+      setError("技術確認用画像をアップロードしてください。");
+      return;
+    }
+    if (skillImageFile && skillImageFile.size > 8 * 1024 * 1024) {
+      setError("画像は8MB以下にしてください。");
+      return;
+    }
     setSubmitting(true);
     try {
       const token = session?.access_token;
+      const formData = new FormData();
+      formData.append("companyId", company!.id);
+      formData.append("minecraftTag", minecraftTag.trim());
+      formData.append("formData", JSON.stringify({ motivation: motivation.trim() }));
+      if (skillImageFile) formData.append("skillImage", skillImageFile);
       const res = await fetch("/api/es-apply", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          companyId: company!.id,
-          minecraftTag: minecraftTag.trim(),
-          formData: { motivation: motivation.trim() },
-        }),
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "送信に失敗しました");
@@ -211,6 +222,30 @@ export default function ApplyPage() {
                 className="form-textarea"
               />
             </div>
+
+            {skillImageField && (
+              <div className="form-group">
+                <label className="form-label">
+                  技術確認用画像（技術レベル確認用）
+                  {skillImageRequired && <span className="required"> *</span>}
+                </label>
+                <p className="section-sub" style={{ marginBottom: 8, fontSize: 12 }}>
+                  スキルや実績が分かる画像をアップロードしてください。画像は社長のDiscord DMに送られ、DBには保存されません。
+                </p>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={(e) => setSkillImageFile(e.target.files?.[0] ?? null)}
+                  className="form-input"
+                  style={{ padding: 8 }}
+                />
+                {skillImageFile && (
+                  <p className="section-sub" style={{ marginTop: 4, fontSize: 12 }}>
+                    {skillImageFile.name}（{(skillImageFile.size / 1024).toFixed(1)} KB）
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="form-actions">
               <button type="button" onClick={() => router.push("/es-system/companies")} className="btn-cancel">
