@@ -46,8 +46,11 @@ export async function POST(request: NextRequest) {
 
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('es-upload-image: SUPABASE_URL or SERVICE_ROLE_KEY is missing');
-      return fail('認証の設定がありません', 500);
+      console.error('es-upload-image: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing (Netlifyの場合は Runtime スコープで設定してください)');
+      return fail(
+        '画像アップロード用のSupabase設定がサーバーにありません。Netlifyの「Environment variables」で NEXT_PUBLIC_SUPABASE_URL と SUPABASE_SERVICE_ROLE_KEY を「All scopes」または「Runtime」に設定してください。',
+        503
+      );
     }
 
     let user: { id: string } | null = null;

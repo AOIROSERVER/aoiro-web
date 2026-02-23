@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { updateApplicationStatus, getApplicationsFromSheets, getCompanyCreatedBy, setAICCompanyForUser } from '@/lib/es-companies-sheets';
+import { updateApplicationStatus, getApplicationsFromSheets, getCompanyCreatorIds, setAICCompanyForUser } from '@/lib/es-companies-sheets';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function getDiscordIdFromUser(user: { user_metadata?: Record<string, unknown> }): string | null {
+  const m = user.user_metadata || {};
+  const id = m.provider_id ?? m.sub;
+  return id != null ? String(id).trim() || null : null;
+}
 
 async function canManageApplication(request: NextRequest, applicationCompanyId: string): Promise<boolean> {
   const authHeader = request.headers.get('authorization');
@@ -14,8 +20,11 @@ async function canManageApplication(request: NextRequest, applicationCompanyId: 
   if (!user) return false;
   const isAdmin = user.email === 'aoiroserver.m@gmail.com' || user.email === process.env.NEXT_PUBLIC_SUPERADMIN_EMAIL;
   if (isAdmin) return true;
-  const createdBy = await getCompanyCreatedBy(applicationCompanyId);
-  return createdBy === user.id;
+  const { createdBy, createdByDiscordId } = await getCompanyCreatorIds(applicationCompanyId);
+  if (createdBy === user.id) return true;
+  const discordId = getDiscordIdFromUser(user);
+  if (discordId && createdByDiscordId === discordId) return true;
+  return false;
 }
 
 /** 管理者または募集作成者: 申請のステータスを更新（approved / rejected） */

@@ -118,8 +118,17 @@ export async function getCompanyByIdFromSheets(companyId: string): Promise<Compa
 
 /** 会社の作成者ID（created_by）を取得。L列 */
 export async function getCompanyCreatedBy(companyId: string): Promise<string | null> {
+  const { createdBy } = await getCompanyCreatorIds(companyId);
+  return createdBy;
+}
+
+/** 会社の作成者情報を取得。L=created_by（Supabase user.id）, M=created_by_discord_id。申請の権限判定で両方使う */
+export async function getCompanyCreatorIds(companyId: string): Promise<{
+  createdBy: string | null;
+  createdByDiscordId: string | null;
+}> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!key) return null;
+  if (!key) return { createdBy: null, createdByDiscordId: null };
   try {
     const serviceAccountKey = JSON.parse(key);
     const auth = new google.auth.GoogleAuth({
@@ -133,9 +142,12 @@ export async function getCompanyCreatedBy(companyId: string): Promise<string | n
     });
     const rows = (res.data.values || []) as string[][];
     const row = rows.find((r) => r[0] === companyId);
-    return row && row[11] ? row[11] : null;
+    if (!row) return { createdBy: null, createdByDiscordId: null };
+    const createdBy = (row[11] || '').trim() || null;
+    const createdByDiscordId = (row[12] || '').trim() || null;
+    return { createdBy, createdByDiscordId };
   } catch {
-    return null;
+    return { createdBy: null, createdByDiscordId: null };
   }
 }
 

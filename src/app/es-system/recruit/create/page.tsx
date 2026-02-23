@@ -4,7 +4,21 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import "@/app/es-system/companies/joblist.css";
+
+const BUCKET = "recruit-eyecatch";
+
+/** DataURL を Blob に変換（クライアント直接アップロード用） */
+function dataURLtoBlob(dataUrl: string): { blob: Blob; ext: string } {
+  const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+  const mime = (m?.[1] ?? "image/png").trim().toLowerCase();
+  const ext = mime === "image/jpeg" ? "jpg" : mime.replace("image/", "") || "png";
+  const bstr = atob(m?.[2] ?? "");
+  const u8 = new Uint8Array(bstr.length);
+  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+  return { blob: new Blob([u8], { type: mime }), ext };
+}
 
 const DEFAULT_FORM_SCHEMA = {
   fields: [
@@ -78,20 +92,16 @@ export default function RecruitCreatePage() {
     try {
       if (eyecatchDataUrl) {
         setUploading(true);
-        const uploadRes = await fetch("/api/es-upload-image?storage=supabase", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ base64: eyecatchDataUrl }),
+        // SERVICE_ROLE_KEY 不要: クライアントの Supabase（anon + セッション）で Storage に直接アップロード
+        const { blob, ext } = dataURLtoBlob(eyecatchDataUrl);
+        const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+        const { data, error } = await supabase.storage.from(BUCKET).upload(path, blob, {
+          contentType: blob.type,
+          upsert: false,
         });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok) {
-          const msg = uploadData.detail ? `${uploadData.error || "画像のアップロードに失敗しました"}（${uploadData.detail}）` : (uploadData.error || "画像のアップロードに失敗しました");
-          throw new Error(msg);
-        }
-        imageUrls = [uploadData.url];
+        if (error) throw new Error(error.message);
+        const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(data.path);
+        imageUrls = [urlData.publicUrl];
         setUploading(false);
       }
 

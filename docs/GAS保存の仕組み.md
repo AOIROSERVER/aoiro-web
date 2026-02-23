@@ -11,7 +11,7 @@
 【募集作成】
   募集作成ページで入力
        ↓
-  アイキャッチ画像 → いったんSupabaseにアップロード → 画像のURLを取得
+  アイキャッチ画像 → ブラウザから Supabase Storage（recruit-eyecatch）に直接アップロード → 画像のURLを取得
   その他のテキスト → そのままAPIに送信
        ↓
   Next.js API（/api/es-companies）
@@ -28,7 +28,9 @@
 ```
 
 - **文字・数値・JSON** → すべて **Googleスプレッドシート** に保存されます。
-- **画像ファイル** → **Supabase Storage** にアップロードし、その **URL（文字列）** をスプレッドシートの「画像URL」列に保存します。
+- **画像ファイル** → **Supabase Storage**（バケット名 `recruit-eyecatch`）に**ブラウザから直接**アップロードし、その **URL（文字列）** をスプレッドシートの「画像URL」列に保存します。  
+  - 認証はログイン中のセッション（anon key + JWT）で行うため、**SUPABASE_SERVICE_ROLE_KEY は不要**です。  
+  - Supabase ダッシュボードでバケット `recruit-eyecatch` を public 作成し、Storage の RLS で「認証済みユーザーが INSERT 可能」にしてください。
 
 ---
 

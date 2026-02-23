@@ -97,7 +97,7 @@ Netlify の環境変数一覧で、**本番で未使用のものは削除**し�
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`（認証・管理者系）
+- `SUPABASE_SERVICE_ROLE_KEY`（認証・管理者系。**募集のアイキャッチはクライアントから直接 Storage にアップロードするため、このキーは不要**）
 - `NEXT_PUBLIC_SUPERADMIN_EMAIL`（管理者判定）
 - `DISCORD_BOT_TOKEN` / `DISCORD_CHANNEL_ID` / `DISCORD_SERVER_ID` / `DISCORD_MEMBER_ROLE_ID`（Discord 連携）
 - `VAPID_PRIVATE_KEY`（プッシュ通知）
