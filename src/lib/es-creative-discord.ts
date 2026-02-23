@@ -43,9 +43,10 @@ export async function sendCreativeApplicationToDiscord(params: {
   ];
 
   const fileName = pdfFileName && /\.pdf$/i.test(pdfFileName) ? pdfFileName : `creative-${companyId}.pdf`;
+  const pdfBytes = new Uint8Array(pdfBuffer);
   const form = new FormData();
   form.append('payload_json', JSON.stringify({ content, components }));
-  form.append('files[0]', new Blob([pdfBuffer], { type: 'application/pdf' }), fileName);
+  form.append('files[0]', new Blob([pdfBytes], { type: 'application/pdf' }), fileName);
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${CREATIVE_CHANNEL_ID}/messages`, {
     method: 'POST',
