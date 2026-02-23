@@ -39,6 +39,9 @@ export default function RecruitMyPage() {
   const [aicMainCompany, setAicMainCompany] = useState<string | null>(null);
   const [aicPartTimeCompanies, setAicPartTimeCompanies] = useState<string[]>([]);
   const [resigning, setResigning] = useState(false);
+  const [resigningCompanyName, setResigningCompanyName] = useState<string | null>(null);
+  const [discordUsers, setDiscordUsers] = useState<Record<string, { avatarUrl: string; displayName: string }>>({});
+  const [detailApplication, setDetailApplication] = useState<Application | null>(null);
 
   useEffect(() => {
     if (!user || !session?.access_token) {
@@ -53,7 +56,26 @@ export default function RecruitMyPage() {
       .catch(() => setCompanies([]));
     fetch("/api/es-companies/applications", { headers, credentials: "include" })
       .then((r) => r.json())
-      .then((list) => setApplications(Array.isArray(list) ? list : []))
+      .then((list) => {
+        const apps = Array.isArray(list) ? list : [];
+        setApplications(apps);
+        const ids = new Set<string>();
+        apps.forEach((a: Application) => a.discordId && ids.add(a.discordId));
+        if (ids.size > 0) {
+          Promise.all(
+            Array.from(ids).map((id) =>
+              fetch(`/api/discord-user/${id}`)
+                .then((res) => res.json())
+                .then((u) => ({ id, avatarUrl: u.avatarUrl || "https://cdn.discordapp.com/embed/avatars/0.png", displayName: u.globalName || u.username || "—" }))
+                .catch(() => ({ id, avatarUrl: "https://cdn.discordapp.com/embed/avatars/0.png", displayName: "—" }))
+            )
+          ).then((results) => {
+            const next: Record<string, { avatarUrl: string; displayName: string }> = {};
+            results.forEach((r) => { next[r.id] = { avatarUrl: r.avatarUrl, displayName: r.displayName }; });
+            setDiscordUsers(next);
+          });
+        }
+      })
       .catch(() => setApplications([]));
     fetch("/api/aic-company", { headers, credentials: "include" })
       .then((r) => r.json())
@@ -80,18 +102,26 @@ export default function RecruitMyPage() {
       if (!res.ok) throw new Error(data.error || "更新に失敗しました");
       const list = await fetch("/api/es-companies/applications", { headers: { Authorization: `Bearer ${session.access_token}` }, credentials: "include" }).then((r) => r.json());
       setApplications(Array.isArray(list) ? list : []);
+      setDetailApplication(null);
     } catch (e) {
       alert(e instanceof Error ? e.message : "ステータスの更新に失敗しました");
     }
   };
 
-  const resign = async () => {
-    if (!session?.access_token || !confirm("現在の所属（正社員・アルバイト）をすべて退職しますか？AICカードの表示も更新されます。")) return;
+  const resign = async (companyName?: string) => {
+    if (!session?.access_token) return;
+    const isSingle = typeof companyName === "string" && companyName.trim();
+    const msg = isSingle
+      ? `「${companyName}」から退職しますか？`
+      : "現在の所属（正社員・アルバイト）をすべて退職しますか？AICカードの表示も更新されます。";
+    if (!confirm(msg)) return;
     setResigning(true);
+    if (isSingle) setResigningCompanyName(companyName!.trim());
     try {
       const res = await fetch("/api/aic-company/resign", {
         method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: isSingle ? JSON.stringify({ companyName: companyName!.trim() }) : undefined,
         credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
@@ -102,6 +132,7 @@ export default function RecruitMyPage() {
       alert(e instanceof Error ? e.message : "退職に失敗しました");
     } finally {
       setResigning(false);
+      setResigningCompanyName(null);
     }
   };
 
@@ -166,33 +197,55 @@ export default function RecruitMyPage() {
 
             <div className="detail-section-title">現在の所属</div>
             {aicMainCompany || aicPartTimeCompanies.length > 0 ? (
-              <div className="info-item" style={{ marginBottom: 24 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
                 {aicMainCompany && (
-                  <p style={{ margin: "0 0 4px 0", fontSize: 15 }}>
-                    <strong>正社員:</strong> {aicMainCompany}
-                  </p>
+                  <div className="info-item" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)", marginRight: 8 }}>正社員</span>
+                      <strong style={{ fontSize: 15 }}>{aicMainCompany}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => resign(aicMainCompany)}
+                      disabled={resigning}
+                      style={{
+                        fontSize: 13,
+                        padding: "6px 14px",
+                        color: "#c62828",
+                        background: "none",
+                        border: "1px solid #c62828",
+                        borderRadius: 6,
+                        cursor: resigning ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {resigning && resigningCompanyName === aicMainCompany ? "処理中..." : "退職する"}
+                    </button>
+                  </div>
                 )}
-                {aicPartTimeCompanies.length > 0 && (
-                  <p style={{ margin: "0 0 12px 0", fontSize: 14, color: "var(--color-text-secondary)" }}>
-                    アルバイト中: {aicPartTimeCompanies.join("、")}
-                  </p>
-                )}
-                <button
-                  type="button"
-                  onClick={resign}
-                  disabled={resigning}
-                  style={{
-                    fontSize: 13,
-                    padding: "6px 14px",
-                    color: "#c62828",
-                    background: "none",
-                    border: "1px solid #c62828",
-                    borderRadius: 6,
-                    cursor: resigning ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {resigning ? "処理中..." : "退職する"}
-                </button>
+                {aicPartTimeCompanies.map((name) => (
+                  <div key={name} className="info-item" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                    <div>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)", marginRight: 8 }}>アルバイト</span>
+                      <strong style={{ fontSize: 15 }}>{name}</strong>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => resign(name)}
+                      disabled={resigning}
+                      style={{
+                        fontSize: 13,
+                        padding: "6px 14px",
+                        color: "#c62828",
+                        background: "none",
+                        border: "1px solid #c62828",
+                        borderRadius: 6,
+                        cursor: resigning ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {resigning && resigningCompanyName === name ? "処理中..." : "退職する"}
+                    </button>
+                  </div>
+                ))}
               </div>
             ) : (
               <p className="section-sub" style={{ marginBottom: 24 }}>現在、所属している会社はありません。</p>
@@ -244,46 +297,108 @@ export default function RecruitMyPage() {
                 {filteredApps.length === 0 ? (
                   <p className="apply-login-required-text">申請はまだありません。</p>
                 ) : (
-                  <div style={{ overflowX: "auto" }}>
-                    <table className="info-item" style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead>
-                        <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
-                          <th style={{ textAlign: "left", padding: 8 }}>日時</th>
-                          <th style={{ textAlign: "left", padding: 8 }}>募集</th>
-                          <th style={{ textAlign: "left", padding: 8 }}>Discord</th>
-                          <th style={{ textAlign: "left", padding: 8 }}>Discord ID</th>
-                          <th style={{ textAlign: "left", padding: 8 }}>MCID</th>
-                          <th style={{ textAlign: "left", padding: 8 }}>志望理由</th>
-                          <th style={{ textAlign: "left", padding: 8 }}>ステータス</th>
-                          <th style={{ textAlign: "left", padding: 8 }}>操作</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredApps.map((a) => (
-                          <tr key={a.id} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                            <td style={{ padding: 8, fontSize: 14 }}>{a.createdAt}</td>
-                            <td style={{ padding: 8, fontSize: 14 }}>{a.companyName}</td>
-                            <td style={{ padding: 8, fontSize: 14 }}>{a.discord}</td>
-                            <td style={{ padding: 8, fontSize: 14 }}>{a.discordId || "—"}</td>
-                            <td style={{ padding: 8, fontSize: 14 }}>{a.minecraftTag}</td>
-                            <td style={{ padding: 8, fontSize: 14, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }} title={a.motivation}>{a.motivation || "—"}</td>
-                            <td style={{ padding: 8, fontSize: 14 }}>
-                              <span style={{ color: a.status === "approved" ? "#1e7e45" : a.status === "rejected" ? "#c62828" : "var(--color-text-muted)" }}>
-                                {a.status === "approved" ? "許可" : a.status === "rejected" ? "拒否" : "未処理"}
-                              </span>
-                            </td>
-                            <td style={{ padding: 8 }}>
-                              {a.status === "pending" && (
-                                <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
-                                  <button type="button" title="許可" style={{ color: "#1e7e45", background: "none", border: "none", cursor: "pointer", fontSize: 18, padding: 2, lineHeight: 1 }} onClick={() => updateStatus(a.id, "approved")}>✅</button>
-                                  <button type="button" title="拒否" style={{ color: "#c62828", background: "none", border: "none", cursor: "pointer", fontSize: 18, padding: 2, lineHeight: 1 }} onClick={() => updateStatus(a.id, "rejected")}>❌</button>
-                                </div>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {filteredApps.map((a) => (
+                      <div
+                        key={a.id}
+                        className="info-item"
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          flexWrap: "wrap",
+                          gap: 10,
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                          <img
+                            src={a.discordId && discordUsers[a.discordId] ? discordUsers[a.discordId].avatarUrl : "https://cdn.discordapp.com/embed/avatars/0.png"}
+                            alt=""
+                            style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+                          />
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>
+                              {a.discordId && discordUsers[a.discordId] ? discordUsers[a.discordId].displayName : a.discord || "—"}
+                            </div>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{a.companyName}</div>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="recruit-create-btn"
+                          style={{ fontSize: 13, padding: "6px 14px", flexShrink: 0 }}
+                          onClick={() => setDetailApplication(a)}
+                        >
+                          詳細
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {detailApplication && (
+                  <div className="application-detail-overlay" onClick={() => setDetailApplication(null)}>
+                    <div className="application-detail-modal" onClick={(e) => e.stopPropagation()}>
+                      <div className="application-detail-modal-header">
+                        <h3>申請詳細</h3>
+                        <button
+                          type="button"
+                          className="detail-members-modal-close"
+                          onClick={() => setDetailApplication(null)}
+                          aria-label="閉じる"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="application-detail-modal-body">
+                        <table className="application-detail-table">
+                          <tbody>
+                            <tr>
+                              <th>日時</th>
+                              <td>{detailApplication.createdAt}</td>
+                            </tr>
+                            <tr>
+                              <th>募集</th>
+                              <td>{detailApplication.companyName}</td>
+                            </tr>
+                            <tr>
+                              <th>Discord</th>
+                              <td>{detailApplication.discord || "—"}</td>
+                            </tr>
+                            <tr>
+                              <th>Discord ID</th>
+                              <td>{detailApplication.discordId || "—"}</td>
+                            </tr>
+                            <tr>
+                              <th>MCID</th>
+                              <td>{detailApplication.minecraftTag || "—"}</td>
+                            </tr>
+                            <tr>
+                              <th>志望理由</th>
+                              <td style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{detailApplication.motivation || "—"}</td>
+                            </tr>
+                            <tr>
+                              <th>ステータス</th>
+                              <td>
+                                <span style={{ color: detailApplication.status === "approved" ? "#1e7e45" : detailApplication.status === "rejected" ? "#c62828" : "var(--color-text-muted)", fontWeight: 600 }}>
+                                  {detailApplication.status === "approved" ? "許可" : detailApplication.status === "rejected" ? "拒否" : "未処理"}
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      {detailApplication.status === "pending" && (
+                        <div className="application-detail-modal-actions">
+                          <button type="button" className="btn-approve" onClick={() => updateStatus(detailApplication.id, "approved")}>
+                            許可
+                          </button>
+                          <button type="button" className="btn-reject" onClick={() => updateStatus(detailApplication.id, "rejected")}>
+                            拒否
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </>

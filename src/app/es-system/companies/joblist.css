@@ -172,9 +172,9 @@
   color: var(--color-primary);
 }
 
-/* メンバー全員ポップアップ */
+/* メンバー全員ポップアップ（会社詳細カード内で中央表示） */
 .companies-joblist .detail-members-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.4);
   z-index: 1000;
@@ -182,6 +182,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  border-radius: 0 0 var(--detail-radius) var(--detail-radius);
 }
 .companies-joblist .detail-members-modal {
   background: var(--color-surface);
@@ -236,6 +237,89 @@
 .companies-joblist .detail-members-modal-body .detail-member-row {
   padding: 8px 12px;
 }
+
+/* 過去の投稿一覧：申請詳細モーダル */
+.recruit-my-page .application-detail-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.recruit-my-page .application-detail-modal {
+  background: var(--color-surface);
+  border-radius: var(--detail-radius);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.recruit-my-page .application-detail-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+.recruit-my-page .application-detail-modal-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+.recruit-my-page .application-detail-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.recruit-my-page .application-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.recruit-my-page .application-detail-table th {
+  text-align: left;
+  padding: 8px 12px 4px 0;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  vertical-align: top;
+  width: 100px;
+}
+.recruit-my-page .application-detail-table td {
+  padding: 8px 0 4px 0;
+  color: var(--color-text-primary);
+  word-break: break-word;
+}
+.recruit-my-page .application-detail-modal-actions {
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.recruit-my-page .application-detail-modal-actions .btn-approve {
+  padding: 10px 20px;
+  background: #1e7e45;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.recruit-my-page .application-detail-modal-actions .btn-reject {
+  padding: 10px 20px;
+  background: transparent;
+  color: #c62828;
+  border: 1px solid #c62828;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .companies-joblist .search-bar {
   display: flex;
   gap: 0;

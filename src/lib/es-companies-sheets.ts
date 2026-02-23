@@ -85,8 +85,8 @@ function rowToCompany(row: string[]): Company {
     imageUrls,
     createdAt: row[9] || '',
     active: (row[10] || '1') === '1' || (row[10] || '').toLowerCase() === 'true',
-    hourlyWage: (row[15] || '').trim() || undefined,
-    monthlySalary: (row[16] || '').trim() || undefined,
+    hourlyWage: String(row[15] ?? '').trim() || undefined,
+    monthlySalary: String(row[16] ?? '').trim() || undefined,
   };
 }
 
@@ -723,8 +723,8 @@ export async function getAICCompaniesForUser(userId: string): Promise<AICCompani
     });
     const rows = (res.data.values || []) as string[][];
     const row = rows.find((r) => r[0] === userId);
-    if (!row || !row[1]) return { mainCompanyName: null, partTimeCompanyNames: [] };
-    const mainCompanyName = row[1].trim();
+    if (!row) return { mainCompanyName: null, partTimeCompanyNames: [] };
+    const mainCompanyName = (row[1] || '').trim() || null;
     let partTimeCompanyNames: string[] = [];
     // 4列以上なら新形式（main, part_time_companies, updated_at）。3列は旧形式（company_name, updated_at）なので part_time は空
     if (row.length >= 4 && row[2]) {
@@ -746,6 +746,48 @@ export async function getAICCompaniesForUser(userId: string): Promise<AICCompani
 export async function getAICCompanyForUser(userId: string): Promise<string | null> {
   const { mainCompanyName } = await getAICCompaniesForUser(userId);
   return mainCompanyName;
+}
+
+/** 指定した会社だけ退職する（正社員なら main を空に、アルバイトなら part_time から削除）。 */
+export async function resignFromCompany(userId: string, companyName: string): Promise<boolean> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key || !userId || !companyName.trim()) return false;
+
+  const name = companyName.trim();
+  try {
+    const current = await getAICCompaniesForUser(userId);
+    let newMain = current.mainCompanyName;
+    let newPartTime = [...(current.partTimeCompanyNames || [])];
+
+    if (newMain === name) newMain = null;
+    newPartTime = newPartTime.filter((n) => n.trim() !== name);
+
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${AIC_COMPANY_SHEET}!A2:D`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const rowIndex = rows.findIndex((r) => r[0] === userId);
+    const now = new Date().toISOString();
+    if (rowIndex >= 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: GOOGLE_SHEETS_ID,
+        range: `${AIC_COMPANY_SHEET}!B${rowIndex + 2}:D${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[newMain ?? '', JSON.stringify(newPartTime), now]] },
+      });
+    }
+    return true;
+  } catch (e) {
+    console.error('resignFromCompany error:', e);
+    return false;
+  }
 }
 
 /** ユーザーのAIC所属を退職（正社員・アルバイトともクリア）する。 */

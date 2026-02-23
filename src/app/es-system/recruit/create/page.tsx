@@ -288,10 +288,12 @@ export default function RecruitCreatePage() {
                 <div className="info-item">
                   <div className="info-item-label">時給 *</div>
                   <input
-                    type="text"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
                     value={form.hourlyWage}
                     onChange={(e) => setForm((p) => ({ ...p, hourlyWage: e.target.value }))}
-                    placeholder="例: 1000円"
+                    placeholder="例: 1000"
                     className="info-item-value"
                     style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
                   />
@@ -299,10 +301,12 @@ export default function RecruitCreatePage() {
                 <div className="info-item">
                   <div className="info-item-label">月給 *</div>
                   <input
-                    type="text"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
                     value={form.monthlySalary}
                     onChange={(e) => setForm((p) => ({ ...p, monthlySalary: e.target.value }))}
-                    placeholder="例: 20万円"
+                    placeholder="例: 200000"
                     className="info-item-value"
                     style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
                   />

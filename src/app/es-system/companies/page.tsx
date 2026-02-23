@@ -27,6 +27,26 @@ type Company = {
 
 type DiscordUser = { avatarUrl: string; displayName: string };
 
+/** 時給表示用: 数字なら「〇〇円」、それ以外はそのまま */
+function formatHourlyWage(s: string | undefined): string {
+  if (s == null || s === "") return "—";
+  const n = parseInt(String(s).replace(/[^0-9]/g, ""), 10);
+  if (!isNaN(n)) return `${n.toLocaleString()}円`;
+  return s;
+}
+
+/** 月給表示用: 数字なら 1万以上は「〇〇万円」、1万未満は「〇〇円」。100000 → 10万円 */
+function formatMonthlySalary(s: string | undefined): string {
+  if (s == null || s === "") return "—";
+  const str = String(s).replace(/[^0-9.eE+-]/g, "");
+  const num = parseFloat(str);
+  if (isNaN(num) || num < 0) return s;
+  const n = Math.round(num);
+  if (n >= 10000) return `${(n / 10000).toLocaleString()}万円`;
+  if (n > 0) return `${n.toLocaleString()}円`;
+  return s;
+}
+
 export default function CompaniesPage() {
   const router = useRouter();
   const { user, isAdmin } = useAuth();
@@ -467,11 +487,11 @@ export default function CompaniesPage() {
                   </div>
                   <div className="info-item">
                     <div className="info-item-label">時給</div>
-                    <div className="info-item-value">{detailCompany.hourlyWage || "—"}</div>
+                    <div className="info-item-value">{formatHourlyWage(detailCompany.hourlyWage)}</div>
                   </div>
                   <div className="info-item">
                     <div className="info-item-label">月給</div>
-                    <div className="info-item-value">{detailCompany.monthlySalary || "—"}</div>
+                    <div className="info-item-value">{formatMonthlySalary(detailCompany.monthlySalary)}</div>
                   </div>
                   <div className="info-item">
                     <div className="info-item-label">参加可能人数</div>
