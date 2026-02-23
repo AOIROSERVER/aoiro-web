@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
-import { updateApplicationStatus, getApplicationsFromSheets, setAICCompanyForUser } from '@/lib/es-companies-sheets';
+import { updateApplicationStatus, getApplicationsFromSheets, setAICCompanyForUser, getCompanyByIdFromSheets } from '@/lib/es-companies-sheets';
 
 const DISCORD_PUBLIC_KEY = process.env.DISCORD_APPLICATION_PUBLIC_KEY ?? '';
 
@@ -56,7 +56,9 @@ export async function POST(request: NextRequest) {
       const applications = await getApplicationsFromSheets();
       const app = applications.find((a) => a.id === applicationId);
       if (app?.userId && app?.companyName) {
-        await setAICCompanyForUser(app.userId, app.companyName);
+        const company = await getCompanyByIdFromSheets(app.companyId);
+        const employmentType = (company?.employmentType === '正社員' ? '正社員' : 'アルバイト') as '正社員' | 'アルバイト';
+        await setAICCompanyForUser(app.userId, app.companyName, employmentType);
       }
     }
 

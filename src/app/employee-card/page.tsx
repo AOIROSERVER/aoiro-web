@@ -71,8 +71,9 @@ export default function EmployeeCardPage() {
   const [progress, setProgress] = useState(0);
   const [showCard, setShowCard] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  /** GAS（入社申請許可）から取得した所属会社名。あればカードの section 表示に優先使用 */
-  const [aicCompanyName, setAicCompanyName] = useState<string | null>(null);
+  /** GAS（入社申請許可）から取得した所属。正社員1社＋アルバイト複数 */
+  const [aicMainCompanyName, setAicMainCompanyName] = useState<string | null>(null);
+  const [aicPartTimeCompanyNames, setAicPartTimeCompanyNames] = useState<string[]>([]);
 
   useEffect(() => {
     checkUserAuthorization();
@@ -83,8 +84,14 @@ export default function EmployeeCardPage() {
     if (!user) return;
     fetch('/api/aic-company', { credentials: 'include' })
       .then((r) => r.json())
-      .then((d: { companyName?: string | null }) => setAicCompanyName(d.companyName ?? null))
-      .catch(() => setAicCompanyName(null));
+      .then((d: { mainCompanyName?: string | null; companyName?: string | null; partTimeCompanyNames?: string[] }) => {
+        setAicMainCompanyName(d.mainCompanyName ?? d.companyName ?? null);
+        setAicPartTimeCompanyNames(Array.isArray(d.partTimeCompanyNames) ? d.partTimeCompanyNames : []);
+      })
+      .catch(() => {
+        setAicMainCompanyName(null);
+        setAicPartTimeCompanyNames([]);
+      });
   }, [user?.id]);
 
   // プログレスバーの自動更新
@@ -1183,8 +1190,19 @@ export default function EmployeeCardPage() {
                     display: "block",
                     mb: 0.5
                   }}>
-                    {aicCompanyName ?? employeeCard?.section_name ?? 'メンバー'}
+                    {aicMainCompanyName ?? employeeCard?.section_name ?? 'メンバー'}
                   </Typography>
+                  {aicPartTimeCompanyNames.length > 0 && (
+                    <Typography component="span" sx={{
+                      display: "block",
+                      fontSize: "0.65rem",
+                      color: "rgba(255,255,255,0.85)",
+                      textShadow: "0 1px 1px rgba(0,0,0,0.5)",
+                      mt: 0.25
+                    }}>
+                      {aicPartTimeCompanyNames.map((name) => `アルバイト中(${name})`).join('　')}
+                    </Typography>
+                  )}
                   <Typography variant="body2" sx={{ 
                     color: "#ffffff",
                     textShadow: "0 1px 2px rgba(0,0,0,0.6)",
@@ -1593,8 +1611,19 @@ export default function EmployeeCardPage() {
                         lineHeight: 1.2,
                         textShadow: "0 1px 2px rgba(0,0,0,0.5)"
                       }}>
-                        {aicCompanyName ?? employeeCard?.section_name ?? 'メンバー'}
+                        {aicMainCompanyName ?? employeeCard?.section_name ?? 'メンバー'}
                       </Typography>
+                      {aicPartTimeCompanyNames.length > 0 && (
+                        <Typography component="span" sx={{
+                          display: "block",
+                          fontSize: "0.5rem",
+                          color: "rgba(255,255,255,0.85)",
+                          textShadow: "0 1px 1px rgba(0,0,0,0.5)",
+                          mt: 0.15
+                        }}>
+                          {aicPartTimeCompanyNames.map((name) => `アルバイト中(${name})`).join(' ')}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 </Box>

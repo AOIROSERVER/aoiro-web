@@ -115,7 +115,7 @@ export default function RecruitMyPage() {
   }
 
   return (
-    <div className="companies-joblist">
+    <div className="companies-joblist recruit-my-page" style={{ paddingBottom: 120 }}>
       <div className="back-link" style={{ paddingTop: 24, paddingBottom: 16 }}>
         <Link href="/es-system/companies">← 会社一覧へ戻る</Link>
         <span style={{ marginLeft: 16 }}>

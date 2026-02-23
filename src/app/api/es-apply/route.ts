@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { appendCompanyApplication, getCompanyCreatorIds } from '@/lib/es-companies-sheets';
+import { appendCompanyApplication, getCompanyCreatorIds, getAICCompaniesForUser } from '@/lib/es-companies-sheets';
 import { getCompanyByIdFromSheets, SEED_COMPANY } from '@/lib/es-companies-sheets';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -158,6 +158,17 @@ export async function POST(request: NextRequest) {
       const d = getDiscordFromUser(user);
       discordId = d.id;
       discordUsername = d.username;
+    }
+
+    // 正社員は1社まで。既に正社員で所属がある場合は申請不可
+    if (company.employmentType === '正社員' && user?.id) {
+      const aic = await getAICCompaniesForUser(user.id);
+      if (aic.mainCompanyName && aic.mainCompanyName.trim()) {
+        return NextResponse.json(
+          { error: '正社員として既に1社に所属しています。アルバイトは複数加入可能です。' },
+          { status: 400 }
+        );
+      }
     }
 
     const motivation = getMotivationOnly(formDataObj);

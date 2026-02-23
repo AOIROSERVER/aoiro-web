@@ -367,7 +367,7 @@ export async function setCompanyActiveInSheets(companyId: string, active: boolea
 const APPLICATIONS_SHEET = 'CompanyApplications';
 const APPLICATIONS_RANGE = `${APPLICATIONS_SHEET}!A:K`;
 
-/** AICカードの所属会社名をGASで管理。列: user_id, company_name, updated_at */
+/** AICカードの所属をGASで管理。列: user_id, main_company_name, part_time_companies(JSON配列), updated_at。正社員1社・アルバイト複数可。 */
 const AIC_COMPANY_SHEET = 'AIC所属';
 
 function generateId(): string {
@@ -592,8 +592,12 @@ export async function updateApplicationStatus(applicationId: string, status: str
   }
 }
 
-/** AICカードの所属会社名をGASに保存（申請許可時に呼ぶ）。同一 user_id は上書き。 */
-export async function setAICCompanyForUser(userId: string, companyName: string): Promise<void> {
+/** AICカードの所属をGASに保存（申請許可時に呼ぶ）。正社員=mainのみ1社、アルバイト=part_timeに追加（複数可）。 */
+export async function setAICCompanyForUser(
+  userId: string,
+  companyName: string,
+  employmentType: '正社員' | 'アルバイト'
+): Promise<void> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!key || !userId || !companyName.trim()) return;
 
@@ -609,38 +613,65 @@ export async function setAICCompanyForUser(userId: string, companyName: string):
 
     const headerRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${AIC_COMPANY_SHEET}!A1:C1`,
+      range: `${AIC_COMPANY_SHEET}!A1:D1`,
     });
     if (!headerRes.data.values?.length) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${AIC_COMPANY_SHEET}!A1:C1`,
+        range: `${AIC_COMPANY_SHEET}!A1:D1`,
         valueInputOption: 'RAW',
-        requestBody: { values: [['user_id', 'company_name', 'updated_at']] },
+        requestBody: { values: [['user_id', 'main_company_name', 'part_time_companies', 'updated_at']] },
       });
     }
 
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${AIC_COMPANY_SHEET}!A2:C`,
+      range: `${AIC_COMPANY_SHEET}!A2:D`,
     });
     const rows = (res.data.values || []) as string[][];
     const rowIndex = rows.findIndex((r) => r[0] === userId);
     const now = new Date().toISOString();
+    const name = companyName.trim();
+
+    let mainName = '';
+    let partTimeJson = '[]';
+    if (rowIndex >= 0) {
+      const r = rows[rowIndex];
+      mainName = (r[1] ?? '').trim();
+      if (r.length >= 3 && r[2]) {
+        partTimeJson = r[2].trim() || '[]';
+      }
+    }
+
+    if (employmentType === '正社員') {
+      mainName = name;
+    } else {
+      let partTime: string[] = [];
+      try {
+        partTime = JSON.parse(partTimeJson) as string[];
+        if (!Array.isArray(partTime)) partTime = [];
+      } catch {
+        partTime = [];
+      }
+      if (!partTime.includes(name)) partTime.push(name);
+      partTimeJson = JSON.stringify(partTime);
+    }
+
+    const values = [[userId, mainName, partTimeJson, now]];
     if (rowIndex >= 0) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${AIC_COMPANY_SHEET}!B${rowIndex + 2}:C${rowIndex + 2}`,
+        range: `${AIC_COMPANY_SHEET}!A${rowIndex + 2}:D${rowIndex + 2}`,
         valueInputOption: 'RAW',
-        requestBody: { values: [[companyName.trim(), now]] },
+        requestBody: { values },
       });
     } else {
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: `${AIC_COMPANY_SHEET}!A2:C`,
+        range: `${AIC_COMPANY_SHEET}!A2:D`,
         valueInputOption: 'RAW',
         insertDataOption: 'INSERT_ROWS',
-        requestBody: { values: [[userId, companyName.trim(), now]] },
+        requestBody: { values },
       });
     }
   } catch (e) {
@@ -648,10 +679,15 @@ export async function setAICCompanyForUser(userId: string, companyName: string):
   }
 }
 
-/** AICカードの所属会社名をGASから取得。無ければ null。 */
-export async function getAICCompanyForUser(userId: string): Promise<string | null> {
+export type AICCompanies = {
+  mainCompanyName: string | null;
+  partTimeCompanyNames: string[];
+};
+
+/** AICカードの所属（正社員1社＋アルバイト複数）をGASから取得。旧形式（3列）も読む。 */
+export async function getAICCompaniesForUser(userId: string): Promise<AICCompanies> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  if (!key || !userId) return null;
+  if (!key || !userId) return { mainCompanyName: null, partTimeCompanyNames: [] };
 
   try {
     const serviceAccountKey = JSON.parse(key);
@@ -662,13 +698,31 @@ export async function getAICCompanyForUser(userId: string): Promise<string | nul
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${AIC_COMPANY_SHEET}!A2:B`,
+      range: `${AIC_COMPANY_SHEET}!A2:D`,
     });
     const rows = (res.data.values || []) as string[][];
     const row = rows.find((r) => r[0] === userId);
-    return row && row[1] ? row[1].trim() : null;
+    if (!row || !row[1]) return { mainCompanyName: null, partTimeCompanyNames: [] };
+    const mainCompanyName = row[1].trim();
+    let partTimeCompanyNames: string[] = [];
+    // 4列以上なら新形式（main, part_time_companies, updated_at）。3列は旧形式（company_name, updated_at）なので part_time は空
+    if (row.length >= 4 && row[2]) {
+      try {
+        const parsed = JSON.parse(row[2].trim()) as unknown;
+        partTimeCompanyNames = Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+      } catch {
+        // 不正値は無視
+      }
+    }
+    return { mainCompanyName, partTimeCompanyNames };
   } catch (e) {
-    console.error('getAICCompanyForUser error:', e);
-    return null;
+    console.error('getAICCompaniesForUser error:', e);
+    return { mainCompanyName: null, partTimeCompanyNames: [] };
   }
+}
+
+/** AICカードの所属会社名（正社員）をGASから取得。無ければ null。後方互換用。 */
+export async function getAICCompanyForUser(userId: string): Promise<string | null> {
+  const { mainCompanyName } = await getAICCompaniesForUser(userId);
+  return mainCompanyName;
 }
