@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { updateApplicationStatus, getApplicationsFromSheets, getCompanyCreatedBy } from '@/lib/es-companies-sheets';
+import { updateApplicationStatus, getApplicationsFromSheets, getCompanyCreatedBy, setAICCompanyForUser } from '@/lib/es-companies-sheets';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -40,6 +40,9 @@ export async function PATCH(
     }
     const ok = await updateApplicationStatus(id, status);
     if (!ok) return NextResponse.json({ error: '申請が見つかりません' }, { status: 404 });
+    if (status === 'approved' && app.userId && app.companyName) {
+      await setAICCompanyForUser(app.userId, app.companyName);
+    }
     return NextResponse.json({ message: 'ステータスを更新しました', status });
   } catch (e) {
     console.error('es-companies/applications [id] PATCH error:', e);

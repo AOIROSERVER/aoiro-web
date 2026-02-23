@@ -30,6 +30,8 @@ export default function CompaniesPage() {
   const [keyword, setKeyword] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const [filterChip, setFilterChip] = useState("all");
+  /** 正社員募集 | アルバイト・プロジェクト募集 */
+  const [recruitmentTab, setRecruitmentTab] = useState<"正社員" | "アルバイト">("正社員");
 
   useEffect(() => {
     fetch("/api/es-companies")
@@ -45,12 +47,13 @@ export default function CompaniesPage() {
   }, []);
 
   const filtered = companies.filter((c) => {
+    const matchTab = recruitmentTab === "正社員" ? c.employmentType === "正社員" : c.employmentType !== "正社員";
     const kw = keyword.toLowerCase();
     const loc = locationFilter.toLowerCase();
     const matchKw = !kw || c.name.toLowerCase().includes(kw) || (c.description || "").toLowerCase().includes(kw) || c.tags.some((t) => t.toLowerCase().includes(kw));
     const matchLoc = !loc || (c.location || "").toLowerCase().includes(loc);
     const matchChip = filterChip === "all" || c.employmentType === filterChip || (filterChip === "remote" && c.tags.some((t) => /リモート|remote/i.test(t)));
-    return matchKw && matchLoc && matchChip;
+    return matchTab && matchKw && matchLoc && matchChip;
   });
 
   const displayDetail = selectedId && filtered.find((c) => c.id === selectedId) ? filtered.find((c) => c.id === selectedId)! : filtered[0] || null;
@@ -123,6 +126,47 @@ export default function CompaniesPage() {
 
       <div className="back-link">
         <Link href="/more">← もっとへ戻る</Link>
+      </div>
+
+      <div className="recruitment-tabs" style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "2px solid var(--color-border)", paddingLeft: 0 }}>
+        <button
+          type="button"
+          onClick={() => setRecruitmentTab("正社員")}
+          className={recruitmentTab === "正社員" ? "recruitment-tab active" : "recruitment-tab"}
+          style={{
+            padding: "12px 20px",
+            border: "none",
+            background: recruitmentTab === "正社員" ? "var(--color-surface)" : "transparent",
+            color: recruitmentTab === "正社員" ? "var(--color-primary)" : "var(--color-text-secondary)",
+            fontWeight: recruitmentTab === "正社員" ? 700 : 500,
+            borderBottom: recruitmentTab === "正社員" ? "2px solid var(--color-primary)" : "2px solid transparent",
+            marginBottom: "-2px",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontSize: 15,
+          }}
+        >
+          正社員募集
+        </button>
+        <button
+          type="button"
+          onClick={() => setRecruitmentTab("アルバイト")}
+          className={recruitmentTab === "アルバイト" ? "recruitment-tab active" : "recruitment-tab"}
+          style={{
+            padding: "12px 20px",
+            border: "none",
+            background: recruitmentTab === "アルバイト" ? "var(--color-surface)" : "transparent",
+            color: recruitmentTab === "アルバイト" ? "var(--color-primary)" : "var(--color-text-secondary)",
+            fontWeight: recruitmentTab === "アルバイト" ? 700 : 500,
+            borderBottom: recruitmentTab === "アルバイト" ? "2px solid var(--color-primary)" : "2px solid transparent",
+            marginBottom: "-2px",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontSize: 15,
+          }}
+        >
+          アルバイト・プロジェクト募集
+        </button>
       </div>
 
       <div className="main">

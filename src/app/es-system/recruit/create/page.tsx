@@ -22,6 +22,8 @@ export default function RecruitCreatePage() {
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [eyecatchFile, setEyecatchFile] = useState<File | null>(null);
   const [eyecatchPreview, setEyecatchPreview] = useState<string | null>(null);
+  /** 募集種別: 正社員 or アルバイト・プロジェクト（雇用形態の元になる） */
+  const [recruitmentKind, setRecruitmentKind] = useState<"正社員" | "アルバイト">("正社員");
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -102,7 +104,7 @@ export default function RecruitCreatePage() {
           name: form.name.trim(),
           description: form.description.trim() || undefined,
           location: form.location.trim() || undefined,
-          employmentType: form.employmentType || "正社員",
+          employmentType: recruitmentKind === "正社員" ? "正社員" : "アルバイト",
           tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
           maxParticipants: parseInt(form.maxParticipants, 10) || 0,
           imageUrls,
@@ -136,7 +138,7 @@ export default function RecruitCreatePage() {
   }
 
   return (
-    <div className="companies-joblist">
+    <div className="companies-joblist recruit-create-page" style={{ paddingBottom: 120 }}>
       <div className="back-link" style={{ paddingTop: 24, paddingBottom: 16 }}>
         <Link href="/es-system/companies">← 会社一覧へ戻る</Link>
         <span style={{ marginLeft: 16 }}>
@@ -165,6 +167,31 @@ export default function RecruitCreatePage() {
                   {message.text}
                 </div>
               )}
+
+              <div className="detail-section-title">募集種別</div>
+              <p className="section-sub" style={{ marginBottom: 12, fontSize: 13 }}>
+                正社員募集か、アルバイト・プロジェクト募集かを選びます。会社一覧でタブ分けされて表示されます。
+              </p>
+              <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="recruitmentKind"
+                    checked={recruitmentKind === "正社員"}
+                    onChange={() => setRecruitmentKind("正社員")}
+                  />
+                  <span>正社員募集</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="recruitmentKind"
+                    checked={recruitmentKind === "アルバイト"}
+                    onChange={() => setRecruitmentKind("アルバイト")}
+                  />
+                  <span>アルバイト・プロジェクト募集</span>
+                </label>
+              </div>
 
               <div className="detail-section-title">基本情報</div>
               <div className="detail-info-grid" style={{ gridTemplateColumns: "1fr" }}>
@@ -201,14 +228,10 @@ export default function RecruitCreatePage() {
                   />
                 </div>
                 <div className="info-item">
-                  <div className="info-item-label">雇用形態</div>
-                  <input
-                    type="text"
-                    value={form.employmentType}
-                    onChange={(e) => setForm((p) => ({ ...p, employmentType: e.target.value }))}
-                    placeholder="正社員"
-                    style={{ width: "100%", border: "none", background: "transparent", padding: 0, fontFamily: "inherit" }}
-                  />
+                  <div className="info-item-label">雇用形態（募集種別から自動）</div>
+                  <div style={{ color: "var(--color-text-secondary)", fontSize: 14 }}>
+                    {recruitmentKind === "正社員" ? "正社員" : "アルバイト"}
+                  </div>
                 </div>
                 <div className="info-item">
                   <div className="info-item-label">タグ（カンマ区切り）</div>

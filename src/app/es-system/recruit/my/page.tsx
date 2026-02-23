@@ -22,9 +22,11 @@ type Application = {
   companyName: string;
   email: string;
   discord: string;
+  discordId: string;
   minecraftTag: string;
-  formDataJson: string;
+  motivation: string;
   status: string;
+  userId?: string;
 };
 
 export default function RecruitMyPage() {
@@ -40,11 +42,12 @@ export default function RecruitMyPage() {
       return;
     }
     const token = session.access_token;
-    fetch("/api/es-companies?mine=1", { headers: { Authorization: `Bearer ${token}` } })
+    const headers = { Authorization: `Bearer ${token}` };
+    fetch("/api/es-companies?mine=1", { headers, credentials: "include" })
       .then((r) => r.json())
       .then((list) => setCompanies(Array.isArray(list) ? list : []))
       .catch(() => setCompanies([]));
-    fetch("/api/es-companies/applications", { headers: { Authorization: `Bearer ${token}` } })
+    fetch("/api/es-companies/applications", { headers, credentials: "include" })
       .then((r) => r.json())
       .then((list) => setApplications(Array.isArray(list) ? list : []))
       .catch(() => setApplications([]))
@@ -60,7 +63,7 @@ export default function RecruitMyPage() {
         body: JSON.stringify({ status }),
       });
       if (!res.ok) throw new Error("更新に失敗しました");
-      const list = await fetch("/api/es-companies/applications", { headers: { Authorization: `Bearer ${session.access_token}` } }).then((r) => r.json());
+      const list = await fetch("/api/es-companies/applications", { headers: { Authorization: `Bearer ${session.access_token}` }, credentials: "include" }).then((r) => r.json());
       setApplications(Array.isArray(list) ? list : []);
     } catch {
       alert("ステータスの更新に失敗しました");
@@ -145,7 +148,9 @@ export default function RecruitMyPage() {
                           <th style={{ textAlign: "left", padding: 8 }}>日時</th>
                           <th style={{ textAlign: "left", padding: 8 }}>募集</th>
                           <th style={{ textAlign: "left", padding: 8 }}>Discord</th>
+                          <th style={{ textAlign: "left", padding: 8 }}>Discord ID</th>
                           <th style={{ textAlign: "left", padding: 8 }}>MCID</th>
+                          <th style={{ textAlign: "left", padding: 8 }}>志望理由</th>
                           <th style={{ textAlign: "left", padding: 8 }}>ステータス</th>
                           <th style={{ textAlign: "left", padding: 8 }}>操作</th>
                         </tr>
@@ -156,7 +161,9 @@ export default function RecruitMyPage() {
                             <td style={{ padding: 8, fontSize: 14 }}>{a.createdAt}</td>
                             <td style={{ padding: 8, fontSize: 14 }}>{a.companyName}</td>
                             <td style={{ padding: 8, fontSize: 14 }}>{a.discord}</td>
+                            <td style={{ padding: 8, fontSize: 14 }}>{a.discordId || "—"}</td>
                             <td style={{ padding: 8, fontSize: 14 }}>{a.minecraftTag}</td>
+                            <td style={{ padding: 8, fontSize: 14, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }} title={a.motivation}>{a.motivation || "—"}</td>
                             <td style={{ padding: 8, fontSize: 14 }}>
                               <span style={{ color: a.status === "approved" ? "#1e7e45" : a.status === "rejected" ? "#c62828" : "var(--color-text-muted)" }}>
                                 {a.status === "approved" ? "許可" : a.status === "rejected" ? "拒否" : "未処理"}

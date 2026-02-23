@@ -7,8 +7,8 @@ import { getCompaniesFromSheets, getMyCompaniesFromSheets, addCompanyToSheets, S
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-/** Authorization Bearer または Cookie からユーザーを取得 */
-async function getAuthenticatedUser(request: NextRequest): Promise<{ id: string; email?: string } | null> {
+/** Authorization Bearer または Cookie からユーザーを取得（user_metadata 含む） */
+async function getAuthenticatedUser(request: NextRequest): Promise<{ id: string; email?: string; user_metadata?: Record<string, unknown> } | null> {
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.replace(/Bearer\s+/i, '');
   if (token && supabaseUrl && supabaseServiceKey) {
@@ -24,6 +24,15 @@ async function getAuthenticatedUser(request: NextRequest): Promise<{ id: string;
     // cookie 取得失敗時は null
   }
   return null;
+}
+
+function getDiscordFromUser(user: { user_metadata?: Record<string, unknown> }): { id: string; username: string } {
+  const m = user.user_metadata || {};
+  const id = String(m.provider_id ?? m.sub ?? '').trim();
+  const username = String(
+    m.full_name ?? m.name ?? (m as { custom_claims?: { global_name?: string } }).custom_claims?.global_name ?? ''
+  ).trim();
+  return { id, username };
 }
 
 async function isAdmin(request: NextRequest): Promise<boolean> {
@@ -83,7 +92,7 @@ export async function POST(request: NextRequest) {
     if (!name || !name.trim()) {
       return NextResponse.json({ error: '会社名は必須です' }, { status: 400 });
     }
-    const createdBy = user.id;
+    const { id: discordId, username: discordUsername } = getDiscordFromUser(user);
     const id = await addCompanyToSheets({
       name: name.trim(),
       description,
@@ -93,7 +102,9 @@ export async function POST(request: NextRequest) {
       formSchema,
       maxParticipants,
       imageUrls,
-      createdBy,
+      createdBy: user.id,
+      createdByDiscordId: discordId,
+      createdByDiscordUsername: discordUsername,
     });
     return NextResponse.json({ id, message: '会社を登録しました' });
   } catch (e) {

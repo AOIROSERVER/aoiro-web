@@ -71,11 +71,21 @@ export default function EmployeeCardPage() {
   const [progress, setProgress] = useState(0);
   const [showCard, setShowCard] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  /** GAS（入社申請許可）から取得した所属会社名。あればカードの section 表示に優先使用 */
+  const [aicCompanyName, setAicCompanyName] = useState<string | null>(null);
 
   useEffect(() => {
     checkUserAuthorization();
     checkMobileDevice();
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch('/api/aic-company', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d: { companyName?: string | null }) => setAicCompanyName(d.companyName ?? null))
+      .catch(() => setAicCompanyName(null));
+  }, [user?.id]);
 
   // プログレスバーの自動更新
   useEffect(() => {
@@ -1173,7 +1183,7 @@ export default function EmployeeCardPage() {
                     display: "block",
                     mb: 0.5
                   }}>
-                    {employeeCard?.section_name || 'メンバー'}
+                    {aicCompanyName ?? employeeCard?.section_name ?? 'メンバー'}
                   </Typography>
                   <Typography variant="body2" sx={{ 
                     color: "#ffffff",
@@ -1583,7 +1593,7 @@ export default function EmployeeCardPage() {
                         lineHeight: 1.2,
                         textShadow: "0 1px 2px rgba(0,0,0,0.5)"
                       }}>
-                        {employeeCard?.section_name || 'メンバー'}
+                        {aicCompanyName ?? employeeCard?.section_name ?? 'メンバー'}
                       </Typography>
                     </Box>
                   </Box>

@@ -1,10 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { appendCompanyApplication } from '@/lib/es-companies-sheets';
 import { getCompanyByIdFromSheets, SEED_COMPANY } from '@/lib/es-companies-sheets';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+function getDiscordFromUser(user: { user_metadata?: Record<string, unknown>; email?: string }): { id: string; username: string } {
+  const m = user.user_metadata || {};
+  const id = String(m.provider_id ?? m.sub ?? '').trim();
+  const username = String(
+    m.full_name ?? m.name ?? m.username ?? m.preferred_username ?? user.email?.split('@')[0] ?? ''
+  ).trim();
+  return { id, username };
+}
+
+/** フォームから志望理由のみを取り出す（minecraft_tag は別列のため含めない） */
+function getMotivationOnly(formData: Record<string, unknown> | undefined): string {
+  if (!formData || typeof formData !== 'object') return '';
+  const v = formData.motivation ?? formData['志望理由・意志表明'] ?? formData['志望理由'];
+  return typeof v === 'string' ? v.trim() : '';
+}
 
 /** POST: 入社申請を送信。body: { companyId, minecraftTag, formData }。認証はAuthorization Bearer (Supabase session) または cookie */
 export async function POST(request: NextRequest) {
@@ -31,38 +49,46 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '会社が見つかりません' }, { status: 404 });
     }
 
-    const authHeader = request.headers.get('authorization');
     let email = '';
+    let discordId = '';
     let discordUsername = '';
 
-    if (supabaseUrl && supabaseServiceKey) {
+    let user: { id?: string; email?: string; user_metadata?: Record<string, unknown> } | null = null;
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace(/Bearer\s+/i, '');
+    if (token && supabaseUrl && supabaseServiceKey) {
       const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      const token = authHeader?.replace(/Bearer\s+/i, '') || undefined;
-      if (token) {
-        const { data: { user } } = await supabase.auth.getUser(token);
-        if (user) {
-          email = user.email || '';
-          discordUsername =
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            user.user_metadata?.username ||
-            user.user_metadata?.preferred_username ||
-            user.email?.split('@')[0] ||
-            '';
-        }
+      const { data: { user: u } } = await supabase.auth.getUser(token);
+      if (u) user = u;
+    }
+    if (!user) {
+      try {
+        const supabaseCookie = createRouteHandlerClient({ cookies });
+        const { data: { user: u } } = await supabaseCookie.auth.getUser();
+        if (u) user = u;
+      } catch {
+        // ignore
       }
     }
+    if (user) {
+      email = user.email || '';
+      const d = getDiscordFromUser(user);
+      discordId = d.id;
+      discordUsername = d.username;
+    }
 
-    const formDataJson = typeof formData === 'object' ? JSON.stringify(formData) : '{}';
+    const motivation = getMotivationOnly(formData);
 
     await appendCompanyApplication({
       companyId,
       companyName: company.name,
       email,
       discordUsername,
+      discordId,
       minecraftTag,
-      formDataJson,
+      motivation,
       status: 'pending',
+      userId: user?.id ?? '',
     });
 
     return NextResponse.json({

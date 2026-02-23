@@ -12,9 +12,11 @@ type Application = {
   companyName: string;
   email: string;
   discord: string;
+  discordId: string;
   minecraftTag: string;
-  formDataJson: string;
+  motivation: string;
   status: string;
+  userId?: string;
 };
 
 const DEFAULT_FORM_SCHEMA = {
@@ -303,7 +305,9 @@ export default function CompanyAdminPage() {
                       <th className="text-left p-3">日時</th>
                       <th className="text-left p-3">会社</th>
                       <th className="text-left p-3">Discord</th>
+                      <th className="text-left p-3">Discord ID</th>
                       <th className="text-left p-3">MCID</th>
+                      <th className="text-left p-3">志望理由</th>
                       <th className="text-left p-3">ステータス</th>
                       <th className="text-left p-3">操作</th>
                     </tr>
@@ -314,7 +318,9 @@ export default function CompanyAdminPage() {
                         <td className="p-3">{a.createdAt}</td>
                         <td className="p-3">{a.companyName}</td>
                         <td className="p-3">{a.discord}</td>
+                        <td className="p-3">{a.discordId || "—"}</td>
                         <td className="p-3">{a.minecraftTag}</td>
+                        <td className="p-3 max-w-[200px] truncate" title={a.motivation}>{a.motivation || "—"}</td>
                         <td className="p-3">
                           <span
                             className={

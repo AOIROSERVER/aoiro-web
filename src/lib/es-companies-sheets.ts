@@ -1,7 +1,7 @@
 /**
  * ESシステム・入社申請用：Googleスプレッドシート「Companies」シートの読み書き
  * シート名: Companies
- * 列: A=id, B=name, C=description, D=location, E=employment_type, F=tags, G=form_json, H=max_participants, I=image_urls, J=created_at, K=active
+ * 列: A=id, B=name, C=description, D=location, E=employment_type, F=tags, G=form_json, H=max_participants, I=image_urls, J=created_at, K=active, L=created_by, M=created_by_discord_id, N=created_by_discord_username, O=会社詳細
  */
 import { google } from 'googleapis';
 
@@ -129,7 +129,7 @@ export async function getCompanyCreatedBy(companyId: string): Promise<string | n
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${COMPANIES_SHEET}!A2:L`,
+      range: `${COMPANIES_SHEET}!A2:O`,
     });
     const rows = (res.data.values || []) as string[][];
     const row = rows.find((r) => r[0] === companyId);
@@ -153,7 +153,7 @@ export async function getMyCompaniesFromSheets(userId: string): Promise<Company[
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${COMPANIES_SHEET}!A2:L`,
+      range: `${COMPANIES_SHEET}!A2:O`,
     });
     const rows = (res.data.values || []) as string[][];
     return rows
@@ -177,6 +177,8 @@ export async function addCompanyToSheets(company: {
   maxParticipants?: number;
   imageUrls?: string[];
   createdBy?: string;
+  createdByDiscordId?: string;
+  createdByDiscordUsername?: string;
 }): Promise<string> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!key) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
@@ -190,29 +192,35 @@ export async function addCompanyToSheets(company: {
   const sheets = google.sheets({ version: 'v4', auth });
   const spreadsheetId = GOOGLE_SHEETS_ID;
 
+  await ensureCompaniesSheetExists(sheets, spreadsheetId);
+
+  const headerRow = ['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active', 'created_by', 'created_by_discord_id', 'created_by_discord_username', '会社詳細'];
   try {
     const headerRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${COMPANIES_SHEET}!A1:K1`,
+      range: `${COMPANIES_SHEET}!A1:O1`,
     });
     if (!headerRes.data.values || headerRes.data.values.length === 0) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${COMPANIES_SHEET}!A1:L1`,
+        range: `${COMPANIES_SHEET}!A1:O1`,
         valueInputOption: 'RAW',
-        requestBody: {
-          values: [['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active', 'created_by']],
-        },
+        requestBody: { values: [headerRow] },
       });
     }
-  } catch {
-    // シートが無い場合は手動で「Companies」シートを追加してください
+  } catch (e) {
+    console.error('Companies header check/update error:', e);
   }
 
   const tagsStr = (company.tags || []).join(',');
   const formJson = company.formSchema ? JSON.stringify(company.formSchema) : '';
   const imageUrlsStr = (company.imageUrls || []).join(',');
   const createdBy = company.createdBy ?? '';
+  const discordId = company.createdByDiscordId ?? '';
+  const discordUsername = company.createdByDiscordUsername ?? '';
+  const desc = (company.description || '').replace(/\s+/g, ' ').trim();
+  const companyDetail = `${company.name}${desc ? ` | ${desc.slice(0, 100)}${desc.length > 100 ? '…' : ''}` : ''}`;
+
   const values = [[
     id,
     company.name,
@@ -226,11 +234,14 @@ export async function addCompanyToSheets(company: {
     new Date().toISOString(),
     '1',
     createdBy,
+    discordId,
+    discordUsername,
+    companyDetail,
   ]];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${COMPANIES_SHEET}!A2:L`,
+    range: `${COMPANIES_SHEET}!A2:O`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values },
@@ -238,15 +249,36 @@ export async function addCompanyToSheets(company: {
   return id;
 }
 
-/** 入社申請を「CompanyApplications」シートに追加。列: 申請ID, 申請日時, 会社ID, 会社名, メール, Discord, Minecraftタグ, フォーム回答(JSON), ステータス */
+/** 入社申請を「CompanyApplications」シートに追加。列: 申請ID, 申請日時, 会社ID, 会社名, メール, Discord, Discord ID, Minecraftタグ, 志望理由, ステータス, user_id（AIC所属更新用） */
 const APPLICATIONS_SHEET = 'CompanyApplications';
-const APPLICATIONS_RANGE = `${APPLICATIONS_SHEET}!A:I`;
+const APPLICATIONS_RANGE = `${APPLICATIONS_SHEET}!A:K`;
+
+/** AICカードの所属会社名をGASで管理。列: user_id, company_name, updated_at */
+const AIC_COMPANY_SHEET = 'AIC所属';
 
 function generateId(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
+  });
+}
+
+/** Companies シートが存在しなければ作成する */
+async function ensureCompaniesSheetExists(sheets: ReturnType<typeof google.sheets>, spreadsheetId: string): Promise<void> {
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties.title',
+  });
+  const exists = meta.data.sheets?.some(
+    (s) => (s.properties?.title ?? '') === COMPANIES_SHEET
+  );
+  if (exists) return;
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{ addSheet: { properties: { title: COMPANIES_SHEET } } }],
+    },
   });
 }
 
@@ -268,14 +300,36 @@ async function ensureApplicationsSheetExists(sheets: ReturnType<typeof google.sh
   });
 }
 
+/** AIC所属シートが存在しなければ作成する */
+async function ensureAICCompanySheetExists(sheets: ReturnType<typeof google.sheets>, spreadsheetId: string): Promise<void> {
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId,
+    fields: 'sheets.properties.title',
+  });
+  const exists = meta.data.sheets?.some(
+    (s) => (s.properties?.title ?? '') === AIC_COMPANY_SHEET
+  );
+  if (exists) return;
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [{ addSheet: { properties: { title: AIC_COMPANY_SHEET } } }],
+    },
+  });
+}
+
 export async function appendCompanyApplication(row: {
   companyId: string;
   companyName: string;
   email: string;
   discordUsername: string;
+  discordId: string;
   minecraftTag: string;
-  formDataJson: string;
+  /** 志望理由のみ（フォーム回答の志望理由フィールドのテキスト） */
+  motivation: string;
   status?: string;
+  /** Supabase user_id（申請許可時にAIC所属を更新するため） */
+  userId?: string;
 }): Promise<string> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!key) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
@@ -291,19 +345,18 @@ export async function appendCompanyApplication(row: {
 
   await ensureApplicationsSheetExists(sheets, spreadsheetId);
 
+  const applicationHeaders = ['申請ID', '申請日時', '会社ID', '会社名', 'メール', 'Discord', 'Discord ID', 'Minecraftタグ', '志望理由', 'ステータス', 'user_id'];
   try {
     const headerRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${APPLICATIONS_SHEET}!A1:I1`,
+      range: `${APPLICATIONS_SHEET}!A1:K1`,
     });
     if (!headerRes.data.values || headerRes.data.values.length === 0) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${APPLICATIONS_SHEET}!A1:I1`,
+        range: `${APPLICATIONS_SHEET}!A1:K1`,
         valueInputOption: 'RAW',
-        requestBody: {
-          values: [['申請ID', '申請日時', '会社ID', '会社名', 'メール', 'Discord', 'Minecraftタグ', 'フォーム回答(JSON)', 'ステータス']],
-        },
+        requestBody: { values: [applicationHeaders] },
       });
     }
   } catch (e) {
@@ -317,9 +370,11 @@ export async function appendCompanyApplication(row: {
     row.companyName,
     row.email,
     row.discordUsername,
+    row.discordId,
     row.minecraftTag,
-    row.formDataJson,
+    row.motivation,
     row.status || 'pending',
+    row.userId ?? '',
   ]];
 
   await sheets.spreadsheets.values.append({
@@ -339,9 +394,13 @@ export type ApplicationRow = {
   companyName: string;
   email: string;
   discord: string;
+  discordId: string;
   minecraftTag: string;
-  formDataJson: string;
+  /** 志望理由のみ */
+  motivation: string;
   status: string;
+  /** Supabase user_id（AIC所属更新用） */
+  userId: string;
 };
 
 export async function getApplicationsFromSheets(companyId?: string): Promise<ApplicationRow[]> {
@@ -357,22 +416,28 @@ export async function getApplicationsFromSheets(companyId?: string): Promise<App
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${APPLICATIONS_SHEET}!A2:I`,
+      range: `${APPLICATIONS_SHEET}!A2:K`,
     });
     const rows = (res.data.values || []) as string[][];
     return rows
       .filter((r) => r[0])
-      .map((r) => ({
-        id: r[0] || '',
-        createdAt: r[1] || '',
-        companyId: r[2] || '',
-        companyName: r[3] || '',
-        email: r[4] || '',
-        discord: r[5] || '',
-        minecraftTag: r[6] || '',
-        formDataJson: r[7] || '{}',
-        status: r[8] || 'pending',
-      }))
+      .map((r) => {
+        const has10 = r.length >= 10;
+        const has11 = r.length >= 11;
+        return {
+          id: r[0] || '',
+          createdAt: r[1] || '',
+          companyId: r[2] || '',
+          companyName: r[3] || '',
+          email: r[4] || '',
+          discord: r[5] || '',
+          discordId: has10 ? (r[6] || '') : '',
+          minecraftTag: has10 ? (r[7] || '') : (r[6] || ''),
+          motivation: has10 ? (r[8] || '') : (r[7] || ''),
+          status: has10 ? (r[9] || 'pending') : (r[8] || 'pending'),
+          userId: has11 ? (r[10] || '') : '',
+        };
+      })
       .filter((a) => !companyId || a.companyId === companyId);
   } catch (e) {
     console.error('getApplicationsFromSheets error:', e);
@@ -393,12 +458,13 @@ export async function updateApplicationStatus(applicationId: string, status: str
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${APPLICATIONS_SHEET}!A2:I`,
+      range: `${APPLICATIONS_SHEET}!A2:K`,
     });
     const rows = (res.data.values || []) as string[][];
     const rowIndex = rows.findIndex((r) => r[0] === applicationId);
     if (rowIndex < 0) return false;
-    const range = `${APPLICATIONS_SHEET}!I${rowIndex + 2}`;
+    const statusCol = rows[rowIndex]?.length >= 10 ? 'J' : 'I';
+    const range = `${APPLICATIONS_SHEET}!${statusCol}${rowIndex + 2}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId: GOOGLE_SHEETS_ID,
       range,
@@ -409,5 +475,86 @@ export async function updateApplicationStatus(applicationId: string, status: str
   } catch (e) {
     console.error('updateApplicationStatus error:', e);
     return false;
+  }
+}
+
+/** AICカードの所属会社名をGASに保存（申請許可時に呼ぶ）。同一 user_id は上書き。 */
+export async function setAICCompanyForUser(userId: string, companyName: string): Promise<void> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key || !userId || !companyName.trim()) return;
+
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = GOOGLE_SHEETS_ID;
+    await ensureAICCompanySheetExists(sheets, spreadsheetId);
+
+    const headerRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${AIC_COMPANY_SHEET}!A1:C1`,
+    });
+    if (!headerRes.data.values?.length) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${AIC_COMPANY_SHEET}!A1:C1`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [['user_id', 'company_name', 'updated_at']] },
+      });
+    }
+
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${AIC_COMPANY_SHEET}!A2:C`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const rowIndex = rows.findIndex((r) => r[0] === userId);
+    const now = new Date().toISOString();
+    if (rowIndex >= 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${AIC_COMPANY_SHEET}!B${rowIndex + 2}:C${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[companyName.trim(), now]] },
+      });
+    } else {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `${AIC_COMPANY_SHEET}!A2:C`,
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [[userId, companyName.trim(), now]] },
+      });
+    }
+  } catch (e) {
+    console.error('setAICCompanyForUser error:', e);
+  }
+}
+
+/** AICカードの所属会社名をGASから取得。無ければ null。 */
+export async function getAICCompanyForUser(userId: string): Promise<string | null> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key || !userId) return null;
+
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: GOOGLE_SHEETS_ID,
+      range: `${AIC_COMPANY_SHEET}!A2:B`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const row = rows.find((r) => r[0] === userId);
+    return row && row[1] ? row[1].trim() : null;
+  } catch (e) {
+    console.error('getAICCompanyForUser error:', e);
+    return null;
   }
 }
