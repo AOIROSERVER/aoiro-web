@@ -47,6 +47,10 @@ export default function RecruitCreatePage() {
   const [recruitmentKind, setRecruitmentKind] = useState<"正社員" | "アルバイト">("正社員");
   /** 技術確認用画像を必須にするか（応募作成で変更可能） */
   const [skillImageRequired, setSkillImageRequired] = useState(false);
+  /** クリエイティブ申請が必要か。必要の場合はPDF必須 */
+  const [creativeRequired, setCreativeRequired] = useState(false);
+  /** クリエイティブ申請PDF（公開されない・審査用） */
+  const [creativePdfFile, setCreativePdfFile] = useState<File | null>(null);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -100,6 +104,10 @@ export default function RecruitCreatePage() {
       setMessage({ type: "error", text: "月給を入力してください" });
       return;
     }
+    if (creativeRequired && !creativePdfFile) {
+      setMessage({ type: "error", text: "クリエイティブ申請（PDF）をアップロードしてください" });
+      return;
+    }
     if (!session?.access_token) {
       setMessage({ type: "error", text: "ログインし直してください" });
       return;
@@ -111,7 +119,6 @@ export default function RecruitCreatePage() {
     try {
       if (eyecatchDataUrl) {
         setUploading(true);
-        // SERVICE_ROLE_KEY 不要: クライアントの Supabase（anon + セッション）で Storage に直接アップロード
         const { blob, ext } = dataURLtoBlob(eyecatchDataUrl);
         const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
         const { data, error } = await supabase.storage.from(BUCKET).upload(path, blob, {
@@ -124,30 +131,56 @@ export default function RecruitCreatePage() {
         setUploading(false);
       }
 
-      const res = await fetch("/api/es-companies", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          description: form.description.trim() || undefined,
-          location: form.location.trim() || undefined,
-          employmentType: recruitmentKind === "正社員" ? "正社員" : "アルバイト",
-          tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
-          maxParticipants: parseInt(form.maxParticipants, 10) || 0,
-          imageUrls,
-          formSchema: buildFormSchema(skillImageRequired),
-          hourlyWage: form.hourlyWage.trim(),
-          monthlySalary: form.monthlySalary.trim(),
-        }),
-      });
+      const payload = {
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        location: form.location.trim() || undefined,
+        employmentType: recruitmentKind === "正社員" ? "正社員" : "アルバイト",
+        tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
+        maxParticipants: parseInt(form.maxParticipants, 10) || 0,
+        imageUrls,
+        formSchema: buildFormSchema(skillImageRequired),
+        hourlyWage: form.hourlyWage.trim(),
+        monthlySalary: form.monthlySalary.trim(),
+        creativeRequired: creativeRequired || undefined,
+      };
+
+      let res: Response;
+      if (creativeRequired && creativePdfFile) {
+        const fd = new FormData();
+        fd.append("name", payload.name);
+        fd.append("description", payload.description ?? "");
+        fd.append("location", payload.location ?? "");
+        fd.append("employmentType", payload.employmentType ?? "");
+        fd.append("tags", payload.tags?.join(",") ?? "");
+        fd.append("maxParticipants", String(payload.maxParticipants ?? 0));
+        fd.append("imageUrls", JSON.stringify(payload.imageUrls ?? []));
+        fd.append("formSchema", JSON.stringify(payload.formSchema ?? {}));
+        fd.append("hourlyWage", payload.hourlyWage);
+        fd.append("monthlySalary", payload.monthlySalary);
+        fd.append("creativeRequired", "true");
+        fd.append("creativePdf", creativePdfFile, creativePdfFile.name || "creative.pdf");
+        res = await fetch("/api/es-companies", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: fd,
+        });
+      } else {
+        res = await fetch("/api/es-companies", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "保存に失敗しました");
-      setMessage({ type: "ok", text: `募集を作成しました（ID: ${data.id}）。会社一覧に反映されます。` });
+      setMessage({ type: "ok", text: `募集を作成しました（ID: ${data.id}）。会社一覧に反映されます。${creativeRequired ? " クリエイティブ申請は審査中です。承認後に応募が可能になります。" : ""}` });
       setForm({ ...form, name: "", description: "", location: "", hourlyWage: "", monthlySalary: "" });
       setEyecatchDataUrl(null);
+      setCreativePdfFile(null);
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "保存に失敗しました" });
     } finally {
@@ -310,6 +343,53 @@ export default function RecruitCreatePage() {
                     className="info-item-value"
                     style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
                   />
+                </div>
+                <div className="info-item">
+                  <div className="info-item-label">クリエイティブ申請</div>
+                  <p className="section-sub" style={{ marginBottom: 8, fontSize: 13 }}>
+                    必要にした場合、応募受付は運営の審査承認後に有効になります。説明欄とは別にクリエイティブ申請用PDFの提出が必須です（公開されません）。
+                  </p>
+                  <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                      <input
+                        type="radio"
+                        name="creativeRequired"
+                        checked={!creativeRequired}
+                        onChange={() => { setCreativeRequired(false); setCreativePdfFile(null); }}
+                      />
+                      <span>不要</span>
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                      <input
+                        type="radio"
+                        name="creativeRequired"
+                        checked={creativeRequired}
+                        onChange={() => setCreativeRequired(true)}
+                      />
+                      <span>必要</span>
+                    </label>
+                  </div>
+                  {creativeRequired && (
+                    <div style={{ marginTop: 8 }}>
+                      <div className="info-item-label" style={{ marginBottom: 4 }}>クリエイティブ申請（公開はされません）*</div>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          setCreativePdfFile(f && f.type === "application/pdf" ? f : null);
+                          if (f && f.type !== "application/pdf") setMessage({ type: "error", text: "PDFファイルを選択してください" });
+                          else setMessage(null);
+                        }}
+                        style={{ fontSize: 14 }}
+                      />
+                      {creativePdfFile && (
+                        <p style={{ marginTop: 6, fontSize: 13, color: "var(--color-text-muted)" }}>
+                          {creativePdfFile.name}（{(creativePdfFile.size / 1024).toFixed(1)} KB）
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

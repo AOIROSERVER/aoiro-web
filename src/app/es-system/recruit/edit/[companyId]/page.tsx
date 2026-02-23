@@ -30,6 +30,8 @@ type Company = {
   imageUrls: string[];
   hourlyWage?: string;
   monthlySalary?: string;
+  creativeRequired?: boolean;
+  creativeStatus?: string;
 };
 
 export default function RecruitEditPage() {
@@ -44,6 +46,7 @@ export default function RecruitEditPage() {
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
   const [eyecatchDataUrl, setEyecatchDataUrl] = useState<string | null>(null);
   const [recruitmentKind, setRecruitmentKind] = useState<"正社員" | "アルバイト">("正社員");
+  const [creativeRequired, setCreativeRequired] = useState(false);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -71,6 +74,7 @@ export default function RecruitEditPage() {
           monthlySalary: data.monthlySalary ?? "",
         });
         setRecruitmentKind(data.employmentType === "正社員" ? "正社員" : "アルバイト");
+        setCreativeRequired(!!data.creativeRequired);
       })
       .catch(() => setCompany(null))
       .finally(() => setLoading(false));
@@ -134,11 +138,12 @@ export default function RecruitEditPage() {
           imageUrls,
           hourlyWage: form.hourlyWage.trim() || undefined,
           monthlySalary: form.monthlySalary.trim() || undefined,
+          creativeRequired: creativeRequired || undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "更新に失敗しました");
-      setMessage({ type: "ok", text: "募集を更新しました。" });
+      setMessage({ type: "ok", text: creativeRequired ? "募集を更新しました。クリエイティブ申請は審査中になります。承認後に応募が可能になります。" : "募集を更新しました。" });
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "更新に失敗しました" });
     } finally {
@@ -282,6 +287,22 @@ export default function RecruitEditPage() {
                     className="info-item-value"
                     style={{ border: "none", background: "transparent", width: "100%", padding: 0 }}
                   />
+                </div>
+                <div className="info-item">
+                  <div className="info-item-label">クリエイティブ申請</div>
+                  <p className="section-sub" style={{ marginBottom: 8, fontSize: 13 }}>
+                    必要にすると、応募受付は運営の審査承認後に有効になります（審査中になります）。
+                  </p>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                      <input type="radio" name="creativeRequired" checked={!creativeRequired} onChange={() => setCreativeRequired(false)} />
+                      <span>不要</span>
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                      <input type="radio" name="creativeRequired" checked={creativeRequired} onChange={() => setCreativeRequired(true)} />
+                      <span>必要</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 

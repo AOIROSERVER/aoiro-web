@@ -19,6 +19,8 @@ type Company = {
   imageUrls: string[];
   createdAt: string;
   active: boolean;
+  creativeRequired?: boolean;
+  creativeStatus?: string;
 };
 
 export default function ApplyPage() {
@@ -164,6 +166,21 @@ export default function ApplyPage() {
         <div className="apply-login-required-card">
           <p className="apply-login-required-title">会社が見つかりません</p>
           <p className="apply-login-required-text">URLを確認するか、会社一覧から再度お選びください。</p>
+          <Link href="/es-system/companies" className="apply-login-required-btn">会社一覧へ戻る</Link>
+        </div>
+      </div>
+    );
+  }
+
+  const creativePending = company.creativeRequired && (company.creativeStatus || "").toLowerCase() !== "approved";
+  if (creativePending) {
+    return (
+      <div className="apply-login-required-wrap">
+        <div className="apply-login-required-card">
+          <p className="apply-login-required-title">クリエイティブ申請審査中です</p>
+          <p className="apply-login-required-text">
+            {company.name} はクリエイティブ申請の審査中のため、現在は応募できません。運営の承認後に応募が可能になります。
+          </p>
           <Link href="/es-system/companies" className="apply-login-required-btn">会社一覧へ戻る</Link>
         </div>
       </div>

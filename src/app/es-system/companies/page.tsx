@@ -23,6 +23,8 @@ type Company = {
   members?: { discordId: string; discordUsername: string }[];
   hourlyWage?: string;
   monthlySalary?: string;
+  creativeRequired?: boolean;
+  creativeStatus?: string;
 };
 
 type DiscordUser = { avatarUrl: string; displayName: string };
@@ -395,11 +397,18 @@ export default function CompaniesPage() {
                   </div>
                 )}
 
+                {detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved" && (
+                  <div className="info-item" style={{ marginBottom: 12, background: "#fff8e1", color: "#f57c00", padding: "10px 12px", borderRadius: 8 }}>
+                    クリエイティブ申請審査中です。承認後に応募が可能になります。
+                  </div>
+                )}
                 <div className="detail-actions">
                   <button
                     type="button"
                     className="btn-apply"
+                    disabled={!!(detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved")}
                     onClick={() => router.push(`/es-system/apply/${detailCompany.id}`)}
+                    title={detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved" ? "クリエイティブ審査承認後に応募できます" : undefined}
                   >
                     応募画面に進む
                   </button>

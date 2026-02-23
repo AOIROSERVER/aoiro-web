@@ -115,6 +115,16 @@ export async function PATCH(
     if (body.formSchema !== undefined) updates.formSchema = body.formSchema as Record<string, unknown> | null;
     if (body.hourlyWage !== undefined) updates.hourlyWage = String(body.hourlyWage);
     if (body.monthlySalary !== undefined) updates.monthlySalary = String(body.monthlySalary);
+    if (body.creativeRequired !== undefined) {
+      updates.creativeRequired = !!body.creativeRequired;
+      if (body.creativeRequired) {
+        updates.creativeStatus = 'pending';
+      } else {
+        updates.creativeStatus = '';
+        updates.creativeFileUrl = '';
+      }
+    }
+    if (body.creativeFileUrl !== undefined) updates.creativeFileUrl = String(body.creativeFileUrl).trim();
     const ok = await updateCompanyInSheets(companyId, updates);
     if (!ok) return NextResponse.json({ error: '会社の更新に失敗しました' }, { status: 500 });
     return NextResponse.json({ message: '更新しました' });

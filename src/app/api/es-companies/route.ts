@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { getCompaniesFromSheets, getMyCompaniesFromSheets, addCompanyToSheets, SEED_COMPANY } from '@/lib/es-companies-sheets';
+import { sendCreativeApplicationToDiscord } from '@/lib/es-creative-discord';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -65,49 +66,87 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/** ログイン済みユーザー: 募集（会社・プロジェクト）を新規登録 */
+/** ログイン済みユーザー: 募集（会社・プロジェクト）を新規登録。クリエイティブ必要時は multipart で PDF を送る（DBには保存せずDiscordにのみ送る） */
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json({ error: 'ログインが必要です' }, { status: 401 });
     }
-    const body = await request.json();
-    const {
-      name,
-      description,
-      location,
-      employmentType,
-      tags,
-      formSchema,
-      maxParticipants,
-      imageUrls,
-      hourlyWage,
-      monthlySalary,
-    } = body as {
-      name: string;
-      description?: string;
-      location?: string;
-      employmentType?: string;
-      tags?: string[];
-      formSchema?: Record<string, unknown>;
-      maxParticipants?: number;
-      imageUrls?: string[];
-      hourlyWage?: string;
-      monthlySalary?: string;
-    };
-    if (!name || !name.trim()) {
+    const contentType = request.headers.get('content-type') ?? '';
+    let name: string;
+    let description: string | undefined;
+    let location: string | undefined;
+    let employmentType: string | undefined;
+    let tags: string[] | undefined;
+    let formSchema: Record<string, unknown> | undefined;
+    let maxParticipants: number | undefined;
+    let imageUrls: string[] | undefined;
+    let hourlyWage: string;
+    let monthlySalary: string;
+    let creativeRequired: boolean | undefined;
+    let creativePdfBuffer: Buffer | null = null;
+    let creativePdfFileName: string | undefined;
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      name = (formData.get('name') as string)?.trim() ?? '';
+      description = (formData.get('description') as string)?.trim() || undefined;
+      location = (formData.get('location') as string)?.trim() || undefined;
+      employmentType = (formData.get('employmentType') as string)?.trim() || undefined;
+      const tagsStr = formData.get('tags') as string;
+      tags = tagsStr ? tagsStr.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+      const formSchemaStr = formData.get('formSchema') as string;
+      if (formSchemaStr) {
+        try {
+          formSchema = JSON.parse(formSchemaStr) as Record<string, unknown>;
+        } catch {
+          formSchema = undefined;
+        }
+      }
+      maxParticipants = formData.get('maxParticipants') != null ? Number(formData.get('maxParticipants')) || 0 : undefined;
+      const imageUrlsStr = formData.get('imageUrls') as string;
+      imageUrls = imageUrlsStr ? JSON.parse(imageUrlsStr) as string[] : undefined;
+      hourlyWage = String(formData.get('hourlyWage') ?? '').trim();
+      monthlySalary = String(formData.get('monthlySalary') ?? '').trim();
+      creativeRequired = formData.get('creativeRequired') === 'true' || formData.get('creativeRequired') === '1';
+      const pdfFile = formData.get('creativePdf');
+      if (pdfFile instanceof Blob && pdfFile.size > 0) {
+        const ab = await pdfFile.arrayBuffer();
+        creativePdfBuffer = Buffer.from(ab);
+        const fn = (pdfFile as File).name;
+        if (fn && typeof fn === 'string') creativePdfFileName = fn;
+      }
+    } else {
+      const body = await request.json() as Record<string, unknown>;
+      name = (body.name as string)?.trim() ?? '';
+      description = body.description as string | undefined;
+      location = body.location as string | undefined;
+      employmentType = body.employmentType as string | undefined;
+      tags = body.tags as string[] | undefined;
+      formSchema = body.formSchema as Record<string, unknown> | undefined;
+      maxParticipants = body.maxParticipants as number | undefined;
+      imageUrls = body.imageUrls as string[] | undefined;
+      hourlyWage = String(body.hourlyWage ?? '').trim();
+      monthlySalary = String(body.monthlySalary ?? '').trim();
+      creativeRequired = !!body.creativeRequired;
+    }
+
+    if (!name) {
       return NextResponse.json({ error: '会社名は必須です' }, { status: 400 });
     }
-    if (!hourlyWage || !String(hourlyWage).trim()) {
+    if (!hourlyWage) {
       return NextResponse.json({ error: '時給は必須です' }, { status: 400 });
     }
-    if (!monthlySalary || !String(monthlySalary).trim()) {
+    if (!monthlySalary) {
       return NextResponse.json({ error: '月給は必須です' }, { status: 400 });
+    }
+    if (creativeRequired && !creativePdfBuffer) {
+      return NextResponse.json({ error: 'クリエイティブ必要の場合はPDFファイルのアップロードが必須です' }, { status: 400 });
     }
     const { id: discordId, username: discordUsername } = getDiscordFromUser(user);
     const id = await addCompanyToSheets({
-      name: name.trim(),
+      name,
       description,
       location,
       employmentType,
@@ -118,9 +157,23 @@ export async function POST(request: NextRequest) {
       createdBy: user.id,
       createdByDiscordId: discordId,
       createdByDiscordUsername: discordUsername,
-      hourlyWage: String(hourlyWage).trim(),
-      monthlySalary: String(monthlySalary).trim(),
+      hourlyWage,
+      monthlySalary,
+      creativeRequired: !!creativeRequired,
+      creativeStatus: creativeRequired ? 'pending' : undefined,
+      creativeFileUrl: undefined,
     });
+    if (creativeRequired && creativePdfBuffer) {
+      const dmResult = await sendCreativeApplicationToDiscord({
+        companyName: name,
+        companyId: id,
+        pdfBuffer: creativePdfBuffer,
+        pdfFileName: creativePdfFileName,
+      });
+      if (!dmResult.sent && dmResult.error) {
+        console.warn('[es-companies] クリエイティブ申請Discord送信スキップ:', dmResult.error);
+      }
+    }
     return NextResponse.json({ id, message: '会社を登録しました' });
   } catch (e) {
     console.error('es-companies POST error:', e);

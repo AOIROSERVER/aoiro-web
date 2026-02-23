@@ -1,13 +1,13 @@
 /**
  * ESシステム・入社申請用：Googleスプレッドシート「Companies」シートの読み書き
  * シート名: Companies
- * 列: A=id, B=name, C=description, D=location, E=employment_type, F=tags, G=form_json, H=max_participants, I=image_urls, J=created_at, K=active, L=created_by, M=created_by_discord_id, N=created_by_discord_username, O=会社詳細, P=時給, Q=月給
+ * 列: A=id, B=name, C=description, D=location, E=employment_type, F=tags, G=form_json, H=max_participants, I=image_urls, J=created_at, K=active, L=created_by, M=created_by_discord_id, N=created_by_discord_username, O=会社詳細, P=時給, Q=月給, R=creative_required, S=creative_status, T=creative_file_url
  */
 import { google } from 'googleapis';
 
 const GOOGLE_SHEETS_ID = process.env.GOOGLE_SHEETS_ID || '17oFiF5pvclax-RM38DEREfa1EFKFpzQ9y0lCgizJFE8';
 const COMPANIES_SHEET = 'Companies';
-const COMPANIES_RANGE = `${COMPANIES_SHEET}!A2:Q`;
+const COMPANIES_RANGE = `${COMPANIES_SHEET}!A2:T`;
 
 export type CompanyRow = {
   id: string;
@@ -39,6 +39,12 @@ export type Company = {
   hourlyWage?: string;
   /** 月給（表示用・例: 20万円） */
   monthlySalary?: string;
+  /** クリエイティブ申請が必要か */
+  creativeRequired?: boolean;
+  /** pending | approved | rejected */
+  creativeStatus?: string;
+  /** クリエイティブ申請PDFのURL（非公開・審査用） */
+  creativeFileUrl?: string;
 };
 
 /** 架空のデフォルト会社（スプレッドシートに0件のときも一覧に表示） */
@@ -73,6 +79,9 @@ function rowToCompany(row: string[]): Company {
     // ignore
   }
   const imageUrls = (row[8] || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const creativeRequired = (row[17] || '').trim() === '1';
+  const creativeStatus = (row[18] || '').trim() || undefined;
+  const creativeFileUrl = (row[19] || '').trim() || undefined;
   return {
     id: row[0] || '',
     name: row[1] || '',
@@ -87,6 +96,9 @@ function rowToCompany(row: string[]): Company {
     active: (row[10] || '1') === '1' || (row[10] || '').toLowerCase() === 'true',
     hourlyWage: String(row[15] ?? '').trim() || undefined,
     monthlySalary: String(row[16] ?? '').trim() || undefined,
+    creativeRequired: creativeRequired || undefined,
+    creativeStatus,
+    creativeFileUrl,
   };
 }
 
@@ -175,7 +187,7 @@ export async function getMyCompaniesFromSheets(userId: string, discordId?: strin
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${COMPANIES_SHEET}!A2:Q`,
+      range: `${COMPANIES_SHEET}!A2:T`,
     });
     const rows = (res.data.values || []) as string[][];
     return rows
@@ -210,6 +222,12 @@ export async function addCompanyToSheets(company: {
   hourlyWage: string;
   /** 月給（必須・例: 20万円） */
   monthlySalary: string;
+  /** クリエイティブ申請が必要か */
+  creativeRequired?: boolean;
+  /** pending | approved | rejected */
+  creativeStatus?: string;
+  /** クリエイティブ申請PDFのURL */
+  creativeFileUrl?: string;
 }): Promise<string> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   if (!key) throw new Error('GOOGLE_SERVICE_ACCOUNT_KEY not set');
@@ -225,17 +243,17 @@ export async function addCompanyToSheets(company: {
 
   await ensureCompaniesSheetExists(sheets, spreadsheetId);
 
-  const headerRow = ['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active', 'created_by', 'created_by_discord_id', 'created_by_discord_username', '会社詳細', '時給', '月給'];
+  const headerRow = ['id', 'name', 'description', 'location', 'employment_type', 'tags', 'form_json', 'max_participants', 'image_urls', 'created_at', 'active', 'created_by', 'created_by_discord_id', 'created_by_discord_username', '会社詳細', '時給', '月給', 'creative_required', 'creative_status', 'creative_file_url'];
   try {
     const headerRes = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${COMPANIES_SHEET}!A1:Q1`,
+      range: `${COMPANIES_SHEET}!A1:T1`,
     });
     const existingHeader = (headerRes.data.values || [])[0] as string[] | undefined;
-    if (!existingHeader || existingHeader.length < 17) {
+    if (!existingHeader || existingHeader.length < 20) {
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `${COMPANIES_SHEET}!A1:Q1`,
+        range: `${COMPANIES_SHEET}!A1:T1`,
         valueInputOption: 'RAW',
         requestBody: { values: [headerRow] },
       });
@@ -254,6 +272,9 @@ export async function addCompanyToSheets(company: {
   const companyDetail = `${company.name}${desc ? ` | ${desc.slice(0, 100)}${desc.length > 100 ? '…' : ''}` : ''}`;
   const hourlyWage = (company.hourlyWage ?? '').trim();
   const monthlySalary = (company.monthlySalary ?? '').trim();
+  const creativeRequired = company.creativeRequired ? '1' : '0';
+  const creativeStatus = (company.creativeStatus || '').trim() || '';
+  const creativeFileUrl = (company.creativeFileUrl || '').trim() || '';
 
   const values = [[
     id,
@@ -273,11 +294,14 @@ export async function addCompanyToSheets(company: {
     companyDetail,
     hourlyWage,
     monthlySalary,
+    creativeRequired,
+    creativeStatus,
+    creativeFileUrl,
   ]];
 
   await sheets.spreadsheets.values.append({
     spreadsheetId,
-    range: `${COMPANIES_SHEET}!A2:Q`,
+    range: `${COMPANIES_SHEET}!A2:T`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values },
@@ -299,6 +323,9 @@ export async function updateCompanyInSheets(
     imageUrls?: string[];
     hourlyWage?: string;
     monthlySalary?: string;
+    creativeRequired?: boolean;
+    creativeStatus?: string;
+    creativeFileUrl?: string;
   }
 ): Promise<boolean> {
   const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -312,7 +339,7 @@ export async function updateCompanyInSheets(
     const sheets = google.sheets({ version: 'v4', auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: GOOGLE_SHEETS_ID,
-      range: `${COMPANIES_SHEET}!A2:Q`,
+      range: `${COMPANIES_SHEET}!A2:T`,
     });
     const rows = (res.data.values || []) as string[][];
     const rowIndex = rows.findIndex((r) => r[0] === companyId);
@@ -334,14 +361,17 @@ export async function updateCompanyInSheets(
     const companyDetail = `${name}${description ? ` | ${description.replace(/\s+/g, ' ').trim().slice(0, 100)}${description.length > 100 ? '…' : ''}` : ''}`;
     const hourlyWage = updates.hourlyWage !== undefined ? String(updates.hourlyWage).trim() : (row[15] || '').trim();
     const monthlySalary = updates.monthlySalary !== undefined ? String(updates.monthlySalary).trim() : (row[16] || '').trim();
-    const range = `${COMPANIES_SHEET}!A${rowIndex + 2}:Q${rowIndex + 2}`;
+    const creativeRequired = updates.creativeRequired !== undefined ? (updates.creativeRequired ? '1' : '0') : (row[17] || '0');
+    const creativeStatus = updates.creativeStatus !== undefined ? String(updates.creativeStatus).trim() : (row[18] || '').trim();
+    const creativeFileUrl = updates.creativeFileUrl !== undefined ? String(updates.creativeFileUrl).trim() : (row[19] || '').trim();
+    const range = `${COMPANIES_SHEET}!A${rowIndex + 2}:T${rowIndex + 2}`;
     await sheets.spreadsheets.values.update({
       spreadsheetId: GOOGLE_SHEETS_ID,
       range,
       valueInputOption: 'RAW',
       requestBody: {
         values: [[
-          companyId, name, description, location, employmentType, tagsStr, formJson, maxParticipants, imageUrlsStr, created_at, active, createdBy, discordId, discordUsername, companyDetail, hourlyWage, monthlySalary,
+          companyId, name, description, location, employmentType, tagsStr, formJson, maxParticipants, imageUrlsStr, created_at, active, createdBy, discordId, discordUsername, companyDetail, hourlyWage, monthlySalary, creativeRequired, creativeStatus, creativeFileUrl,
         ]],
       },
     });
