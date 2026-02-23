@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import nodemailer from 'nodemailer';
 import { appendCompanyApplication, getCompanyCreatorIds, getAICCompaniesForUser } from '@/lib/es-companies-sheets';
 import { getCompanyByIdFromSheets, SEED_COMPANY } from '@/lib/es-companies-sheets';
 
@@ -106,6 +107,70 @@ async function sendApplicationDmToOwner(params: {
   return { sent: true };
 }
 
+const ADMIN_BACKUP_EMAIL = 'aoiroserver.m@gmail.com';
+
+/** 念のため aoiroserver.m@gmail.com に全ユーザーの入社申請（応募者名・会社名・志望理由・画像）をメールで送る。 */
+async function sendApplicationEmailToAdmin(params: {
+  applicantName: string;
+  companyName: string;
+  applicationId: string;
+  motivation: string;
+  imageBuffer?: Buffer;
+  imageFileName?: string;
+}): Promise<void> {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+  if (!gmailUser || !gmailAppPassword) {
+    console.warn('[es-apply] GMAIL_USER/GMAIL_APP_PASSWORD not set, skipping admin backup email');
+    return;
+  }
+  const { applicantName, companyName, applicationId, motivation, imageBuffer, imageFileName } = params;
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: { user: gmailUser, pass: gmailAppPassword },
+  });
+  const motivationText = motivation ? motivation.slice(0, 2000) + (motivation.length > 2000 ? '…' : '') : '（未記入）';
+  const attachments: { filename: string; content: Buffer }[] = [];
+  if (imageBuffer && imageFileName) {
+    attachments.push({ filename: imageFileName, content: imageBuffer });
+  }
+  const mailOptions = {
+    from: process.env.FROM_EMAIL || gmailUser,
+    to: ADMIN_BACKUP_EMAIL,
+    subject: `[入社申請] ${companyName} - ${applicantName} (${applicationId})`,
+    text: [
+      `応募者: ${applicantName}`,
+      `会社: ${companyName}`,
+      `申請ID: ${applicationId}`,
+      '',
+      '志望理由:',
+      motivationText,
+    ].join('\n'),
+    html: [
+      '<p><strong>応募者:</strong> ' + escapeHtml(applicantName) + '</p>',
+      '<p><strong>会社:</strong> ' + escapeHtml(companyName) + '</p>',
+      '<p><strong>申請ID:</strong> ' + escapeHtml(applicationId) + '</p>',
+      '<p><strong>志望理由:</strong></p><pre style="white-space:pre-wrap;">' + escapeHtml(motivationText) + '</pre>',
+      attachments.length ? '<p>※ 画像は添付ファイルをご確認ください。</p>' : '',
+    ].join(''),
+    attachments,
+  };
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('[es-apply] Admin backup email sent to', ADMIN_BACKUP_EMAIL);
+  } catch (err) {
+    console.error('[es-apply] Admin backup email failed:', err);
+  }
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 /** POST: 入社申請を送信。body: JSON { companyId, minecraftTag, formData } または FormData（+ skillImage 任意） */
 export async function POST(request: NextRequest) {
   try {
@@ -205,15 +270,15 @@ export async function POST(request: NextRequest) {
 
     const { createdByDiscordId } = await getCompanyCreatorIds(companyId);
     const applicantName = discordUsername || minecraftTag || '応募者';
+    let imageBuffer: Buffer | undefined;
+    let imageFileName: string | undefined;
+    if (skillImageFile) {
+      const ab = await skillImageFile.arrayBuffer();
+      imageBuffer = Buffer.from(ab);
+      imageFileName = skillImageFile.name || 'skill-image.png';
+    }
     let dmSent = false;
     if (createdByDiscordId) {
-      let imageBuffer: Buffer | undefined;
-      let imageFileName: string | undefined;
-      if (skillImageFile) {
-        const ab = await skillImageFile.arrayBuffer();
-        imageBuffer = Buffer.from(ab);
-        imageFileName = skillImageFile.name || 'skill-image.png';
-      }
       const dmResult = await sendApplicationDmToOwner({
         ownerDiscordId: createdByDiscordId,
         applicantName,
@@ -230,6 +295,16 @@ export async function POST(request: NextRequest) {
     } else {
       console.warn('[es-apply] 社長のDiscord IDがありません。会社ID:', companyId, '会社名:', company.name, '（募集作成時にDiscordでログインしたユーザーで作成するとDMが送れます）');
     }
+
+    // 念のため全申請を aoiroserver.m@gmail.com にメールで送る（画像ありなら添付）
+    await sendApplicationEmailToAdmin({
+      applicantName,
+      companyName: company.name,
+      applicationId,
+      motivation,
+      imageBuffer,
+      imageFileName,
+    });
 
     return NextResponse.json({
       message: '入社申請を送信しました',

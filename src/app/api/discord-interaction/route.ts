@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
 import { updateApplicationStatus, getApplicationsFromSheets, setAICCompanyForUser, getCompanyByIdFromSheets } from '@/lib/es-companies-sheets';
 
-const DISCORD_PUBLIC_KEY = process.env.DISCORD_APPLICATION_PUBLIC_KEY ?? '';
+const DISCORD_PUBLIC_KEY = (process.env.DISCORD_APPLICATION_PUBLIC_KEY ?? '').trim();
 
 /** Discord インタラクション（ボタン押下など）を受け付け、署名検証後に許可/拒否を処理 */
 export async function POST(request: NextRequest) {
