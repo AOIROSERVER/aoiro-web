@@ -6,14 +6,6 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import "@/app/es-system/companies/joblist.css";
 
-type FormField = {
-  id: string;
-  label: string;
-  type: string;
-  required?: boolean;
-  placeholder?: string;
-};
-
 type Company = {
   id: string;
   name: string;
@@ -21,17 +13,12 @@ type Company = {
   location: string;
   employmentType: string;
   tags: string[];
-  formSchema: { fields?: FormField[] } | null;
+  formSchema: { fields?: unknown[] } | null;
   maxParticipants: number;
   imageUrls: string[];
   createdAt: string;
   active: boolean;
 };
-
-const DEFAULT_FIELDS: FormField[] = [
-  { id: "minecraft_tag", label: "Minecraftゲームタグ", type: "text", required: true, placeholder: "例: PlayerName" },
-  { id: "motivation", label: "志望理由・意志表明", type: "textarea", required: true, placeholder: "入社の理由や意欲を記入してください" },
-];
 
 export default function ApplyPage() {
   const params = useParams();
@@ -40,7 +27,9 @@ export default function ApplyPage() {
   const companyId = params?.companyId != null ? String(params.companyId) : null;
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [mcid, setMcid] = useState<string | null>(null);
+  const [mcidLoading, setMcidLoading] = useState(true);
+  const [motivation, setMotivation] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -52,45 +41,41 @@ export default function ApplyPage() {
         if (!res.ok) throw new Error("会社が見つかりません");
         return res.json();
       })
-      .then((data) => {
-        setCompany(data);
-        const fields = (data.formSchema?.fields || DEFAULT_FIELDS) as FormField[];
-        const initial: Record<string, string> = {};
-        fields.forEach((f) => {
-          initial[f.id] = "";
-        });
-        setFormValues(initial);
-      })
+      .then((data) => setCompany(data))
       .catch(() => setCompany(null))
       .finally(() => setLoading(false));
   }, [companyId]);
 
   useEffect(() => {
-    if (!company || !user?.user_metadata) return;
-    const tag = (user.user_metadata as Record<string, string>).game_tag;
-    if (!tag || typeof tag !== "string") return;
-    setFormValues((prev) => {
-      const current = prev.minecraft_tag ?? prev["Minecraftゲームタグ"] ?? "";
-      if (current.trim()) return prev;
-      return { ...prev, minecraft_tag: tag, "Minecraftゲームタグ": tag };
-    });
-  }, [company, user]);
-
-  const fields: FormField[] = company?.formSchema?.fields?.length
-    ? (company.formSchema!.fields as FormField[])
-    : DEFAULT_FIELDS;
+    if (!user) {
+      setMcidLoading(false);
+      return;
+    }
+    const fromMetadata = (user.user_metadata as Record<string, string> | undefined)?.game_tag;
+    if (fromMetadata && typeof fromMetadata === "string" && fromMetadata.trim()) {
+      setMcid(fromMetadata.trim());
+      setMcidLoading(false);
+      return;
+    }
+    fetch("/api/mcid-for-current-user", { credentials: "include", headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {} })
+      .then((r) => r.json())
+      .then((d: { mcid?: string | null }) => {
+        setMcid(d.mcid && typeof d.mcid === "string" ? d.mcid.trim() : null);
+      })
+      .catch(() => setMcid(null))
+      .finally(() => setMcidLoading(false));
+  }, [user?.id, user?.user_metadata, session?.access_token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const missing = fields.filter((f) => f.required && !(formValues[f.id] || "").trim());
-    if (missing.length > 0) {
-      setError(`${missing.map((f) => f.label).join("、")}を入力してください。`);
+    const minecraftTag = mcid ?? "";
+    if (!minecraftTag.trim()) {
+      setError("MCID認証を完了してください。");
       return;
     }
-    const minecraftTag = formValues.minecraft_tag || formValues["Minecraftゲームタグ"] || "";
-    if (!minecraftTag.trim()) {
-      setError("Minecraftゲームタグを入力してください。");
+    if (!motivation.trim()) {
+      setError("志望理由・意志表明を入力してください。");
       return;
     }
     setSubmitting(true);
@@ -105,7 +90,7 @@ export default function ApplyPage() {
         body: JSON.stringify({
           companyId: company!.id,
           minecraftTag: minecraftTag.trim(),
-          formData: formValues,
+          formData: { motivation: motivation.trim() },
         }),
       });
       const data = await res.json();
@@ -199,36 +184,39 @@ export default function ApplyPage() {
 
           <form onSubmit={handleSubmit}>
             {error && <div className="form-error">{error}</div>}
-            {fields.map((f) => (
-              <div key={f.id} className="form-group">
-                <label className="form-label">
-                  {f.label}
-                  {f.required && <span className="required"> *</span>}
-                </label>
-                {f.type === "textarea" ? (
-                  <textarea
-                    value={formValues[f.id] ?? ""}
-                    onChange={(e) => setFormValues((prev) => ({ ...prev, [f.id]: e.target.value }))}
-                    placeholder={f.placeholder}
-                    rows={4}
-                    className="form-textarea"
-                  />
-                ) : (
-                  <input
-                    type={f.type === "number" ? "number" : f.type === "url" ? "url" : "text"}
-                    value={formValues[f.id] ?? ""}
-                    onChange={(e) => setFormValues((prev) => ({ ...prev, [f.id]: e.target.value }))}
-                    placeholder={f.placeholder}
-                    className="form-input"
-                  />
-                )}
-              </div>
-            ))}
+
+            <div className="form-group">
+              <label className="form-label">Minecraftゲームタグ <span className="required">*</span></label>
+              {mcidLoading ? (
+                <p className="section-sub" style={{ margin: 0 }}>読み込み中...</p>
+              ) : mcid ? (
+                <input type="text" value={mcid} readOnly disabled className="form-input" style={{ backgroundColor: "var(--color-bg)", cursor: "not-allowed" }} />
+              ) : (
+                <div>
+                  <p className="section-sub" style={{ marginBottom: 12 }}>MCID認証が完了していません。認証するとDiscord IDとMinecraft IDが連携され、ここに自動で表示されます。</p>
+                  <Link href={`/minecraft-auth?redirect=${encodeURIComponent(`/es-system/apply/${companyId}`)}`} className="apply-login-required-btn" style={{ display: "inline-block" }}>
+                    MCID認証をする
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">志望理由・意志表明 <span className="required">*</span></label>
+              <textarea
+                value={motivation}
+                onChange={(e) => setMotivation(e.target.value)}
+                placeholder="入社の理由や意欲を記入してください"
+                rows={4}
+                className="form-textarea"
+              />
+            </div>
+
             <div className="form-actions">
               <button type="button" onClick={() => router.push("/es-system/companies")} className="btn-cancel">
                 キャンセル
               </button>
-              <button type="submit" disabled={submitting} className="btn-submit">
+              <button type="submit" disabled={submitting || !mcid || mcidLoading} className="btn-submit">
                 {submitting ? "送信中..." : "申請を送信"}
               </button>
             </div>

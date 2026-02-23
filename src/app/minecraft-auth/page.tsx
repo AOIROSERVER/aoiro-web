@@ -50,6 +50,14 @@ function DiscordAuthContent() {
   const { supabase, user, session } = useAuth();
   const router = useRouter();
 
+  // 入社申請などから戻る用の redirect を保存
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirect = urlParams.get('redirect');
+    if (redirect) sessionStorage.setItem('mcid-auth-redirect', redirect);
+  }, []);
+
   // AOIRO IDログイン必須チェック
   useEffect(() => {
     const checkAoiroIdLogin = async () => {

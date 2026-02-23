@@ -20,8 +20,8 @@ export default function RecruitCreatePage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
-  const [eyecatchFile, setEyecatchFile] = useState<File | null>(null);
-  const [eyecatchPreview, setEyecatchPreview] = useState<string | null>(null);
+  /** クエスト作成と同じ: FileReader.readAsDataURL で Base64 DataURL を保持 */
+  const [eyecatchDataUrl, setEyecatchDataUrl] = useState<string | null>(null);
   /** 募集種別: 正社員 or アルバイト・プロジェクト（雇用形態の元になる） */
   const [recruitmentKind, setRecruitmentKind] = useState<"正社員" | "アルバイト">("正社員");
   const [form, setForm] = useState({
@@ -31,7 +31,6 @@ export default function RecruitCreatePage() {
     employmentType: "正社員",
     tags: "",
     maxParticipants: "0",
-    formSchemaJson: JSON.stringify(DEFAULT_FORM_SCHEMA, null, 2),
   });
 
   useEffect(() => {
@@ -40,6 +39,7 @@ export default function RecruitCreatePage() {
     if (!user) router.push("/es-system/companies");
   }, [user, authLoading, router]);
 
+  /** クエスト作成と同じ: 画像を Base64 DataURL で保持（保存先は Supabase） */
   const handleEyecatchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -47,10 +47,17 @@ export default function RecruitCreatePage() {
       setMessage({ type: "error", text: "画像は5MB以下にしてください" });
       return;
     }
-    setEyecatchFile(file);
-    const url = URL.createObjectURL(file);
-    setEyecatchPreview(url);
-    setMessage(null);
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "画像ファイルを選択してください" });
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const result = ev.target?.result as string;
+      setEyecatchDataUrl(result ?? null);
+      setMessage(null);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,13 +65,6 @@ export default function RecruitCreatePage() {
     setMessage(null);
     if (!form.name.trim()) {
       setMessage({ type: "error", text: "会社名・プロジェクト名を入力してください" });
-      return;
-    }
-    let formSchema: Record<string, unknown> = DEFAULT_FORM_SCHEMA;
-    try {
-      formSchema = JSON.parse(form.formSchemaJson || "{}");
-    } catch {
-      setMessage({ type: "error", text: "フォームJSONの形式が正しくありません" });
       return;
     }
     if (!session?.access_token) {
@@ -76,14 +76,15 @@ export default function RecruitCreatePage() {
     let imageUrls: string[] = [];
 
     try {
-      if (eyecatchFile) {
+      if (eyecatchDataUrl) {
         setUploading(true);
-        const fd = new FormData();
-        fd.append("file", eyecatchFile);
-        const uploadRes = await fetch("/api/es-upload-image", {
+        const uploadRes = await fetch("/api/es-upload-image?storage=supabase", {
           method: "POST",
-          headers: { Authorization: `Bearer ${session.access_token}` },
-          body: fd,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ base64: eyecatchDataUrl }),
         });
         const uploadData = await uploadRes.json();
         if (!uploadRes.ok) {
@@ -108,15 +109,14 @@ export default function RecruitCreatePage() {
           tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
           maxParticipants: parseInt(form.maxParticipants, 10) || 0,
           imageUrls,
-          formSchema,
+          formSchema: DEFAULT_FORM_SCHEMA,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "保存に失敗しました");
       setMessage({ type: "ok", text: `募集を作成しました（ID: ${data.id}）。会社一覧に反映されます。` });
       setForm({ ...form, name: "", description: "", location: "" });
-      setEyecatchFile(null);
-      setEyecatchPreview(null);
+      setEyecatchDataUrl(null);
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "保存に失敗しました" });
     } finally {
@@ -257,9 +257,9 @@ export default function RecruitCreatePage() {
               </div>
 
               <hr className="detail-divider" />
-              <div className="detail-section-title">アイキャッチ画像（Supabaseに保存）</div>
+              <div className="detail-section-title">アイキャッチ画像（クエストと同じ・Supabaseに保存）</div>
               <p className="section-sub" style={{ marginBottom: 12 }}>
-                1枚まで。JPEG/PNG/GIF/WebP、5MB以下。アップロードすると自動でSupabaseに保存され、URLがスプレッドシートに記録されます。
+                1枚まで。JPEG/PNG/GIF/WebP、5MB以下。クエスト作成と同じ方式でSupabaseに保存され、URLがスプレッドシートに記録されます。
               </p>
               <div className="info-item" style={{ marginBottom: 16 }}>
                 <input
@@ -268,16 +268,12 @@ export default function RecruitCreatePage() {
                   onChange={handleEyecatchChange}
                   style={{ fontSize: 14 }}
                 />
-                {eyecatchPreview && (
+                {eyecatchDataUrl && (
                   <div style={{ marginTop: 12 }}>
-                    <img src={eyecatchPreview} alt="プレビュー" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8 }} />
+                    <img src={eyecatchDataUrl} alt="プレビュー" style={{ maxWidth: "100%", maxHeight: 200, borderRadius: 8 }} />
                     <button
                       type="button"
-                      onClick={() => {
-                        setEyecatchFile(null);
-                        setEyecatchPreview(null);
-                        if (eyecatchPreview) URL.revokeObjectURL(eyecatchPreview);
-                      }}
+                      onClick={() => setEyecatchDataUrl(null)}
                       style={{ marginTop: 8, fontSize: 12, color: "var(--color-text-link)" }}
                     >
                       画像を外す
@@ -286,34 +282,11 @@ export default function RecruitCreatePage() {
                 )}
               </div>
 
-              <hr className="detail-divider" />
-              <div className="detail-section-title">応募フォーム定義（JSON）</div>
-              <p className="apply-login-required-text" style={{ marginBottom: 12, fontSize: 13 }}>
-                応募時に表示する入力項目をJSONで定義します。未入力の場合はデフォルト（Minecraftゲームタグ・志望理由）が使われます。GASにも同じ内容が保存されます。
+              <p className="section-sub" style={{ marginTop: 8, fontSize: 13, color: "var(--color-text-muted)" }}>
+                応募フォームは「Minecraftゲームタグ」「志望理由・意志表明」の2項目で固定です。応募者はMCID認証済みならゲームタグが自動入力されます。
               </p>
-              <label className="detail-section-title" style={{ display: "block", marginBottom: 6, fontSize: 14 }}>
-                フォーム定義 JSON
-              </label>
-              <textarea
-                value={form.formSchemaJson}
-                onChange={(e) => setForm((p) => ({ ...p, formSchemaJson: e.target.value }))}
-                rows={14}
-                style={{
-                  width: "100%",
-                  fontFamily: "ui-monospace, monospace",
-                  fontSize: 13,
-                  padding: 14,
-                  border: "2px solid var(--color-border)",
-                  borderRadius: 10,
-                  marginBottom: 24,
-                  resize: "vertical",
-                  minHeight: 200,
-                }}
-                placeholder={`{\n  "fields": [\n    { "id": "minecraft_tag", "label": "Minecraftゲームタグ", "type": "text", "required": true },\n    { "id": "motivation", "label": "志望理由", "type": "textarea", "required": true }\n  ]\n}`}
-                aria-label="応募フォーム定義（JSON）"
-              />
 
-              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 24 }}>
                 <button type="submit" className="btn-apply" disabled={submitting || uploading}>
                   {uploading ? "画像アップロード中..." : submitting ? "保存中..." : "募集を作成（GASに保存）"}
                 </button>

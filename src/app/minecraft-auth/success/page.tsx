@@ -173,11 +173,18 @@ function MinecraftAuthSuccessContent() {
   };
 
 
+  const [redirectAfterAuth, setRedirectAfterAuth] = useState<string | null>(null);
+
   // クライアントサイドでのみsearchParamsを取得
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     setMinecraftId(searchParams.get('minecraftId') || '');
     setAvatarUrl(searchParams.get('avatarUrl') || null);
+    const stored = sessionStorage.getItem('mcid-auth-redirect');
+    if (stored) {
+      setRedirectAfterAuth(stored);
+      sessionStorage.removeItem('mcid-auth-redirect');
+    }
     
     // マインクラフト認証フローが完了したのでフラグをクリア
     sessionStorage.removeItem('minecraft-auth-flow');
@@ -202,6 +209,13 @@ function MinecraftAuthSuccessContent() {
     sessionStorage.removeItem('minecraft-auth-completed');
     console.log('🏠 Leaving minecraft auth flow, going to home');
     router.push('/');
+  };
+
+  const handleGoToRedirect = () => {
+    if (!redirectAfterAuth) return;
+    sessionStorage.removeItem('minecraft-auth-flow');
+    sessionStorage.removeItem('minecraft-auth-completed');
+    router.push(redirectAfterAuth);
   };
 
   const handleRetry = () => {
@@ -539,6 +553,25 @@ function MinecraftAuthSuccessContent() {
             flexWrap: 'wrap',
             flexDirection: { xs: 'column', sm: 'row' }
           }}>
+            {redirectAfterAuth && (
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handleGoToRedirect}
+                sx={{
+                  background: 'linear-gradient(45deg, #4CAF50, #388E3C)',
+                  borderRadius: 3,
+                  px: { xs: 3, sm: 4 },
+                  py: { xs: 1.5, sm: 2 },
+                  fontSize: { xs: '0.9rem', sm: '1.1rem' },
+                  fontWeight: 'bold',
+                  boxShadow: '0 8px 25px rgba(76, 175, 80, 0.3)',
+                  '&:hover': { transform: 'translateY(-2px)' },
+                }}
+              >
+                申請画面に戻る
+              </Button>
+            )}
             <Button
               variant="contained"
               size="large"
