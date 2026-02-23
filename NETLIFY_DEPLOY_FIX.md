@@ -104,3 +104,24 @@ Netlify Functionsを再有効化する場合：
 1. `functions-disabled` → `functions`に戻す
 2. `netlify.toml`に`functions`設定を追加
 3. 再デプロイ
+
+---
+
+## 関数アップロード HTTP 400 エラー（Failed to upload file: webhook-discord, ___netlify-server-handler, fetch-discord-messages）
+
+### 原因
+Next.js 用のサーバーハンドラやスタンドアロン関数のバンドルが大きすぎる、または Netlify の関数アップロード制限に抵触している。
+
+### 実施した対応
+1. **スタンドアロン Netlify 関数の削除**  
+   `netlify/functions/webhook-discord.js` と `netlify/functions/fetch-discord-messages.js` を削除。  
+   同じ処理は Next.js の API ルートで提供しています。
+   - 列車位置 Webhook: `POST /api/netlify/functions/webhook-discord`
+   - Discord メッセージ取得: `GET /api/netlify/functions/fetch-discord-messages`
+2. **公式 Next.js プラグインの追加**  
+   `netlify.toml` に `[[plugins]] package = "@netlify/plugin-nextjs"` を追加し、`@netlify/plugin-nextjs` を devDependency に追加。  
+   Next.js のデプロイと関数のプロビジョニングをプラグインに任せ、大きな単一関数のアップロードを避ける。
+
+### まだデプロイが失敗する場合
+Netlify ダッシュボードで **「Site settings → Build & deploy → Build」** を開き、**「Functions directory」** に `netlify/functions` が指定されていれば**空欄に変更**してください。  
+プラグイン利用時は関数ディレクトリを指定しない方が安全です。

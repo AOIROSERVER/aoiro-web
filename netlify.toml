@@ -1,6 +1,10 @@
 [build]
   command = "npm run build"
 
+# Next.js を Netlify で正しくデプロイするため公式プラグインを使用（関数アップロード 400 エラー回避）
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
 [[headers]]
   for = "/*"
   [headers.values]
