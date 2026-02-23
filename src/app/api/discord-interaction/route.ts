@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
-import { updateApplicationStatus, getApplicationsFromSheets, setAICCompanyForUser, getCompanyByIdFromSheets } from '@/lib/es-companies-sheets';
+import { updateApplicationStatus, getApplicationsFromSheets, setAICCompanyForUser, getCompanyByIdFromSheets, getCompanyCreatorIds } from '@/lib/es-companies-sheets';
+import { sendApprovalDmToApplicant } from '@/app/api/es-apply/route';
 
 const DISCORD_PUBLIC_KEY = (process.env.DISCORD_APPLICATION_PUBLIC_KEY ?? '').trim();
 
@@ -59,6 +60,20 @@ export async function POST(request: NextRequest) {
         const company = await getCompanyByIdFromSheets(app.companyId);
         const employmentType = (company?.employmentType === '正社員' ? '正社員' : 'アルバイト') as '正社員' | 'アルバイト';
         await setAICCompanyForUser(app.userId, app.companyName, employmentType);
+      }
+      if (app?.discordId?.trim()) {
+        const { createdByDiscordUsername } = await getCompanyCreatorIds(app.companyId);
+        const applicantName = (app.discord || app.minecraftTag || '応募者').trim() || '応募者';
+        const hrName = (createdByDiscordUsername || '採用担当').trim();
+        const dmResult = await sendApprovalDmToApplicant({
+          applicantDiscordId: app.discordId.trim(),
+          applicantName,
+          companyName: app.companyName,
+          hrName,
+        });
+        if (!dmResult.sent && dmResult.error) {
+          console.warn('[discord-interaction] 入社承認DM送信スキップ:', dmResult.error);
+        }
       }
     }
 

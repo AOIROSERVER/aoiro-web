@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { updateApplicationStatus, getApplicationsFromSheets, getCompanyCreatorIds, setAICCompanyForUser, getCompanyByIdFromSheets } from '@/lib/es-companies-sheets';
+import { sendApprovalDmToApplicant } from '@/app/api/es-apply/route';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -70,6 +71,20 @@ export async function PATCH(
       const company = await getCompanyByIdFromSheets(app.companyId);
       const employmentType = (company?.employmentType === '正社員' ? '正社員' : 'アルバイト') as '正社員' | 'アルバイト';
       await setAICCompanyForUser(app.userId, app.companyName, employmentType);
+    }
+    if (status === 'approved' && app.discordId?.trim()) {
+      const { createdByDiscordUsername } = await getCompanyCreatorIds(app.companyId);
+      const applicantName = (app.discord || app.minecraftTag || '応募者').trim() || '応募者';
+      const hrName = (createdByDiscordUsername || '採用担当').trim();
+      const dmResult = await sendApprovalDmToApplicant({
+        applicantDiscordId: app.discordId.trim(),
+        applicantName,
+        companyName: app.companyName,
+        hrName,
+      });
+      if (!dmResult.sent && dmResult.error) {
+        console.warn('[es-applications] 入社承認DM送信スキップ:', dmResult.error);
+      }
     }
     return NextResponse.json({ message: 'ステータスを更新しました', status });
   } catch (e) {

@@ -108,6 +108,77 @@ async function sendApplicationDmToOwner(params: {
   return { sent: true };
 }
 
+/** 入社承認時に申請者（応募者）のDiscord DMに「入社承認のご連絡」を送る。戻り値: 送信できたか。 */
+export async function sendApprovalDmToApplicant(params: {
+  applicantDiscordId: string;
+  applicantName: string;
+  companyName: string;
+  hrName: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (!botToken) {
+    console.warn('[es-apply] DISCORD_BOT_TOKEN not set, skipping approval DM');
+    return { sent: false, error: 'DISCORD_BOT_TOKEN not set' };
+  }
+  const { applicantDiscordId, applicantName, companyName, hrName } = params;
+  const headers: Record<string, string> = {
+    Authorization: `Bot ${botToken}`,
+    'User-Agent': 'AOIROSERVER/1.0 (ApprovalDM)',
+  };
+
+  const createDmRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipient_id: applicantDiscordId }),
+  });
+  const createDmBody = await createDmRes.text();
+  if (!createDmRes.ok) {
+    console.error('[es-apply] Discord create DM (approval) failed:', createDmRes.status, createDmBody);
+    let errMsg = createDmBody;
+    try {
+      const j = JSON.parse(createDmBody) as { message?: string };
+      if (j.message) errMsg = j.message;
+    } catch {
+      // use raw
+    }
+    return { sent: false, error: errMsg };
+  }
+  const dmChannel = JSON.parse(createDmBody) as { id: string };
+
+  const companyNameDisplay = companyName.startsWith('株式会社') ? companyName : `株式会社${companyName}`;
+  const content = `## 入社承認のご連絡
+
+<@${applicantDiscordId}> 様
+
+この度は、弊社の選考にご参加いただき誠にありがとうございました。
+**慎重に選考を行いました結果、<@${applicantDiscordId}> 様の入社を承認させていただくこととなりましたので、ご連絡申し上げます。**
+
+ぜひ弊社の一員としてご活躍いただけることを、社員一同心より楽しみにしております。
+
+つきましては、入社日や今後の手続きについてAOIROSERVERの会社一覧の弊社のルームでご案内させていただきますので、弊社のルームご確認くださいますようお願いいたします。
+AICのセクションも自動で変更されておりますのでそちらも併せてご確認ください。
+
+ご不明点等ございましたら、お気軽にお問い合わせください。
+今後ともどうぞよろしくお願い申し上げます。
+
+敬具
+
+${companyNameDisplay}
+人事部 ${hrName}`;
+
+  const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  const msgBody = await msgRes.text();
+  if (!msgRes.ok) {
+    console.error('[es-apply] Discord send approval message failed:', msgRes.status, msgBody);
+    return { sent: false, error: msgBody };
+  }
+  return { sent: true };
+}
+
 const ADMIN_BACKUP_EMAIL = 'aoiroserver.m@gmail.com';
 
 /** 念のため aoiroserver.m@gmail.com に全ユーザーの入社申請（応募者名・会社名・志望理由・画像）をメールで送る。ESシステムの sendNotificationEmail と同じ方式。 */
