@@ -21,6 +21,7 @@ type Company = {
   active: boolean;
   creativeRequired?: boolean;
   creativeStatus?: string;
+  members?: { discordId: string; discordUsername: string }[];
 };
 
 export default function ApplyPage() {
@@ -173,6 +174,7 @@ export default function ApplyPage() {
   }
 
   const creativePending = company.creativeRequired && (company.creativeStatus || "").toLowerCase() !== "approved";
+  const maxReached = company.maxParticipants > 0 && (company.members?.length ?? 0) >= company.maxParticipants;
   if (creativePending) {
     return (
       <div className="apply-login-required-wrap">
@@ -180,6 +182,19 @@ export default function ApplyPage() {
           <p className="apply-login-required-title">クリエイティブ申請審査中です</p>
           <p className="apply-login-required-text">
             {company.name} はクリエイティブ申請の審査中のため、現在は応募できません。運営の承認後に応募が可能になります。
+          </p>
+          <Link href="/es-system/companies" className="apply-login-required-btn">会社一覧へ戻る</Link>
+        </div>
+      </div>
+    );
+  }
+  if (maxReached) {
+    return (
+      <div className="apply-login-required-wrap">
+        <div className="apply-login-required-card">
+          <p className="apply-login-required-title">参加可能人数の上限に達しています</p>
+          <p className="apply-login-required-text">
+            {company.name} は参加可能人数の上限に達したため、現在は応募できません。
           </p>
           <Link href="/es-system/companies" className="apply-login-required-btn">会社一覧へ戻る</Link>
         </div>

@@ -8,8 +8,10 @@ import {
   getApplicationsFromSheets,
   updateCompanyInSheets,
   setCompanyActiveInSheets,
+  deleteCompanyRowFromSheets,
   SEED_COMPANY,
 } from '@/lib/es-companies-sheets';
+import { sendCreativeApplicationToDiscord } from '@/lib/es-creative-discord';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -90,7 +92,7 @@ export async function GET(
   }
 }
 
-/** 会社の編集（作成者または管理者） */
+/** 会社の編集（作成者または管理者）。multipart の場合は PDF を Discord に送信可能 */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ companyId: string }> }
@@ -103,8 +105,58 @@ export async function PATCH(
     if (!(await canManageCompany(request, companyId))) {
       return NextResponse.json({ error: 'この会社を編集する権限がありません' }, { status: 403 });
     }
+    const contentType = request.headers.get('content-type') ?? '';
+    let updates: Parameters<typeof updateCompanyInSheets>[1] = {};
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      updates.name = (formData.get('name') as string)?.trim();
+      updates.description = (formData.get('description') as string)?.trim() || undefined;
+      updates.location = (formData.get('location') as string)?.trim() || undefined;
+      updates.employmentType = (formData.get('employmentType') as string)?.trim() || undefined;
+      const tagsStr = formData.get('tags') as string;
+      updates.tags = tagsStr ? tagsStr.split(',').map((s) => s.trim()).filter(Boolean) : undefined;
+      updates.maxParticipants = formData.get('maxParticipants') != null ? Number(formData.get('maxParticipants')) || 0 : undefined;
+      const imageUrlsStr = formData.get('imageUrls') as string;
+      updates.imageUrls = imageUrlsStr ? (JSON.parse(imageUrlsStr) as string[]) : undefined;
+      updates.hourlyWage = (formData.get('hourlyWage') as string)?.trim() || undefined;
+      updates.monthlySalary = (formData.get('monthlySalary') as string)?.trim() || undefined;
+      const creativeRequired = formData.get('creativeRequired') === 'true' || formData.get('creativeRequired') === '1';
+      updates.creativeRequired = creativeRequired;
+      if (creativeRequired) {
+        updates.creativeStatus = 'pending';
+      } else {
+        updates.creativeStatus = '';
+        updates.creativeFileUrl = '';
+      }
+      const pdfFiles = formData.getAll('creativePdf');
+      const pdfBuffers: { buffer: Buffer; fileName?: string }[] = [];
+      for (let i = 0; i < Math.min(pdfFiles.length, 5); i++) {
+        const f = pdfFiles[i];
+        if (f instanceof Blob && f.size > 0) {
+          const ab = await f.arrayBuffer();
+          const fileName = (f as File).name;
+          pdfBuffers.push({ buffer: Buffer.from(ab), fileName: fileName || undefined });
+        }
+      }
+      const ok = await updateCompanyInSheets(companyId, updates);
+      if (!ok) return NextResponse.json({ error: '会社の更新に失敗しました' }, { status: 500 });
+      if (pdfBuffers.length > 0) {
+        const company = await getCompanyByIdFromSheets(companyId);
+        const companyName = company?.name ?? '';
+        const dmResult = await sendCreativeApplicationToDiscord({
+          companyName,
+          companyId,
+          pdfBuffers,
+        });
+        if (!dmResult.sent && dmResult.error) {
+          console.warn('[es-companies PATCH] クリエイティブ申請Discord送信スキップ:', dmResult.error);
+        }
+      }
+      return NextResponse.json({ message: '更新しました' });
+    }
+
     const body = await request.json() as Record<string, unknown>;
-    const updates: Parameters<typeof updateCompanyInSheets>[1] = {};
     if (body.name !== undefined) updates.name = String(body.name);
     if (body.description !== undefined) updates.description = String(body.description);
     if (body.location !== undefined) updates.location = String(body.location);
@@ -134,7 +186,7 @@ export async function PATCH(
   }
 }
 
-/** 会社の削除（論理削除・非表示）。作成者または管理者のみ */
+/** 会社の削除。GASから行を削除し、Supabaseのアイキャッチ画像も削除。作成者または管理者のみ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ companyId: string }> }
@@ -147,9 +199,23 @@ export async function DELETE(
     if (!(await canManageCompany(request, companyId))) {
       return NextResponse.json({ error: 'この会社を削除する権限がありません' }, { status: 403 });
     }
-    const ok = await setCompanyActiveInSheets(companyId, false);
+    const company = await getCompanyByIdFromSheets(companyId);
+    const imageUrls = company?.imageUrls ?? [];
+    const bucketName = 'recruit-eyecatch';
+    const pathsToRemove: string[] = [];
+    for (const url of imageUrls) {
+      if (!url || typeof url !== 'string') continue;
+      const match = url.match(/\/storage\/v1\/object\/public\/recruit-eyecatch\/(.+)$/);
+      if (match?.[1]) pathsToRemove.push(match[1]);
+    }
+    if (pathsToRemove.length > 0 && supabaseServiceKey) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { error } = await supabase.storage.from(bucketName).remove(pathsToRemove);
+      if (error) console.warn('[es-companies DELETE] Supabase storage remove error:', error.message);
+    }
+    const ok = await deleteCompanyRowFromSheets(companyId);
     if (!ok) return NextResponse.json({ error: '削除に失敗しました' }, { status: 500 });
-    return NextResponse.json({ message: '削除しました（非表示になりました）' });
+    return NextResponse.json({ message: '削除しました（シートから削除し、アイキャッチ画像も削除しました）' });
   } catch (e) {
     console.error('es-companies [companyId] DELETE error:', e);
     return NextResponse.json({ error: '削除に失敗しました' }, { status: 500 });

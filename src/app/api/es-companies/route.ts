@@ -85,8 +85,7 @@ export async function POST(request: NextRequest) {
     let hourlyWage: string;
     let monthlySalary: string;
     let creativeRequired: boolean | undefined;
-    let creativePdfBuffer: Buffer | null = null;
-    let creativePdfFileName: string | undefined;
+    const creativePdfBuffers: { buffer: Buffer; fileName?: string }[] = [];
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
@@ -110,12 +109,14 @@ export async function POST(request: NextRequest) {
       hourlyWage = String(formData.get('hourlyWage') ?? '').trim();
       monthlySalary = String(formData.get('monthlySalary') ?? '').trim();
       creativeRequired = formData.get('creativeRequired') === 'true' || formData.get('creativeRequired') === '1';
-      const pdfFile = formData.get('creativePdf');
-      if (pdfFile instanceof Blob && pdfFile.size > 0) {
-        const ab = await pdfFile.arrayBuffer();
-        creativePdfBuffer = Buffer.from(ab);
-        const fn = (pdfFile as File).name;
-        if (fn && typeof fn === 'string') creativePdfFileName = fn;
+      const pdfFiles = formData.getAll('creativePdf');
+      for (let i = 0; i < Math.min(pdfFiles.length, 5); i++) {
+        const f = pdfFiles[i];
+        if (f instanceof Blob && f.size > 0) {
+          const ab = await f.arrayBuffer();
+          const fileName = (f as File).name;
+          creativePdfBuffers.push({ buffer: Buffer.from(ab), fileName: fileName || undefined });
+        }
       }
     } else {
       const body = await request.json() as Record<string, unknown>;
@@ -141,8 +142,8 @@ export async function POST(request: NextRequest) {
     if (!monthlySalary) {
       return NextResponse.json({ error: '月給は必須です' }, { status: 400 });
     }
-    if (creativeRequired && !creativePdfBuffer) {
-      return NextResponse.json({ error: 'クリエイティブ必要の場合はPDFファイルのアップロードが必須です' }, { status: 400 });
+    if (creativeRequired && creativePdfBuffers.length === 0) {
+      return NextResponse.json({ error: 'クリエイティブ必要の場合はPDFファイルのアップロードが必須です（最大5枚）' }, { status: 400 });
     }
     const { id: discordId, username: discordUsername } = getDiscordFromUser(user);
     const id = await addCompanyToSheets({
@@ -163,12 +164,11 @@ export async function POST(request: NextRequest) {
       creativeStatus: creativeRequired ? 'pending' : undefined,
       creativeFileUrl: undefined,
     });
-    if (creativeRequired && creativePdfBuffer) {
+    if (creativeRequired && creativePdfBuffers.length > 0) {
       const dmResult = await sendCreativeApplicationToDiscord({
         companyName: name,
         companyId: id,
-        pdfBuffer: creativePdfBuffer,
-        pdfFileName: creativePdfFileName,
+        pdfBuffers: creativePdfBuffers,
       });
       if (!dmResult.sent && dmResult.error) {
         console.warn('[es-companies] クリエイティブ申請Discord送信スキップ:', dmResult.error);

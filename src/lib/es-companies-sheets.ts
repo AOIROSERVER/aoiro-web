@@ -414,6 +414,58 @@ export async function setCompanyActiveInSheets(companyId: string, active: boolea
   }
 }
 
+/** 会社の行をシートから削除する（削除時にGASからも消すため） */
+export async function deleteCompanyRowFromSheets(companyId: string): Promise<boolean> {
+  const key = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!key) return false;
+  try {
+    const serviceAccountKey = JSON.parse(key);
+    const auth = new google.auth.GoogleAuth({
+      credentials: serviceAccountKey,
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheets = google.sheets({ version: 'v4', auth });
+    const spreadsheetId = GOOGLE_SHEETS_ID;
+    const meta = await sheets.spreadsheets.get({
+      spreadsheetId,
+      fields: 'sheets(properties(sheetId,title))',
+    });
+    const companiesSheet = meta.data.sheets?.find(
+      (s) => (s.properties?.title ?? '') === COMPANIES_SHEET
+    );
+    const sheetId = companiesSheet?.properties?.sheetId;
+    if (sheetId == null) return false;
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${COMPANIES_SHEET}!A2:A`,
+    });
+    const rows = (res.data.values || []) as string[][];
+    const rowIndex = rows.findIndex((r) => r[0] === companyId);
+    if (rowIndex < 0) return false;
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId,
+                dimension: 'ROWS',
+                startIndex: rowIndex + 1,
+                endIndex: rowIndex + 2,
+              },
+            },
+          },
+        ],
+      },
+    });
+    return true;
+  } catch (e) {
+    console.error('deleteCompanyRowFromSheets error:', e);
+    return false;
+  }
+}
+
 /** 入社申請を「CompanyApplications」シートに追加。列: 申請ID, 申請日時, 会社ID, 会社名, メール, Discord, Discord ID, Minecraftタグ, 志望理由, ステータス, user_id（AIC所属更新用） */
 const APPLICATIONS_SHEET = 'CompanyApplications';
 const APPLICATIONS_RANGE = `${APPLICATIONS_SHEET}!A:K`;

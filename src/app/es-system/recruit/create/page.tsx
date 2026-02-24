@@ -47,10 +47,10 @@ export default function RecruitCreatePage() {
   const [recruitmentKind, setRecruitmentKind] = useState<"正社員" | "アルバイト">("正社員");
   /** 技術確認用画像を必須にするか（応募作成で変更可能） */
   const [skillImageRequired, setSkillImageRequired] = useState(false);
-  /** クリエイティブ申請が必要か。必要の場合はPDF必須 */
+  /** クリエイティブ申請が必要か。必要の場合はPDF必須（最大5枚） */
   const [creativeRequired, setCreativeRequired] = useState(false);
-  /** クリエイティブ申請PDF（公開されない・審査用） */
-  const [creativePdfFile, setCreativePdfFile] = useState<File | null>(null);
+  /** クリエイティブ申請PDF（公開されない・審査用・最大5枚） */
+  const [creativePdfFiles, setCreativePdfFiles] = useState<File[]>([]);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -104,8 +104,8 @@ export default function RecruitCreatePage() {
       setMessage({ type: "error", text: "月給を入力してください" });
       return;
     }
-    if (creativeRequired && !creativePdfFile) {
-      setMessage({ type: "error", text: "クリエイティブ申請（PDF）をアップロードしてください" });
+    if (creativeRequired && creativePdfFiles.length === 0) {
+      setMessage({ type: "error", text: "クリエイティブ申請（PDF）を1枚以上アップロードしてください（最大5枚）" });
       return;
     }
     if (!session?.access_token) {
@@ -146,7 +146,7 @@ export default function RecruitCreatePage() {
       };
 
       let res: Response;
-      if (creativeRequired && creativePdfFile) {
+      if (creativeRequired && creativePdfFiles.length > 0) {
         const fd = new FormData();
         fd.append("name", payload.name);
         fd.append("description", payload.description ?? "");
@@ -159,7 +159,7 @@ export default function RecruitCreatePage() {
         fd.append("hourlyWage", payload.hourlyWage);
         fd.append("monthlySalary", payload.monthlySalary);
         fd.append("creativeRequired", "true");
-        fd.append("creativePdf", creativePdfFile, creativePdfFile.name || "creative.pdf");
+        creativePdfFiles.slice(0, 5).forEach((f) => fd.append("creativePdf", f, f.name || "creative.pdf"));
         res = await fetch("/api/es-companies", {
           method: "POST",
           headers: { Authorization: `Bearer ${session.access_token}` },
@@ -180,7 +180,7 @@ export default function RecruitCreatePage() {
       setMessage({ type: "ok", text: `募集を作成しました（ID: ${data.id}）。会社一覧に反映されます。${creativeRequired ? " クリエイティブ申請は審査中です。承認後に応募が可能になります。" : ""}` });
       setForm({ ...form, name: "", description: "", location: "", hourlyWage: "", monthlySalary: "" });
       setEyecatchDataUrl(null);
-      setCreativePdfFile(null);
+      setCreativePdfFiles([]);
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "保存に失敗しました" });
     } finally {
@@ -371,21 +371,24 @@ export default function RecruitCreatePage() {
                   </div>
                   {creativeRequired && (
                     <div style={{ marginTop: 8 }}>
-                      <div className="info-item-label" style={{ marginBottom: 4 }}>クリエイティブ申請（公開はされません）*</div>
+                      <div className="info-item-label" style={{ marginBottom: 4 }}>クリエイティブ申請（公開はされません）* 最大5枚</div>
                       <input
                         type="file"
                         accept=".pdf,application/pdf"
+                        multiple
                         onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          setCreativePdfFile(f && f.type === "application/pdf" ? f : null);
-                          if (f && f.type !== "application/pdf") setMessage({ type: "error", text: "PDFファイルを選択してください" });
+                          const files = Array.from(e.target.files || []);
+                          const pdfs = files.filter((f) => f.type === "application/pdf").slice(0, 5);
+                          setCreativePdfFiles(pdfs);
+                          if (files.some((f) => f.type !== "application/pdf")) setMessage({ type: "error", text: "PDFファイルのみ選択してください" });
+                          else if (files.length > 5) setMessage({ type: "error", text: "PDFは5枚までです" });
                           else setMessage(null);
                         }}
                         style={{ fontSize: 14 }}
                       />
-                      {creativePdfFile && (
+                      {creativePdfFiles.length > 0 && (
                         <p style={{ marginTop: 6, fontSize: 13, color: "var(--color-text-muted)" }}>
-                          {creativePdfFile.name}（{(creativePdfFile.size / 1024).toFixed(1)} KB）
+                          {creativePdfFiles.length}枚: {creativePdfFiles.map((f) => f.name).join(", ")}
                         </p>
                       )}
                     </div>

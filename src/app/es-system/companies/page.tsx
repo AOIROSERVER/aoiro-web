@@ -402,13 +402,33 @@ export default function CompaniesPage() {
                     クリエイティブ申請審査中です。承認後に応募が可能になります。
                   </div>
                 )}
+                {detailCompany.maxParticipants > 0 && (detailCompany.members?.length ?? 0) >= detailCompany.maxParticipants && (
+                  <div className="info-item" style={{ marginBottom: 12, background: "#f5f5f5", color: "#616161", padding: "10px 12px", borderRadius: 8 }}>
+                    参加可能人数の上限に達しています。
+                  </div>
+                )}
                 <div className="detail-actions">
                   <button
                     type="button"
                     className="btn-apply"
-                    disabled={!!(detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved")}
+                    disabled={
+                      !!(detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved") ||
+                      (detailCompany.maxParticipants > 0 && (detailCompany.members?.length ?? 0) >= detailCompany.maxParticipants)
+                    }
                     onClick={() => router.push(`/es-system/apply/${detailCompany.id}`)}
-                    title={detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved" ? "クリエイティブ審査承認後に応募できます" : undefined}
+                    title={
+                      detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved"
+                        ? "クリエイティブ審査承認後に応募できます"
+                        : detailCompany.maxParticipants > 0 && (detailCompany.members?.length ?? 0) >= detailCompany.maxParticipants
+                          ? "参加可能人数の上限に達しています"
+                          : undefined
+                    }
+                    style={
+                      !!(detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved") ||
+                      (detailCompany.maxParticipants > 0 && (detailCompany.members?.length ?? 0) >= detailCompany.maxParticipants)
+                        ? { background: "#9e9e9e", color: "#fff", cursor: "not-allowed", borderColor: "#9e9e9e" }
+                        : undefined
+                    }
                   >
                     応募画面に進む
                   </button>

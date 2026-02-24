@@ -47,6 +47,8 @@ export default function RecruitEditPage() {
   const [eyecatchDataUrl, setEyecatchDataUrl] = useState<string | null>(null);
   const [recruitmentKind, setRecruitmentKind] = useState<"正社員" | "アルバイト">("正社員");
   const [creativeRequired, setCreativeRequired] = useState(false);
+  /** クリエイティブ申請PDF（編集時は任意・最大5枚。添付時はDiscordに送信） */
+  const [creativePdfFiles, setCreativePdfFiles] = useState<File[]>([]);
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -122,28 +124,53 @@ export default function RecruitEditPage() {
         setUploading(false);
       }
 
-      const res = await fetch(`/api/es-companies/${companyId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          name: form.name.trim(),
-          description: form.description.trim() || undefined,
-          location: form.location.trim() || undefined,
-          employmentType: recruitmentKind,
-          tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
-          maxParticipants: parseInt(form.maxParticipants, 10) || 0,
-          imageUrls,
-          hourlyWage: form.hourlyWage.trim() || undefined,
-          monthlySalary: form.monthlySalary.trim() || undefined,
-          creativeRequired: creativeRequired || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "更新に失敗しました");
-      setMessage({ type: "ok", text: creativeRequired ? "募集を更新しました。クリエイティブ申請は審査中になります。承認後に応募が可能になります。" : "募集を更新しました。" });
+      const payload = {
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        location: form.location.trim() || undefined,
+        employmentType: recruitmentKind,
+        tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean),
+        maxParticipants: parseInt(form.maxParticipants, 10) || 0,
+        imageUrls,
+        hourlyWage: form.hourlyWage.trim() || undefined,
+        monthlySalary: form.monthlySalary.trim() || undefined,
+        creativeRequired: creativeRequired || undefined,
+      };
+
+      if (creativeRequired && creativePdfFiles.length > 0) {
+        const fd = new FormData();
+        fd.append("name", payload.name);
+        fd.append("description", payload.description ?? "");
+        fd.append("location", payload.location ?? "");
+        fd.append("employmentType", payload.employmentType ?? "");
+        fd.append("tags", payload.tags?.join(",") ?? "");
+        fd.append("maxParticipants", String(payload.maxParticipants ?? 0));
+        fd.append("imageUrls", JSON.stringify(payload.imageUrls ?? []));
+        fd.append("hourlyWage", payload.hourlyWage ?? "");
+        fd.append("monthlySalary", payload.monthlySalary ?? "");
+        fd.append("creativeRequired", "true");
+        creativePdfFiles.slice(0, 5).forEach((f) => fd.append("creativePdf", f, f.name || "creative.pdf"));
+        const res = await fetch(`/api/es-companies/${companyId}`, {
+          method: "PATCH",
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: fd,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "更新に失敗しました");
+        setMessage({ type: "ok", text: "募集を更新しました。クリエイティブ申請を送信しました。審査承認後に応募が可能になります。" });
+      } else {
+        const res = await fetch(`/api/es-companies/${companyId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "更新に失敗しました");
+        setMessage({ type: "ok", text: creativeRequired ? "募集を更新しました。クリエイティブ申請は審査中になります。承認後に応募が可能になります。" : "募集を更新しました。" });
+      }
     } catch (err) {
       setMessage({ type: "error", text: err instanceof Error ? err.message : "更新に失敗しました" });
     } finally {
@@ -303,6 +330,30 @@ export default function RecruitEditPage() {
                       <span>必要</span>
                     </label>
                   </div>
+                  {creativeRequired && (
+                    <div style={{ marginTop: 8 }}>
+                      <div className="info-item-label" style={{ marginBottom: 4 }}>クリエイティブ申請（公開はされません）任意・最大5枚</div>
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          const pdfs = files.filter((f) => f.type === "application/pdf").slice(0, 5);
+                          setCreativePdfFiles(pdfs);
+                          if (files.some((f) => f.type !== "application/pdf")) setMessage({ type: "error", text: "PDFファイルのみ選択してください" });
+                          else if (files.length > 5) setMessage({ type: "error", text: "PDFは5枚までです" });
+                          else setMessage(null);
+                        }}
+                        style={{ fontSize: 14 }}
+                      />
+                      {creativePdfFiles.length > 0 && (
+                        <p style={{ marginTop: 6, fontSize: 13, color: "var(--color-text-muted)" }}>
+                          {creativePdfFiles.length}枚: {creativePdfFiles.map((f) => f.name).join(", ")}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

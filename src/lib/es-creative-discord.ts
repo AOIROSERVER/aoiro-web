@@ -13,21 +13,20 @@ function getOperationUserId(): string | null {
 }
 
 /**
- * クリエイティブ申請をDiscordチャンネルに送信する（PDFはDiscordにのみ送り、DBには保存しない）。
+ * クリエイティブ申請をDiscordチャンネルに送信する（PDFはDiscordにのみ送り、DBには保存しない）。最大5枚まで。
  * メッセージ: 〇〇会社さんがクリエイティブ申請をしています + PDF添付 + ダッシュボードにアクセス + @運営
  */
 export async function sendCreativeApplicationToDiscord(params: {
   companyName: string;
   companyId: string;
-  pdfBuffer: Buffer;
-  pdfFileName?: string;
+  pdfBuffers: { buffer: Buffer; fileName?: string }[];
 }): Promise<{ sent: boolean; error?: string }> {
   const botToken = process.env.DISCORD_BOT_TOKEN;
   if (!botToken) {
     console.warn('[creative-discord] DISCORD_BOT_TOKEN not set');
     return { sent: false, error: 'DISCORD_BOT_TOKEN not set' };
   }
-  const { companyName, companyId, pdfBuffer, pdfFileName } = params;
+  const { companyName, companyId, pdfBuffers } = params;
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://aoiroserver.site').replace(/\/$/, '');
   const dashboardUrl = `${baseUrl}/es-system/creative-review`;
   const operationId = getOperationUserId();
@@ -42,11 +41,15 @@ export async function sendCreativeApplicationToDiscord(params: {
     },
   ];
 
-  const fileName = pdfFileName && /\.pdf$/i.test(pdfFileName) ? pdfFileName : `creative-${companyId}.pdf`;
-  const pdfBytes = new Uint8Array(pdfBuffer);
   const form = new FormData();
   form.append('payload_json', JSON.stringify({ content, components }));
-  form.append('files[0]', new Blob([pdfBytes], { type: 'application/pdf' }), fileName);
+  const maxFiles = Math.min(pdfBuffers.length, 5);
+  for (let i = 0; i < maxFiles; i++) {
+    const item = pdfBuffers[i];
+    const fileName = (item.fileName && /\.pdf$/i.test(item.fileName)) ? item.fileName : `creative-${companyId}-${i + 1}.pdf`;
+    const pdfBytes = new Uint8Array(item.buffer);
+    form.append(`files[${i}]`, new Blob([pdfBytes], { type: 'application/pdf' }), fileName);
+  }
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${CREATIVE_CHANNEL_ID}/messages`, {
     method: 'POST',
