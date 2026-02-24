@@ -31,8 +31,15 @@ export async function sendCreativeApplicationToDiscord(params: {
   const dashboardUrl = `${baseUrl}/es-system/creative-review`;
   const operationId = getOperationUserId();
   const mention = operationId ? `<@${operationId}>` : '@運営';
-  const content = `${companyName}さんがクリエイティブ申請をしています。\n\nダッシュボードにアクセスして許可・拒否できます。\n${mention}`;
+  const content = `${companyName}さんがクリエイティブ申請をしています。\n\n下のボタンで許可・拒否できます（管理者のみ）。\n${mention}`;
   const components = [
+    {
+      type: 1,
+      components: [
+        { type: 2, style: 3, label: '許可', custom_id: `creative_approve:${companyId}` },
+        { type: 2, style: 4, label: '拒否', custom_id: `creative_reject:${companyId}` },
+      ],
+    },
     {
       type: 1,
       components: [
