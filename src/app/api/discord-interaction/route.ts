@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
 import { updateApplicationStatus, getApplicationsFromSheets, setAICCompanyForUser, getCompanyByIdFromSheets, getCompanyCreatorIds, updateCompanyInSheets } from '@/lib/es-companies-sheets';
 import { sendApprovalDmToApplicant } from '@/app/api/es-apply/route';
+import { sendCreativeApprovalDmToOwner } from '@/lib/es-creative-discord';
 
 const DISCORD_PUBLIC_KEY = (process.env.DISCORD_APPLICATION_PUBLIC_KEY ?? '').trim();
 
@@ -68,6 +69,15 @@ export async function POST(request: NextRequest) {
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: { content: '更新に失敗しました。', flags: 64 },
         });
+      }
+      if (status === 'approved') {
+        const { createdByDiscordId } = await getCompanyCreatorIds(companyId);
+        if (createdByDiscordId?.trim()) {
+          const dmResult = await sendCreativeApprovalDmToOwner({ ownerDiscordId: createdByDiscordId.trim() });
+          if (!dmResult.sent && dmResult.error) {
+            console.warn('[discord-interaction] クリエイティブ承認DM送信スキップ:', dmResult.error);
+          }
+        }
       }
       const message = status === 'approved' ? '✅ クリエイティブ申請を許可しました。' : '❌ クリエイティブ申請を拒否しました。';
       return NextResponse.json({

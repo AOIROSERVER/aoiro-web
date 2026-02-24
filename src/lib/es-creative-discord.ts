@@ -70,3 +70,58 @@ export async function sendCreativeApplicationToDiscord(params: {
   }
   return { sent: true };
 }
+
+/**
+ * クリエイティブ申請が承認されたとき、該当会社の社長（募集作成者）にDMで承認通知を送る。
+ */
+export async function sendCreativeApprovalDmToOwner(params: {
+  ownerDiscordId: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (!botToken) {
+    console.warn('[creative-discord] DISCORD_BOT_TOKEN not set, skipping approval DM');
+    return { sent: false, error: 'DISCORD_BOT_TOKEN not set' };
+  }
+  const { ownerDiscordId } = params;
+  const headers: Record<string, string> = {
+    Authorization: `Bot ${botToken}`,
+    'User-Agent': 'AOIROSERVER/1.0 (CreativeApprovalDM)',
+  };
+
+  const createDmRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipient_id: ownerDiscordId }),
+  });
+  const createDmBody = await createDmRes.text();
+  if (!createDmRes.ok) {
+    console.error('[creative-discord] Discord create DM (approval) failed:', createDmRes.status, createDmBody);
+    return { sent: false, error: createDmBody };
+  }
+  const dmChannel = JSON.parse(createDmBody) as { id: string };
+
+  const content = `<@${ownerDiscordId}> 様
+
+平素よりAOIROSERVERをご利用いただき、誠にありがとうございます。
+
+このたびご申請いただきましたクリエイティブ権限につきまして、運営にて慎重に審査を行いました結果、正式に承認いたしましたことをご通知申し上げます。
+
+本通知をもって、クリエイティブ権限のご利用が可能となります。
+ご利用にあたりましては、サーバー規約および運営方針を厳守いただき、良識ある行動をお願い申し上げます。
+
+今後とも健全かつ円滑なサーバー運営へのご理解とご協力を賜りますよう、何卒よろしくお願い申し上げます。
+
+AOIROSERVER運営`;
+
+  const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  const msgBody = await msgRes.text();
+  if (!msgRes.ok) {
+    console.error('[creative-discord] Discord send approval DM failed:', msgRes.status, msgBody);
+    return { sent: false, error: msgBody };
+  }
+  return { sent: true };
+}

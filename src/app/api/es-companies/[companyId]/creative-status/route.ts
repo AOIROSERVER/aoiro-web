@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { updateCompanyInSheets, getCompanyByIdFromSheets, SEED_COMPANY } from '@/lib/es-companies-sheets';
+import { updateCompanyInSheets, getCompanyByIdFromSheets, getCompanyCreatorIds, SEED_COMPANY } from '@/lib/es-companies-sheets';
+import { sendCreativeApprovalDmToOwner } from '@/lib/es-creative-discord';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -54,6 +55,15 @@ export async function PATCH(
     }
     const ok = await updateCompanyInSheets(companyId, { creativeStatus: status });
     if (!ok) return NextResponse.json({ error: '更新に失敗しました' }, { status: 500 });
+    if (status === 'approved') {
+      const { createdByDiscordId } = await getCompanyCreatorIds(companyId);
+      if (createdByDiscordId?.trim()) {
+        const dmResult = await sendCreativeApprovalDmToOwner({ ownerDiscordId: createdByDiscordId.trim() });
+        if (!dmResult.sent && dmResult.error) {
+          console.warn('[creative-status] クリエイティブ承認DM送信スキップ:', dmResult.error);
+        }
+      }
+    }
     return NextResponse.json({ message: status === 'approved' ? 'クリエイティブ申請を許可しました' : 'クリエイティブ申請を拒否しました', status });
   } catch (e) {
     console.error('creative-status PATCH error:', e);
