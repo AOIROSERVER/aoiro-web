@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
 import { updateApplicationStatus, getApplicationsFromSheets, setAICCompanyForUser, getCompanyByIdFromSheets, getCompanyCreatorIds, updateCompanyInSheets } from '@/lib/es-companies-sheets';
-import { sendApprovalDmToApplicant } from '@/app/api/es-apply/route';
-import { sendCreativeApprovalDmToOwner } from '@/lib/es-creative-discord';
+import { sendApprovalDmToApplicant, sendRejectionDmToApplicant } from '@/app/api/es-apply/route';
+import { sendCreativeApprovalDmToOwner, disableCreativeMessageButtons } from '@/lib/es-creative-discord';
 
 const DISCORD_PUBLIC_KEY = (process.env.DISCORD_APPLICATION_PUBLIC_KEY ?? '').trim();
 
@@ -24,7 +24,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid request signature' }, { status: 401 });
   }
 
-  let body: { type?: number; data?: { custom_id?: string }; member?: { user?: { id?: string } }; user?: { id?: string } };
+  let body: {
+    type?: number;
+    data?: { custom_id?: string };
+    member?: { user?: { id?: string } };
+    user?: { id?: string };
+    channel_id?: string;
+    message?: { id?: string };
+  };
   try {
     body = JSON.parse(rawBody) as typeof body;
   } catch {
@@ -65,10 +72,18 @@ export async function POST(request: NextRequest) {
           }
         }
       }
-      const message = status === 'approved' ? '✅ クリエイティブ申請を許可しました。' : '❌ クリエイティブ申請を拒否しました。';
+      const channelId = body.channel_id;
+      const messageId = body.message?.id;
+      if (channelId && messageId) {
+        await disableCreativeMessageButtons(channelId, messageId, companyId);
+      }
+      const replyContent = status === 'approved' ? 'この申請を許可しました。' : 'この申請を拒否しました。';
       return NextResponse.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: message, flags: 64 },
+        data: {
+          content: replyContent,
+          message_reference: messageId ? { message_id: messageId } : undefined,
+        },
       });
     }
 
@@ -109,6 +124,20 @@ export async function POST(request: NextRequest) {
         });
         if (!dmResult.sent && dmResult.error) {
           console.warn('[discord-interaction] 入社承認DM送信スキップ:', dmResult.error);
+        }
+      }
+    } else if (status === 'rejected') {
+      const applications = await getApplicationsFromSheets();
+      const app = applications.find((a) => a.id === applicationId);
+      if (app?.discordId?.trim()) {
+        const applicantName = (app.discord || app.minecraftTag || '応募者').trim() || '応募者';
+        const dmResult = await sendRejectionDmToApplicant({
+          applicantDiscordId: app.discordId.trim(),
+          applicantName,
+          companyName: app.companyName,
+        });
+        if (!dmResult.sent && dmResult.error) {
+          console.warn('[discord-interaction] 不採用DM送信スキップ:', dmResult.error);
         }
       }
     }

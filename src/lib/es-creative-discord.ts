@@ -117,3 +117,46 @@ AOIROSERVER運営`;
   }
   return { sent: true };
 }
+
+/**
+ * クリエイティブ申請メッセージの許可・拒否ボタンを両方とも押せなくする（1回押したら無効化）。
+ */
+export async function disableCreativeMessageButtons(
+  channelId: string,
+  messageId: string,
+  companyId: string
+): Promise<boolean> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (!botToken) return false;
+  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://aoiroserver.site').replace(/\/$/, '');
+  const dashboardUrl = `${baseUrl}/es-system/creative-review`;
+  const components = [
+    {
+      type: 1,
+      components: [
+        { type: 2, style: 3, label: '許可', custom_id: `creative_approve:${companyId}`, disabled: true },
+        { type: 2, style: 4, label: '拒否', custom_id: `creative_reject:${companyId}`, disabled: true },
+      ],
+    },
+    {
+      type: 1,
+      components: [
+        { type: 2, style: 5, label: 'ダッシュボードにアクセス', url: dashboardUrl },
+      ],
+    },
+  ];
+  const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages/${messageId}`, {
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bot ${botToken}`,
+      'User-Agent': 'AOIROSERVER/1.0 (CreativeDM)',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ components }),
+  });
+  if (!res.ok) {
+    console.error('[creative-discord] disable buttons failed:', res.status, await res.text());
+    return false;
+  }
+  return true;
+}

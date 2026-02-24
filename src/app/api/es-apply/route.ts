@@ -68,8 +68,15 @@ async function sendApplicationDmToOwner(params: {
   const motivationText = motivation ? `\n**志望理由:**\n${motivation.slice(0, 1500)}${motivation.length > 1500 ? '…' : ''}` : '';
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://aoiroserver.site').replace(/\/$/, '');
   const dashboardUrl = `${baseUrl}/es-system/recruit/my/`;
-  const content = `<@${ownerDiscordId}> ${applicantName} さんが **${companyName}** への入社申請をしています。${motivationText}\n\nダッシュボードで許可・拒否できます。下のボタンからアクセスしてください。`;
+  const content = `<@${ownerDiscordId}> ${applicantName} さんが **${companyName}** への入社申請をしています。${motivationText}\n\n下のボタンで採用・不採用できます。ダッシュボードからも操作できます。`;
   const components = [
+    {
+      type: 1,
+      components: [
+        { type: 2, style: 3, label: '採用', custom_id: `apply_approve:${applicationId}` },
+        { type: 2, style: 4, label: '不採用', custom_id: `apply_reject:${applicationId}` },
+      ],
+    },
     {
       type: 1,
       components: [
@@ -174,6 +181,135 @@ ${companyNameDisplay}
   const msgBody = await msgRes.text();
   if (!msgRes.ok) {
     console.error('[es-apply] Discord send approval message failed:', msgRes.status, msgBody);
+    return { sent: false, error: msgBody };
+  }
+  return { sent: true };
+}
+
+/** 不採用時に応募者のDiscord DMに「選考結果のご連絡」を送る。戻り値: 送信できたか。 */
+export async function sendRejectionDmToApplicant(params: {
+  applicantDiscordId: string;
+  applicantName: string;
+  companyName: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (!botToken) {
+    console.warn('[es-apply] DISCORD_BOT_TOKEN not set, skipping rejection DM');
+    return { sent: false, error: 'DISCORD_BOT_TOKEN not set' };
+  }
+  const { applicantDiscordId, applicantName, companyName } = params;
+  const headers: Record<string, string> = {
+    Authorization: `Bot ${botToken}`,
+    'User-Agent': 'AOIROSERVER/1.0 (RejectionDM)',
+  };
+
+  const createDmRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipient_id: applicantDiscordId }),
+  });
+  const createDmBody = await createDmRes.text();
+  if (!createDmRes.ok) {
+    console.error('[es-apply] Discord create DM (rejection) failed:', createDmRes.status, createDmBody);
+    return { sent: false, error: createDmBody };
+  }
+  const dmChannel = JSON.parse(createDmBody) as { id: string };
+
+  const companyNameDisplay = companyName.startsWith('株式会社') ? companyName : `株式会社${companyName}`;
+  const content = `<@${applicantDiscordId}> 様
+
+この度は、弊社の採用選考にご応募いただき、誠にありがとうございました。
+
+慎重に選考を重ねました結果、**誠に残念ながら今回はご期待に添いかねる結果**となりましたことをご連絡申し上げます。
+
+${applicantName}様のこれまでのご経験やお人柄は大変魅力的であり、選考は非常に難しい判断となりました。総合的な観点からの結果となりましたこと、何卒ご理解賜りますようお願い申し上げます。
+
+なお、今後募集職種や募集状況が変わりました際には、ぜひ改めてご応募をご検討いただけましたら幸いです。再びご縁をいただける機会がございましたら、大変嬉しく存じます。
+
+末筆ながら、${applicantName}様の今後ますますのご活躍を心よりお祈り申し上げます。
+
+敬具
+
+${companyNameDisplay}`;
+
+  const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  const msgBody = await msgRes.text();
+  if (!msgRes.ok) {
+    console.error('[es-apply] Discord send rejection message failed:', msgRes.status, msgBody);
+    return { sent: false, error: msgBody };
+  }
+  return { sent: true };
+}
+
+/** 解雇通知を従業員のDiscord DMに送る。戻り値: 送信できたか。 */
+export async function sendDismissalDmToEmployee(params: {
+  employeeDiscordId: string;
+  companyName: string;
+  reason: string;
+  ownerDiscordUsername: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const botToken = process.env.DISCORD_BOT_TOKEN;
+  if (!botToken) {
+    console.warn('[es-apply] DISCORD_BOT_TOKEN not set, skipping dismissal DM');
+    return { sent: false, error: 'DISCORD_BOT_TOKEN not set' };
+  }
+  const { employeeDiscordId, companyName, reason, ownerDiscordUsername } = params;
+  const headers: Record<string, string> = {
+    Authorization: `Bot ${botToken}`,
+    'User-Agent': 'AOIROSERVER/1.0 (DismissalDM)',
+  };
+
+  const createDmRes = await fetch(`${DISCORD_API}/users/@me/channels`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recipient_id: employeeDiscordId }),
+  });
+  const createDmBody = await createDmRes.text();
+  if (!createDmRes.ok) {
+    console.error('[es-apply] Discord create DM (dismissal) failed:', createDmRes.status, createDmBody);
+    return { sent: false, error: createDmBody };
+  }
+  const dmChannel = JSON.parse(createDmBody) as { id: string };
+
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
+  const companyNameDisplay = companyName.startsWith('株式会社') ? companyName : `株式会社${companyName}`;
+  const ownerName = (ownerDiscordUsername || '代表者').trim();
+
+  const content = `<@${employeeDiscordId}> 様
+
+平素より業務にご尽力いただき、誠にありがとうございます。
+
+**このたび、誠に遺憾ではございますが、諸般の事情により、${dateStr}をもちまして、貴殿との雇用契約を終了させていただくこととなりました。**
+
+■ 解雇理由
+${reason}
+
+本決定は、総合的に判断した結果によるものです。
+
+これまでのご貢献に感謝申し上げるとともに、今後のご健勝とご活躍をお祈り申し上げます。
+
+なお、貸出アイテムの返却および最終給与等の手続きにつきましては、追って人事部よりご連絡いたします。
+
+何卒ご理解賜りますようお願い申し上げます。
+
+敬具
+
+${companyNameDisplay}
+代表取締役 ${ownerName}`;
+
+  const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  });
+  const msgBody = await msgRes.text();
+  if (!msgRes.ok) {
+    console.error('[es-apply] Discord send dismissal message failed:', msgRes.status, msgBody);
     return { sent: false, error: msgBody };
   }
   return { sent: true };

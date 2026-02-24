@@ -42,6 +42,9 @@ export default function RecruitMyPage() {
   const [resigningCompanyName, setResigningCompanyName] = useState<string | null>(null);
   const [discordUsers, setDiscordUsers] = useState<Record<string, { avatarUrl: string; displayName: string }>>({});
   const [detailApplication, setDetailApplication] = useState<Application | null>(null);
+  const [dismissTarget, setDismissTarget] = useState<Application | null>(null);
+  const [dismissReason, setDismissReason] = useState("");
+  const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
     if (!user || !session?.access_token) {
@@ -152,6 +155,36 @@ export default function RecruitMyPage() {
       alert(e instanceof Error ? e.message : "削除に失敗しました");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const dismissEmployee = async (applicationId: string, reason: string) => {
+    if (!session?.access_token || !reason.trim()) return;
+    setDismissing(true);
+    try {
+      const res = await fetch(`/api/es-companies/applications/${applicationId}/dismiss`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ reason: reason.trim() }),
+        credentials: "include",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "解雇処理に失敗しました");
+      const list = await fetch("/api/es-companies/applications", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        credentials: "include",
+      }).then((r) => r.json());
+      setApplications(Array.isArray(list) ? list : []);
+      setDismissTarget(null);
+      setDismissReason("");
+      setDetailApplication(null);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "解雇処理に失敗しました");
+    } finally {
+      setDismissing(false);
     }
   };
 
@@ -320,10 +353,33 @@ export default function RecruitMyPage() {
                             <div style={{ fontWeight: 600, fontSize: 14 }}>
                               {a.discordId && discordUsers[a.discordId] ? discordUsers[a.discordId].displayName : a.discord || "—"}
                             </div>
-                            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{a.companyName}</div>
+                            <div style={{ fontSize: 12, color: "var(--color-text-muted)" }}>
+                              {a.companyName}
+                              {a.status === "dismissed" && (
+                                <span style={{ marginLeft: 8, color: "#c62828", fontWeight: 600 }}>解雇済み</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <button
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          {a.status === "approved" && (
+                            <button
+                              type="button"
+                              style={{
+                                fontSize: 13,
+                                padding: "6px 12px",
+                                color: "#c62828",
+                                background: "none",
+                                border: "1px solid #c62828",
+                                borderRadius: 4,
+                                cursor: "pointer",
+                              }}
+                              onClick={() => setDismissTarget(a)}
+                            >
+                              解雇
+                            </button>
+                          )}
+                          <button
                           type="button"
                           className="recruit-create-btn"
                           style={{ fontSize: 13, padding: "6px 14px", flexShrink: 0 }}
@@ -380,8 +436,26 @@ export default function RecruitMyPage() {
                             <tr>
                               <th>ステータス</th>
                               <td>
-                                <span style={{ color: detailApplication.status === "approved" ? "#1e7e45" : detailApplication.status === "rejected" ? "#c62828" : "var(--color-text-muted)", fontWeight: 600 }}>
-                                  {detailApplication.status === "approved" ? "許可" : detailApplication.status === "rejected" ? "拒否" : "未処理"}
+                                <span
+                                  style={{
+                                    color:
+                                      detailApplication.status === "approved"
+                                        ? "#1e7e45"
+                                        : detailApplication.status === "rejected"
+                                          ? "#c62828"
+                                          : detailApplication.status === "dismissed"
+                                            ? "#c62828"
+                                            : "var(--color-text-muted)",
+                                    fontWeight: 600,
+                                  }}
+                                >
+                                  {detailApplication.status === "approved"
+                                    ? "許可"
+                                    : detailApplication.status === "rejected"
+                                      ? "拒否"
+                                      : detailApplication.status === "dismissed"
+                                        ? "解雇済み"
+                                        : "未処理"}
                                 </span>
                               </td>
                             </tr>
@@ -398,6 +472,115 @@ export default function RecruitMyPage() {
                           </button>
                         </div>
                       )}
+                      {detailApplication.status === "approved" && (
+                        <div className="application-detail-modal-actions">
+                          <button
+                            type="button"
+                            style={{
+                              fontSize: 14,
+                              padding: "8px 16px",
+                              color: "#c62828",
+                              background: "none",
+                              border: "1px solid #c62828",
+                              borderRadius: 6,
+                              cursor: "pointer",
+                            }}
+                            onClick={() => {
+                              setDetailApplication(null);
+                              setDismissTarget(detailApplication);
+                              setDismissReason("");
+                            }}
+                          >
+                            解雇する
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {dismissTarget && (
+                  <div
+                    className="application-detail-overlay"
+                    onClick={() => {
+                      if (!dismissing) {
+                        setDismissTarget(null);
+                        setDismissReason("");
+                      }
+                    }}
+                  >
+                    <div className="application-detail-modal" onClick={(e) => e.stopPropagation()}>
+                      <div className="application-detail-modal-header">
+                        <h3>解雇手続き</h3>
+                        <button
+                          type="button"
+                          className="detail-members-modal-close"
+                          onClick={() => {
+                            if (!dismissing) {
+                              setDismissTarget(null);
+                              setDismissReason("");
+                            }
+                          }}
+                          aria-label="閉じる"
+                          disabled={dismissing}
+                        >
+                          ×
+                        </button>
+                      </div>
+                      <div className="application-detail-modal-body">
+                        <p style={{ marginBottom: 12 }}>
+                          <strong>{dismissTarget.discordId && discordUsers[dismissTarget.discordId] ? discordUsers[dismissTarget.discordId].displayName : dismissTarget.discord || "—"}</strong>
+                          （{dismissTarget.companyName}）を解雇します。解雇理由を入力してください（必須）。
+                        </p>
+                        <textarea
+                          value={dismissReason}
+                          onChange={(e) => setDismissReason(e.target.value)}
+                          placeholder="解雇理由を記入してください"
+                          required
+                          rows={4}
+                          style={{
+                            width: "100%",
+                            padding: 10,
+                            fontSize: 14,
+                            borderRadius: 6,
+                            border: "1px solid var(--color-border)",
+                            resize: "vertical",
+                            boxSizing: "border-box",
+                          }}
+                        />
+                      </div>
+                      <div className="application-detail-modal-actions" style={{ justifyContent: "flex-end", gap: 8 }}>
+                        <button
+                          type="button"
+                          className="recruit-create-btn"
+                          style={{ fontSize: 13, padding: "6px 14px" }}
+                          onClick={() => {
+                            if (!dismissing) {
+                              setDismissTarget(null);
+                              setDismissReason("");
+                            }
+                          }}
+                          disabled={dismissing}
+                        >
+                          キャンセル
+                        </button>
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: 13,
+                            padding: "6px 14px",
+                            color: "#fff",
+                            background: "#c62828",
+                            border: "none",
+                            borderRadius: 6,
+                            cursor: dismissing ? "not-allowed" : "pointer",
+                          }}
+                          onClick={() => dismissReason.trim() && dismissEmployee(dismissTarget.id, dismissReason)}
+                          disabled={dismissing || !dismissReason.trim()}
+                        >
+                          {dismissing ? "処理中..." : "解雇する"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

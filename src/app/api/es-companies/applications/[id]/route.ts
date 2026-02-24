@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { updateApplicationStatus, getApplicationsFromSheets, getCompanyCreatorIds, setAICCompanyForUser, getCompanyByIdFromSheets } from '@/lib/es-companies-sheets';
-import { sendApprovalDmToApplicant } from '@/app/api/es-apply/route';
+import { sendApprovalDmToApplicant, sendRejectionDmToApplicant } from '@/app/api/es-apply/route';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -84,6 +84,17 @@ export async function PATCH(
       });
       if (!dmResult.sent && dmResult.error) {
         console.warn('[es-applications] 入社承認DM送信スキップ:', dmResult.error);
+      }
+    }
+    if (status === 'rejected' && app.discordId?.trim()) {
+      const applicantName = (app.discord || app.minecraftTag || '応募者').trim() || '応募者';
+      const dmResult = await sendRejectionDmToApplicant({
+        applicantDiscordId: app.discordId.trim(),
+        applicantName,
+        companyName: app.companyName,
+      });
+      if (!dmResult.sent && dmResult.error) {
+        console.warn('[es-applications] 不採用DM送信スキップ:', dmResult.error);
       }
     }
     return NextResponse.json({ message: 'ステータスを更新しました', status });
