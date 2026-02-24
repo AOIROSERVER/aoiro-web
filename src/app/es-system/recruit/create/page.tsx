@@ -355,7 +355,7 @@ export default function RecruitCreatePage() {
                         type="radio"
                         name="creativeRequired"
                         checked={!creativeRequired}
-                        onChange={() => { setCreativeRequired(false); setCreativePdfFile(null); }}
+                        onChange={() => { setCreativeRequired(false); setCreativePdfFiles([]); }}
                       />
                       <span>不要</span>
                     </label>
