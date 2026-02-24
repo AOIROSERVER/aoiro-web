@@ -6,15 +6,9 @@
 const DISCORD_API = 'https://discord.com/api/v10';
 const CREATIVE_CHANNEL_ID = '1475608910458261525';
 
-/** 運営のDiscordユーザーID（メンション用）。環境変数 DISCORD_OPERATION_USER_ID で指定 */
-function getOperationUserId(): string | null {
-  const id = (process.env.DISCORD_OPERATION_USER_ID || '').trim();
-  return id || null;
-}
-
 /**
  * クリエイティブ申請をDiscordチャンネルに送信する（PDFはDiscordにのみ送り、DBには保存しない）。最大5枚まで。
- * メッセージ: 〇〇会社さんがクリエイティブ申請をしています + PDF添付 + ダッシュボードにアクセス + @運営
+ * メッセージ: 〇〇会社さんがクリエイティブ申請をしています + PDF添付 + ダッシュボードにアクセス
  */
 export async function sendCreativeApplicationToDiscord(params: {
   companyName: string;
@@ -29,9 +23,7 @@ export async function sendCreativeApplicationToDiscord(params: {
   const { companyName, companyId, pdfBuffers } = params;
   const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://aoiroserver.site').replace(/\/$/, '');
   const dashboardUrl = `${baseUrl}/es-system/creative-review`;
-  const operationId = getOperationUserId();
-  const mention = operationId ? `<@${operationId}>` : '@運営';
-  const content = `${companyName}さんがクリエイティブ申請をしています。\n\n下のボタンで許可・拒否できます（管理者のみ）。\n${mention}`;
+  const content = `${companyName}さんがクリエイティブ申請をしています。\n\n下のボタンで許可・拒否できます。`;
   const components = [
     {
       type: 1,

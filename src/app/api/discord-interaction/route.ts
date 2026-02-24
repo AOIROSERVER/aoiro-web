@@ -6,12 +6,6 @@ import { sendCreativeApprovalDmToOwner } from '@/lib/es-creative-discord';
 
 const DISCORD_PUBLIC_KEY = (process.env.DISCORD_APPLICATION_PUBLIC_KEY ?? '').trim();
 
-/** クリエイティブ申請の許可・拒否をDiscord上で実行できるDiscordユーザーID（環境変数 DISCORD_OPERATION_USER_ID と同一想定） */
-function getAllowedCreativeAdminDiscordId(): string | null {
-  const id = (process.env.DISCORD_OPERATION_USER_ID ?? '').trim();
-  return id || null;
-}
-
 /** Discord インタラクション（ボタン押下など）を受け付け、署名検証後に許可/拒否を処理 */
 export async function POST(request: NextRequest) {
   const signature = request.headers.get('X-Signature-Ed25519');
@@ -47,14 +41,6 @@ export async function POST(request: NextRequest) {
 
     if (action === 'creative_approve' || action === 'creative_reject') {
       const companyId = id;
-      const allowedId = getAllowedCreativeAdminDiscordId();
-      const clickerDiscordId = body.member?.user?.id ?? body.user?.id ?? '';
-      if (!allowedId || clickerDiscordId !== allowedId) {
-        return NextResponse.json({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: { content: 'クリエイティブ申請の許可・拒否は管理者のみ実行できます。', flags: 64 },
-        });
-      }
       const company = await getCompanyByIdFromSheets(companyId);
       if (!company) {
         return NextResponse.json({
