@@ -67,6 +67,9 @@ export default function CompaniesPage() {
   const [filterChip, setFilterChip] = useState("all");
   /** 正社員募集 | アルバイト・プロジェクト募集 */
   const [recruitmentTab, setRecruitmentTab] = useState<"正社員" | "アルバイト">("正社員");
+  /** DM許可注意ポップアップ表示中 & わかった後に遷移するパス（null なら遷移しない） */
+  const [showDmPrivacyModal, setShowDmPrivacyModal] = useState(false);
+  const [pendingNavigateTo, setPendingNavigateTo] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/es-companies")
@@ -174,6 +177,18 @@ export default function CompaniesPage() {
     }
   };
 
+  const openDmPrivacyModal = (navigateTo: string) => {
+    setPendingNavigateTo(navigateTo);
+    setShowDmPrivacyModal(true);
+  };
+
+  const closeDmPrivacyModalAndNavigate = () => {
+    const path = pendingNavigateTo;
+    setShowDmPrivacyModal(false);
+    setPendingNavigateTo(null);
+    if (path) router.push(path);
+  };
+
   if (loading && companies.length === 0) {
     return (
       <div className="companies-joblist" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16 }}>
@@ -218,10 +233,14 @@ export default function CompaniesPage() {
           </div>
           {user && (
             <>
-              <Link href="/es-system/recruit/create" className="recruit-create-btn">
+              <button
+                type="button"
+                className="recruit-create-btn"
+                onClick={() => openDmPrivacyModal("/es-system/recruit/create")}
+              >
                 <span aria-hidden>➕</span>
                 募集作成
-              </Link>
+              </button>
               <Link href="/es-system/recruit/my" className="recruit-create-btn" style={{ background: "var(--color-bg)", borderColor: "var(--color-border)", color: "var(--color-text-secondary)" }}>
                 {avatarUrl ? (
                   <img src={avatarUrl} alt="" width={20} height={20} style={{ borderRadius: "50%", objectFit: "cover" }} />
@@ -415,7 +434,14 @@ export default function CompaniesPage() {
                       !!(detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved") ||
                       (detailCompany.maxParticipants > 0 && (detailCompany.members?.length ?? 0) >= detailCompany.maxParticipants)
                     }
-                    onClick={() => router.push(`/es-system/apply/${detailCompany.id}`)}
+                    onClick={() => {
+                      if (
+                        !!(detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved") ||
+                        (detailCompany.maxParticipants > 0 && (detailCompany.members?.length ?? 0) >= detailCompany.maxParticipants)
+                      )
+                        return;
+                      openDmPrivacyModal(`/es-system/apply/${detailCompany.id}`);
+                    }}
                     title={
                       detailCompany.creativeRequired && detailCompany.creativeStatus !== "approved"
                         ? "クリエイティブ審査承認後に応募できます"
@@ -558,6 +584,51 @@ export default function CompaniesPage() {
           )}
         </div>
       </div>
+
+      {/* DM許可注意ポップアップ */}
+      {showDmPrivacyModal && (
+        <div className="dm-privacy-overlay" onClick={() => { setShowDmPrivacyModal(false); setPendingNavigateTo(null); }}>
+          <div className="dm-privacy-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="dm-privacy-header">
+              <span className="dm-privacy-icon" aria-hidden>⚠️</span>
+              <h3 className="dm-privacy-title">ダイレクトメッセージの設定について</h3>
+            </div>
+            <p className="dm-privacy-message">
+              サーバーのプライバシー設定でダイレクトメッセージを許可していないと、申請結果などのメッセージが受信できません。事前に以下の設定をご確認ください。
+            </p>
+
+            <div className="dm-privacy-section">
+              <h4 className="dm-privacy-section-title">PC版</h4>
+              <ol className="dm-privacy-steps">
+                <li>サーバーを右クリックし「プライバシー設定」をクリック</li>
+                <li>「ダイレクトメッセージ」をオンにする</li>
+              </ol>
+              <div className="dm-privacy-images">
+                <img src="https://i.imgur.com/soX7KFj.png" alt="サーバーを右クリックしプライバシー設定" className="dm-privacy-img" />
+                <img src="https://i.imgur.com/bnF99Or.png" alt="ダイレクトメッセージをオン" className="dm-privacy-img" />
+              </div>
+            </div>
+
+            <div className="dm-privacy-section">
+              <h4 className="dm-privacy-section-title">スマホ版</h4>
+              <ol className="dm-privacy-steps">
+                <li>サーバーを長押しし「他のオプション」を押す</li>
+                <li>「ダイレクトメッセージを許可」をオンにする</li>
+              </ol>
+              <div className="dm-privacy-images">
+                <img src="https://i.imgur.com/qInSQQn.jpeg" alt="サーバーを長押し、他のオプション" className="dm-privacy-img" />
+                <img src="https://i.imgur.com/Dy4fMwq.jpeg" alt="ダイレクトメッセージを許可をオン" className="dm-privacy-img" />
+              </div>
+            </div>
+
+            <div className="dm-privacy-actions">
+              <button type="button" className="dm-privacy-btn-ok" onClick={closeDmPrivacyModalAndNavigate}>
+                わかった
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
