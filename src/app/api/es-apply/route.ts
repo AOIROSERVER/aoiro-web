@@ -152,7 +152,6 @@ export async function sendApprovalDmToApplicant(params: {
   }
   const dmChannel = JSON.parse(createDmBody) as { id: string };
 
-  const companyNameDisplay = companyName.startsWith('株式会社') ? companyName : `株式会社${companyName}`;
   const content = `## 入社承認のご連絡
 
 <@${applicantDiscordId}> 様
@@ -170,7 +169,7 @@ AICのセクションも自動で変更されておりますのでそちらも�
 
 敬具
 
-${companyNameDisplay}
+${companyName}
 人事部 ${hrName}`;
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
@@ -215,7 +214,6 @@ export async function sendRejectionDmToApplicant(params: {
   }
   const dmChannel = JSON.parse(createDmBody) as { id: string };
 
-  const companyNameDisplay = companyName.startsWith('株式会社') ? companyName : `株式会社${companyName}`;
   const content = `<@${applicantDiscordId}> 様
 
 この度は、弊社の採用選考にご応募いただき、誠にありがとうございました。
@@ -230,7 +228,7 @@ ${applicantName}様のこれまでのご経験やお人柄は大変魅力的で�
 
 敬具
 
-${companyNameDisplay}`;
+${companyName}`;
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
     method: 'POST',
@@ -277,7 +275,6 @@ export async function sendDismissalDmToEmployee(params: {
 
   const now = new Date();
   const dateStr = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日`;
-  const companyNameDisplay = companyName.startsWith('株式会社') ? companyName : `株式会社${companyName}`;
   const ownerName = (ownerDiscordUsername || '代表者').trim();
 
   const content = `<@${employeeDiscordId}> 様
@@ -299,7 +296,7 @@ ${reason}
 
 敬具
 
-${companyNameDisplay}
+${companyName}
 代表取締役 ${ownerName}`;
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${dmChannel.id}/messages`, {
@@ -437,7 +434,7 @@ export async function POST(request: NextRequest) {
     let skillImageFile: File | null = null;
 
     if (contentType.includes('multipart/form-data')) {
-      const formData = await request.formData();
+      const formData = await request.formData() as unknown as { get(key: string): FormDataEntryValue | null };
       companyId = (formData.get('companyId') as string) ?? undefined;
       minecraftTag = (formData.get('minecraftTag') as string) ?? undefined;
       const formDataStr = formData.get('formData') as string | null;
