@@ -380,13 +380,14 @@ export default function RecruitMyPage() {
                             </button>
                           )}
                           <button
-                          type="button"
-                          className="recruit-create-btn"
-                          style={{ fontSize: 13, padding: "6px 14px", flexShrink: 0 }}
-                          onClick={() => setDetailApplication(a)}
-                        >
-                          詳細
-                        </button>
+                            type="button"
+                            className="recruit-create-btn"
+                            style={{ fontSize: 13, padding: "6px 14px", flexShrink: 0 }}
+                            onClick={() => setDetailApplication(a)}
+                          >
+                            詳細
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
